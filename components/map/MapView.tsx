@@ -126,17 +126,17 @@ export function MapView({
 
     const map = mapRef.current;
 
-    // Check if source already exists
-    if (map.getSource("gates")) {
-      map.removeSource("gates");
-    }
-
-    // Remove existing layers
+    // Remove existing layers first (before removing source)
     [GATE_MARKER_LAYER_ID, GATE_LABEL_LAYER_ID].forEach((layerId) => {
       if (map.getLayer(layerId)) {
         map.removeLayer(layerId);
       }
     });
+
+    // Then remove the source if it exists
+    if (map.getSource("gates")) {
+      map.removeSource("gates");
+    }
 
     // Add gates source
     map.addSource("gates", createGatesSource(HARAM_GATES));
