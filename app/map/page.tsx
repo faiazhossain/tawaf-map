@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { MapView, MapControls, GateSelector, UserLocation } from "@/components/map";
+import {
+  MapView,
+  MapControls,
+  GateSelector,
+  UserLocation,
+  NearbyGatesPanel,
+} from "@/components/map";
 import { useGateProximity } from "@/lib/hooks";
 import { useGateStore, useHotelStore, useRouteStore, usePanelStore } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
@@ -119,7 +125,7 @@ export default function MapPage() {
   }
 
   return (
-    <main className="flex flex-col h-screen bg-slate-950">
+    <main className="flex flex-col h-dvh bg-slate-950">
       {/* Header */}
       <header className="relative px-4 py-3 bg-slate-900 border-b border-slate-800/50 z-10">
         <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
@@ -182,51 +188,7 @@ export default function MapPage() {
 
         {/* Nearby Gates Panel */}
         {hasLocation && nearestGate && !hasActivePanel && (
-          <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-2xl z-[60]">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-emerald-500/20 rounded-lg">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-              </div>
-              <h3 className="font-semibold text-white">কাছাকাছি গেট</h3>
-              <span className="text-xs text-slate-500">(আপনার লোকেশন থেকে)</span>
-            </div>
-
-            <div className="space-y-2">
-              {nearbyGates.slice(0, 4).map((item) => (
-                <button
-                  key={item.gate.id}
-                  onClick={() => handleGateClick(item.gate.id)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200 group"
-                >
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <div
-                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
-                        item.gate.type === "king_fahd"
-                          ? "bg-blue-500"
-                          : item.gate.type === "umrah"
-                            ? "bg-emerald-500"
-                            : "bg-amber-500"
-                      }`}
-                    />
-                    <div className="text-left min-w-0 flex-1">
-                      <div className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
-                        {item.gate.name}
-                      </div>
-                      <div className="text-xs text-slate-500">
-                        {item.distanceFormatted} • {item.direction}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex-shrink-0 text-right">
-                    <div className="text-sm font-semibold text-emerald-500">
-                      {item.walkingTimeFormatted}
-                    </div>
-                    <div className="text-[10px] text-slate-600">হেঁটে</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
+          <NearbyGatesPanel onGateClick={handleGateClick} />
         )}
       </div>
     </main>
