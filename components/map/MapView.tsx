@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import maplibregl, { Map as MapLibreMap, LngLatBoundsLike } from "maplibre-gl";
+import maplibregl, { Map as MapLibreMap, LngLatBoundsLike, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import {
   useMapStore,
@@ -12,25 +12,18 @@ import {
 } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
-import {
-  createGatesSource,
-  createUserLocationSource,
-  createUserAccuracySource,
-  createRouteSource,
-  createHotelsSource,
-  getGatesBounds,
-} from "@/lib/map/sources";
+import { createUserAccuracySource, createRouteSource, getGatesBounds } from "@/lib/map/sources";
 import {
   getLayerConfigs,
-  GATE_MARKER_LAYER_ID,
-  GATE_LABEL_LAYER_ID,
   ROUTE_LAYER_ID,
   ROUTE_CASING_LAYER_ID,
-  USER_LOCATION_LAYER_ID,
   USER_ACCURACY_LAYER_ID,
-  HOTEL_MARKER_LAYER_ID,
-  HOTEL_LABEL_LAYER_ID,
 } from "@/lib/map/layers";
+import {
+  createGateMarkerElement,
+  createHotelMarkerElement,
+  createUserLocationElement,
+} from "@/lib/map/markers";
 
 interface MapViewProps {
   className?: string;
@@ -56,7 +49,11 @@ export function MapView({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
-  const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
+
+  // Store references to markers for removal/update
+  const gateMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const hotelMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const userLocationMarkerRef = useRef<Marker | null>(null);
 
   // Store state - use individual selectors to avoid object creation issues
   const center = useMapStore((state) => state.center);
@@ -137,277 +134,166 @@ export function MapView({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Add gates source and layers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showGates) return;
-
-    const map = mapRef.current;
-
-    // Remove existing layers first (before removing source)
-    [GATE_MARKER_LAYER_ID, GATE_LABEL_LAYER_ID].forEach((layerId) => {
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-    });
-
-    // Then remove the source if it exists
-    if (map.getSource("gates")) {
-      map.removeSource("gates");
-    }
-
-    // Add gates source
-    map.addSource("gates", createGatesSource(HARAM_GATES));
-
-    // Add layers
-    const layerConfigs = getLayerConfigs();
-
-    map.addLayer({
-      id: GATE_MARKER_LAYER_ID,
-      type: "circle",
-      source: "gates",
-      paint: layerConfigs.gateMarkers.paint,
-    });
-
-    map.addLayer({
-      id: GATE_LABEL_LAYER_ID,
-      type: "symbol",
-      source: "gates",
-      layout: layerConfigs.gateLabels.layout,
-      paint: layerConfigs.gateLabels.paint,
-      minzoom: 15,
-    });
-
-    // Click handler for gates
-    map.on("click", GATE_MARKER_LAYER_ID, (e) => {
-      if (e.features && e.features[0]) {
-        const gateId = e.features[0].properties?.id;
-        if (gateId && onGateClick) {
-          onGateClick(gateId);
-        }
-      }
-    });
-
-    // Cursor pointer on hover
-    map.on("mouseenter", GATE_MARKER_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-
-    map.on("mouseleave", GATE_MARKER_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "";
-    });
-
-    // Fit bounds to show all gates
-    map.fitBounds(getGatesBounds(HARAM_GATES), {
-      padding: { top: 50, bottom: 50, left: 50, right: 50 },
-      duration: 1000,
-    });
-  }, [mapLoaded, showGates, onGateClick]);
-
-  // Add hotels source and layers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showHotels) return;
-
-    const map = mapRef.current;
-
-    // Remove existing layers first (before removing source)
-    [HOTEL_MARKER_LAYER_ID, HOTEL_LABEL_LAYER_ID].forEach((layerId) => {
-      if (map.getLayer(layerId)) {
-        map.removeLayer(layerId);
-      }
-    });
-
-    // Then remove the source if it exists
-    if (map.getSource("hotels")) {
-      map.removeSource("hotels");
-    }
-
-    // Add hotels source
-    map.addSource("hotels", createHotelsSource(NEARBY_HOTELS));
-
-    // Add layers
-    const layerConfigs = getLayerConfigs();
-
-    map.addLayer({
-      id: HOTEL_MARKER_LAYER_ID,
-      type: "circle",
-      source: "hotels",
-      paint: layerConfigs.hotelMarkers.paint,
-    });
-
-    map.addLayer({
-      id: HOTEL_LABEL_LAYER_ID,
-      type: "symbol",
-      source: "hotels",
-      layout: layerConfigs.hotelLabels.layout,
-      paint: layerConfigs.hotelLabels.paint,
-      minzoom: 15,
-    });
-
-    // Click handler for hotels
-    map.on("click", HOTEL_MARKER_LAYER_ID, (e) => {
-      if (e.features && e.features[0]) {
-        const hotelId = e.features[0].properties?.id;
-        if (hotelId && onHotelClick) {
-          onHotelClick(hotelId);
-        }
-      }
-    });
-
-    // Cursor pointer on hover
-    map.on("mouseenter", HOTEL_MARKER_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "pointer";
-    });
-
-    map.on("mouseleave", HOTEL_MARKER_LAYER_ID, () => {
-      map.getCanvas().style.cursor = "";
-    });
-  }, [mapLoaded, showHotels, onHotelClick]);
-
-  // Remove hotels when toggled off
+  // Add/update gate markers
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
     const map = mapRef.current;
+    const markersMap = gateMarkersRef.current;
 
-    if (!showHotels) {
-      [HOTEL_MARKER_LAYER_ID, HOTEL_LABEL_LAYER_ID].forEach((layerId) => {
-        if (map.getLayer(layerId)) {
-          map.removeLayer(layerId);
-        }
+    // Remove all existing gate markers
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    if (showGates) {
+      // Add gate markers
+      HARAM_GATES.forEach((gate) => {
+        const isSelected = selectedGate?.id === gate.id;
+        const el = createGateMarkerElement(gate.type, isSelected);
+
+        const marker = new Marker({
+          element: el,
+          anchor: "bottom",
+        })
+          .setLngLat(gate.location.coordinates as [number, number])
+          .addTo(map);
+
+        // Add click handler
+        el.addEventListener("click", () => {
+          if (onGateClick) {
+            onGateClick(gate.id);
+          }
+        });
+
+        // Add hover cursor
+        el.addEventListener("mouseenter", () => {
+          el.style.cursor = "pointer";
+        });
+        el.addEventListener("mouseleave", () => {
+          el.style.cursor = "";
+        });
+
+        markersMap.set(gate.id, marker);
       });
 
-      if (map.getSource("hotels")) {
-        map.removeSource("hotels");
-      }
+      // Fit bounds to show all gates
+      map.fitBounds(getGatesBounds(HARAM_GATES), {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        duration: 1000,
+      });
     }
-  }, [mapLoaded, showHotels]);
+  }, [mapLoaded, showGates, selectedGate?.id, onGateClick]);
 
-  // Update user location
+  // Add/update hotel markers
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+    const markersMap = hotelMarkersRef.current;
+
+    // Remove all existing hotel markers
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    if (showHotels) {
+      // Add hotel markers
+      NEARBY_HOTELS.forEach((hotel) => {
+        const isSelected = selectedHotel?.id === hotel.id;
+        const el = createHotelMarkerElement(hotel.priceLevel, isSelected);
+
+        const marker = new Marker({
+          element: el,
+          anchor: "bottom",
+        })
+          .setLngLat(hotel.location.coordinates as [number, number])
+          .addTo(map);
+
+        // Add click handler
+        el.addEventListener("click", () => {
+          if (onHotelClick) {
+            onHotelClick(hotel.id);
+          }
+        });
+
+        // Add hover cursor
+        el.addEventListener("mouseenter", () => {
+          el.style.cursor = "pointer";
+        });
+        el.addEventListener("mouseleave", () => {
+          el.style.cursor = "";
+        });
+
+        markersMap.set(hotel.id, marker);
+      });
+    }
+  }, [mapLoaded, showHotels, selectedHotel?.id, onHotelClick]);
+
+  // Add/update user location marker
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !showUserLocation) return;
 
     const map = mapRef.current;
 
-    // Add/update user location source
-    if (!map.getSource("user-location")) {
-      map.addSource("user-location", createUserLocationSource(null, null));
-    }
-    (map.getSource("user-location") as any)?.setData(
-      createUserLocationSource(latitude, longitude).data
-    );
-
-    // Add user location layer if not exists
-    if (!map.getLayer(USER_LOCATION_LAYER_ID)) {
-      const layerConfigs = getLayerConfigs();
-      map.addLayer({
-        id: USER_LOCATION_LAYER_ID,
-        type: "circle",
-        source: "user-location",
-        paint: layerConfigs.userLocation.paint,
-      });
+    // Remove existing marker
+    if (userLocationMarkerRef.current) {
+      userLocationMarkerRef.current.remove();
+      userLocationMarkerRef.current = null;
     }
 
-    // Add/update accuracy ring
-    if (!map.getSource("user-accuracy")) {
-      map.addSource("user-accuracy", createUserAccuracySource(null, null, null));
-    }
-    (map.getSource("user-accuracy") as any)?.setData(
-      createUserAccuracySource(latitude, longitude, accuracy).data
-    );
+    if (latitude !== null && longitude !== null) {
+      const el = createUserLocationElement();
 
-    if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
-      const layerConfigs = getLayerConfigs();
-      map.addLayer({
-        id: USER_ACCURACY_LAYER_ID,
-        type: "fill",
-        source: "user-accuracy",
-        paint: layerConfigs.userAccuracy.paint,
-      });
+      const marker = new Marker({
+        element: el,
+        anchor: "center",
+      })
+        .setLngLat([longitude, latitude])
+        .addTo(map);
+
+      userLocationMarkerRef.current = marker;
+
+      // Add/update accuracy ring
+      if (!map.getSource("user-accuracy")) {
+        map.addSource("user-accuracy", createUserAccuracySource(null, null, null));
+      }
+      (map.getSource("user-accuracy") as any)?.setData(
+        createUserAccuracySource(latitude, longitude, accuracy).data
+      );
+
+      if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
+        const layerConfigs = getLayerConfigs();
+        map.addLayer({
+          id: USER_ACCURACY_LAYER_ID,
+          type: "fill",
+          source: "user-accuracy",
+          paint: layerConfigs.userAccuracy.paint,
+        });
+      }
     }
   }, [mapLoaded, showUserLocation, latitude, longitude, accuracy]);
 
-  // Update selected gate marker style
+  // Fly to selected gate
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !mapRef.current.getLayer(GATE_MARKER_LAYER_ID)) return;
+    if (!mapRef.current || !mapLoaded || !selectedGate) return;
 
     const map = mapRef.current;
-    const gateId = selectedGate?.id || null;
+    map.flyTo({
+      center: selectedGate.location.coordinates as [number, number],
+      zoom: 17,
+      duration: 1000,
+    });
+  }, [selectedGate, mapLoaded]);
 
-    if (gateId !== selectedGateId) {
-      setSelectedGateId(gateId);
-
-      if (gateId) {
-        // Set filter to highlight selected gate
-        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-radius", [
-          "case",
-          ["==", ["get", "id"], gateId],
-          12,
-          ["match", ["get", "type"], "king_fahd", 8, "umrah", 8, "salah", 8, 8],
-        ]);
-
-        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-stroke-width", [
-          "case",
-          ["==", ["get", "id"], gateId],
-          3,
-          2,
-        ]);
-
-        // Fly to selected gate
-        const gate = HARAM_GATES.find((g) => g.id === gateId);
-        if (gate) {
-          map.flyTo({
-            center: gate.location.coordinates as [number, number],
-            zoom: 17,
-            duration: 1000,
-          });
-        }
-      } else {
-        // Reset to default style
-        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-radius", 8);
-        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-stroke-width", 2);
-      }
-    }
-  }, [selectedGate, mapLoaded, selectedGateId]);
-
-  // Update selected hotel marker style
+  // Fly to selected hotel
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !mapRef.current.getLayer(HOTEL_MARKER_LAYER_ID)) return;
+    if (!mapRef.current || !mapLoaded || !selectedHotel) return;
 
     const map = mapRef.current;
-    const hotelId = selectedHotel?.id || null;
-
-    if (hotelId) {
-      // Highlight selected hotel
-      map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-radius", [
-        "case",
-        ["==", ["get", "id"], hotelId],
-        14,
-        10,
-      ]);
-
-      map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-stroke-width", [
-        "case",
-        ["==", ["get", "id"], hotelId],
-        4,
-        2,
-      ]);
-
-      // Fly to selected hotel
-      const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
-      if (hotel) {
-        map.flyTo({
-          center: hotel.location.coordinates as [number, number],
-          zoom: 17,
-          duration: 1000,
-        });
-      }
-    } else {
-      // Reset to default style
-      if (map.getLayer(HOTEL_MARKER_LAYER_ID)) {
-        map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-radius", 10);
-        map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-stroke-width", 2);
-      }
-    }
+    map.flyTo({
+      center: selectedHotel.location.coordinates as [number, number],
+      zoom: 17,
+      duration: 1000,
+    });
   }, [selectedHotel, mapLoaded]);
 
   // Update route

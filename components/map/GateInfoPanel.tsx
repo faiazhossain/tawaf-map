@@ -1,17 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { useGateStore, useLocationStore } from "@/lib/store";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useState } from "react";
+import { useGateStore, useLocationStore, usePanelStore } from "@/lib/store";
 import { Button } from "@/components/ui/button";
-import { MapPin, Navigation, X, Accessibility, Zap, Droplet } from "lucide-react";
+import { MapPin, Navigation, X, Accessibility, Droplet, Zap } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
 import { useMapRouting } from "@/lib/hooks";
 
-export function GateInfoPanel() {
+interface GateInfoPanelProps {
+  onClose?: () => void;
+}
+
+export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
   const { selectedGate, clearGate } = useGateStore();
   const { latitude, longitude } = useLocationStore();
   const { calculateRoute, isCalculating } = useMapRouting();
+  const { setActivePanel } = usePanelStore();
   const [isRouting, setIsRouting] = useState(false);
 
   const gate = selectedGate.gate;
@@ -19,148 +23,190 @@ export function GateInfoPanel() {
   const walkingTime = selectedGate.walkingTime;
 
   const facilityIcons = {
-    restroom: <Droplet className="w-4 h-4" />,
-    escalator: <Zap className="w-4 h-4" />,
-    elevator: <Accessibility className="w-4 h-4" />,
-    wheelchair: <Accessibility className="w-4 h-4" />,
+    restroom: <Droplet className="w-3.5 h-3.5" />,
+    escalator: <Zap className="w-3.5 h-3.5" />,
+    elevator: <Accessibility className="w-3.5 h-3.5" />,
+    wheelchair: <Accessibility className="w-3.5 h-3.5" />,
+  };
+
+  const facilityLabels = {
+    restroom: "টয়লেট",
+    escalator: "এসকেলেটর",
+    elevator: "লিফট",
+    wheelchair: "হুইলচেয়ার",
+  };
+
+  const handleClose = () => {
+    clearGate();
+    setActivePanel(null);
+    onClose?.();
   };
 
   const handleGetDirections = async () => {
     if (!gate || latitude === null || longitude === null) return;
-
     setIsRouting(true);
     await calculateRoute(gate.location.coordinates);
     setIsRouting(false);
   };
 
-  if (!gate) {
-    return null;
-  }
+  if (!gate) return null;
 
   const hasLocation = latitude !== null && longitude !== null;
 
-  return (
-    <Card className="absolute top-4 right-4 z-10 w-80 max-h-[80vh] overflow-y-auto">
-      <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <CardTitle className="text-lg">{gate.name}</CardTitle>
-            <p className="text-sm text-muted-foreground">{gate.nameAr}</p>
-          </div>
-          <Button onClick={clearGate} variant="ghost" size="icon" className="h-8 w-8">
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-      </CardHeader>
+  const typeConfig = {
+    king_fahd: {
+      color: "blue",
+      label: "কিং ফাহ্দ এক্সপানশন",
+      bg: "bg-blue-600",
+      bgLight: "bg-blue-500/10",
+      borderLight: "border-blue-500/20",
+      textLight: "text-blue-400",
+    },
+    umrah: {
+      color: "emerald",
+      label: "ওমরাহ গেট",
+      bg: "bg-emerald-600",
+      bgLight: "bg-emerald-500/10",
+      borderLight: "border-emerald-500/20",
+      textLight: "text-emerald-400",
+    },
+    salah: {
+      color: "amber",
+      label: "নামাজ গেট",
+      bg: "bg-amber-600",
+      bgLight: "bg-amber-500/10",
+      borderLight: "border-amber-500/20",
+      textLight: "text-amber-400",
+    },
+  };
 
-      <CardContent className="space-y-4">
-        {/* Distance Info */}
-        {distance !== null && (
-          <div className="flex items-center gap-3 p-3 bg-muted rounded-lg">
-            <Navigation className="w-5 h-5 text-primary" />
-            <div>
-              <div className="text-sm text-muted-foreground">Distance</div>
-              <div className="font-semibold">
-                {formatDistance(distance)}
-                {walkingTime && ` (${formatWalkingTime(walkingTime)})`}
+  const config = typeConfig[gate.type];
+
+  return (
+    <div className="absolute top-4 right-4 z-[100] w-80 max-h-[calc(100vh-2rem)] overflow-hidden">
+      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className={`${config.bg} px-4 py-3`}>
+          <div className="flex items-start justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <MapPin className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-white">{gate.name}</h3>
+                <p className="text-xs text-white/80" dir="rtl">
+                  {gate.nameAr}
+                </p>
               </div>
             </div>
-          </div>
-        )}
-
-        {/* Type Badge */}
-        <div>
-          <span className="text-xs text-muted-foreground">Gate Type</span>
-          <div className="mt-1">
-            <span
-              className={`
-                inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium
-                ${
-                  gate.type === "king_fahd"
-                    ? "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400"
-                    : gate.type === "umrah"
-                      ? "bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400"
-                      : "bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400"
-                }
-              `}
+            <button
+              onClick={handleClose}
+              className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             >
-              <MapPin className="w-3 h-3" />
-              {gate.type === "king_fahd"
-                ? "King Fahd Expansion"
-                : gate.type === "umrah"
-                  ? "Umrah Gate"
-                  : "Prayer Gate"}
-            </span>
+              <X className="w-4 h-4 text-white" />
+            </button>
           </div>
         </div>
 
-        {/* Facilities */}
-        {gate.facilities.length > 0 && (
-          <div>
-            <span className="text-xs text-muted-foreground">Facilities</span>
-            <div className="mt-1 flex flex-wrap gap-2">
-              {gate.facilities.map((facility) => (
-                <span
-                  key={facility}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-secondary rounded-md text-xs"
-                >
-                  {facilityIcons[facility as keyof typeof facilityIcons] || null}
-                  <span className="capitalize">{facility}</span>
-                </span>
-              ))}
+        <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+          {/* Distance Card */}
+          {distance !== null && (
+            <div className={`p-4 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xs text-slate-500 mb-1">দূরত্ব</p>
+                  <p className={`text-xl font-bold ${config.textLight}`}>
+                    {formatDistance(distance)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs text-slate-500 mb-1">হেঁটে যাওয়ার সময়</p>
+                  <p className={`text-xl font-bold ${config.textLight}`}>
+                    {walkingTime ? formatWalkingTime(walkingTime) : "--"}
+                  </p>
+                </div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Nearby Landmarks */}
-        {gate.nearestLandmarks.length > 0 && (
-          <div>
-            <span className="text-xs text-muted-foreground">Nearby Landmarks</span>
-            <ul className="mt-1 space-y-1">
-              {gate.nearestLandmarks.map((landmark) => (
-                <li key={landmark} className="text-sm flex items-center gap-2">
-                  <span className="w-1 h-1 rounded-full bg-primary" />
-                  {landmark}
-                </li>
-              ))}
-            </ul>
+          {/* Type Badge */}
+          <div
+            className={`inline-flex items-center gap-2 px-3 py-1.5 ${config.bgLight} ${config.borderLight} border rounded-full`}
+          >
+            <div className={`w-2 h-2 rounded-full bg-${config.color}-500`} />
+            <span className={`text-xs font-medium ${config.textLight}`}>{config.label}</span>
           </div>
-        )}
 
-        {/* Coordinates */}
-        <div className="pt-2 border-t">
-          <span className="text-xs text-muted-foreground">Coordinates</span>
-          <div className="text-xs font-mono mt-1">
-            {gate.location.coordinates[1].toFixed(6)}, {gate.location.coordinates[0].toFixed(6)}
+          {/* Facilities */}
+          {gate.facilities.length > 0 && (
+            <div>
+              <p className="text-xs text-slate-500 mb-2">সুবিধা সমূহ</p>
+              <div className="flex flex-wrap gap-2">
+                {gate.facilities.map((facility) => (
+                  <span
+                    key={facility}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                  >
+                    {facilityIcons[facility as keyof typeof facilityIcons]}
+                    <span>
+                      {facilityLabels[facility as keyof typeof facilityLabels] || facility}
+                    </span>
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Nearby Landmarks */}
+          {gate.nearestLandmarks.length > 0 && (
+            <div>
+              <p className="text-xs text-slate-500 mb-2">কাছাকাছি জায়গা</p>
+              <div className="space-y-1.5">
+                {gate.nearestLandmarks.map((landmark) => (
+                  <div key={landmark} className="flex items-center gap-2 text-sm text-slate-400">
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    {landmark}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Coordinates */}
+          <div className={`p-3 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
+            <p className="text-[10px] text-slate-500 mb-1">কোঅর্ডিনেট</p>
+            <p className="text-xs font-mono text-slate-400">
+              {gate.location.coordinates[1].toFixed(6)}, {gate.location.coordinates[0].toFixed(6)}
+            </p>
           </div>
         </div>
 
-        {/* Get Directions Button */}
-        <div className="pt-2 border-t">
+        {/* Footer */}
+        <div className="p-4 border-t border-slate-700/50">
           <Button
             onClick={handleGetDirections}
             disabled={!hasLocation || isCalculating || isRouting}
-            className="w-full"
+            className={`w-full gap-2 ${config.bg} hover:opacity-90 text-white border-0 shadow-lg`}
           >
             {isCalculating || isRouting ? (
               <>
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
-                Calculating route...
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                রুট বের করা হচ্ছে...
               </>
             ) : (
               <>
-                <Navigation className="w-4 h-4 mr-2" />
-                Get Directions
+                <Navigation className="w-4 h-4" />
+                দিক নির্দেশনা দেখুন
               </>
             )}
           </Button>
           {!hasLocation && (
-            <p className="text-xs text-muted-foreground text-center mt-2">
-              Enable location to get directions
+            <p className="text-xs text-slate-600 text-center mt-2">
+              লোকেশন চালু করুন দিক নির্দেশনা পেতে
             </p>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }

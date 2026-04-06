@@ -1,13 +1,12 @@
 "use client";
 
+import { useState } from "react";
 import { MapPin, Star, Navigation, Phone, Globe, X } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
 import type { Hotel, HotelAmenity } from "@/types/hotel";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { useState } from "react";
 import { useMapRouting } from "@/lib/hooks";
-import { Badge } from "@/components/ui/badge";
+import { usePanelStore } from "@/lib/store";
 
 interface HotelInfoPanelProps {
   hotel: Hotel;
@@ -17,21 +16,22 @@ interface HotelInfoPanelProps {
 }
 
 const AMENITY_ICONS: Record<HotelAmenity, string> = {
-  wifi: "WiFi",
-  restaurant: "Restaurant",
-  parking: "Parking",
-  pool: "Pool",
-  gym: "Gym",
-  spa: "Spa",
-  prayer_room: "Prayer",
-  shuttle: "Shuttle",
-  room_service: "Service",
-  ac: "AC",
-  elevator: "Elevator",
+  wifi: "ওয়াইফাই",
+  restaurant: "রেস্টুরেন্ট",
+  parking: "পার্কিং",
+  pool: "পুল",
+  gym: "জিম",
+  spa: "স্পা",
+  prayer_room: "প্রার্থনা রুম",
+  shuttle: "শাটল",
+  room_service: "রুম সার্ভিস",
+  ac: "এসি",
+  elevator: "লিফট",
 };
 
 export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: HotelInfoPanelProps) {
   const { calculateRoute, isCalculating } = useMapRouting();
+  const { setActivePanel } = usePanelStore();
   const [isRouting, setIsRouting] = useState(false);
 
   const handleGetDirections = async () => {
@@ -41,16 +41,21 @@ export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: Ho
     onStartRoute?.();
   };
 
+  const handleClose = () => {
+    setActivePanel(null);
+    onClose?.();
+  };
+
   const getPriceColor = () => {
     switch (hotel.priceLevel) {
       case 1:
-        return "text-green-600 dark:text-green-400";
+        return "text-emerald-400";
       case 2:
-        return "text-blue-600 dark:text-blue-400";
+        return "text-blue-400";
       case 3:
-        return "text-amber-600 dark:text-amber-400";
+        return "text-amber-400";
       case 4:
-        return "text-purple-600 dark:text-purple-400";
+        return "text-purple-400";
     }
   };
 
@@ -59,144 +64,149 @@ export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: Ho
   };
 
   return (
-    <Card className="absolute top-4 right-4 w-80 max-h-[calc(100vh-2rem)] z-10 overflow-hidden flex flex-col shadow-xl">
-      {/* Header */}
-      <div className="relative h-32 bg-gradient-to-br from-primary to-primary/80">
-        <button
-          onClick={onClose}
-          className="absolute top-2 right-2 p-1.5 bg-black/20 hover:bg-black/30 rounded-full transition-colors"
-          aria-label="Close"
-        >
-          <X className="w-4 h-4 text-primary-foreground" />
-        </button>
-        <div className="absolute bottom-3 left-3 right-3">
-          <h3 className="text-lg font-semibold text-primary-foreground drop-shadow-md">
-            {hotel.name}
-          </h3>
-          <p className="text-sm text-primary-foreground/90 drop-shadow-md">{hotel.nameAr}</p>
-        </div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* Rating and Price */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex">
-              {[...Array(hotel.starRating)].map((_, i) => (
-                <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
-              ))}
-            </div>
-            <span className="text-sm text-muted-foreground">{hotel.starRating} Star</span>
-          </div>
-          <Badge variant="secondary" className={getPriceColor()}>
-            {getPriceLabel()}
-          </Badge>
-        </div>
-
-        {/* Distance Info */}
-        <div className="bg-primary/10 rounded-lg p-3 border border-primary/20">
-          <div className="flex items-center gap-2 text-primary">
-            <MapPin className="w-4 h-4" />
-            <span className="text-sm font-medium">Distance to Haram</span>
-          </div>
-          <div className="grid grid-cols-2 gap-4 mt-2">
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatDistance(hotel.distanceToHaram)}
-              </p>
-              <p className="text-xs text-muted-foreground">Walking distance</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-foreground">
-                {formatWalkingTime(hotel.walkingTime)}
-              </p>
-              <p className="text-xs text-muted-foreground">Walking time</p>
-            </div>
+    <div className="absolute top-4 right-4 z-[100] w-80 max-h-[calc(100vh-2rem)]">
+      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+        {/* Header */}
+        <div className="relative h-28 bg-emerald-600">
+          <button
+            onClick={handleClose}
+            className="absolute top-3 right-3 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors"
+            aria-label="Close"
+          >
+            <X className="w-4 h-4 text-white" />
+          </button>
+          <div className="absolute bottom-3 left-4 right-4">
+            <h3 className="text-lg font-bold text-white drop-shadow-md">{hotel.name}</h3>
+            <p className="text-sm text-white/90 drop-shadow-md" dir="rtl">
+              {hotel.nameAr}
+            </p>
           </div>
         </div>
 
-        {/* Address */}
-        <div>
-          <p className="text-xs text-muted-foreground mb-1">Address</p>
-          <p className="text-sm text-foreground">{hotel.location.address}</p>
-          <p className="text-sm text-muted-foreground" dir="rtl">
-            {hotel.location.addressAr}
-          </p>
-        </div>
+        {/* Content */}
+        <div className="p-4 space-y-4 max-h-[50vh] overflow-y-auto">
+          {/* Rating and Price */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="flex">
+                {[...Array(hotel.starRating)].map((_, i) => (
+                  <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
+                ))}
+              </div>
+              <span className="text-sm text-slate-400">{hotel.starRating} স্টার</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 rounded-lg">
+              <span className={`font-bold ${getPriceColor()}`}>{getPriceLabel()}</span>
+            </div>
+          </div>
 
-        {/* Amenities */}
-        {hotel.amenities.length > 0 && (
+          {/* Distance Info Card */}
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
+            <div className="flex items-center gap-2 text-emerald-400 mb-3">
+              <MapPin className="w-4 h-4" />
+              <span className="text-sm font-medium">হারাম থেকে দূরত্ব</span>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {formatDistance(hotel.distanceToHaram)}
+                </p>
+                <p className="text-xs text-slate-500">হাঁটার দূরত্ব</p>
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-white">
+                  {formatWalkingTime(hotel.walkingTime)}
+                </p>
+                <p className="text-xs text-slate-500">হাঁটার সময়</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Address */}
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Amenities</p>
-            <div className="flex flex-wrap gap-2">
-              {hotel.amenities.map((amenity) => (
-                <Badge
-                  key={amenity}
-                  variant="outline"
-                  className="text-xs"
-                  title={amenity.replace(/_/g, " ")}
-                >
-                  {AMENITY_ICONS[amenity] || amenity}
-                </Badge>
-              ))}
-            </div>
+            <p className="text-xs text-slate-500 mb-1">ঠিকানা</p>
+            <p className="text-sm text-slate-300">{hotel.location.address}</p>
+            <p className="text-sm text-slate-500" dir="rtl">
+              {hotel.location.addressAr}
+            </p>
           </div>
-        )}
 
-        {/* Contact */}
-        {hotel.contact && (hotel.contact.phone || hotel.contact.website) && (
-          <div>
-            <p className="text-xs text-muted-foreground mb-2">Contact</p>
-            <div className="space-y-1">
-              {hotel.contact.phone && (
-                <a
-                  href={`tel:${hotel.contact.phone}`}
-                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <Phone className="w-3 h-3" />
-                  {hotel.contact.phone}
-                </a>
-              )}
-              {hotel.contact.website && (
-                <a
-                  href={`https://${hotel.contact.website}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
-                >
-                  <Globe className="w-3 h-3" />
-                  <span className="truncate">{hotel.contact.website}</span>
-                </a>
-              )}
+          {/* Amenities */}
+          {hotel.amenities.length > 0 && (
+            <div>
+              <p className="text-xs text-slate-500 mb-2">সুবিধা সমূহ</p>
+              <div className="flex flex-wrap gap-2">
+                {hotel.amenities.map((amenity) => (
+                  <span
+                    key={amenity}
+                    className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                    title={amenity.replace(/_/g, " ")}
+                  >
+                    {AMENITY_ICONS[amenity] || amenity}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
-
-      {/* Footer Actions */}
-      <div className="p-4 border-t space-y-2 bg-muted/20">
-        <Button
-          onClick={handleGetDirections}
-          disabled={isCalculating || isRouting}
-          className="w-full"
-        >
-          {isCalculating || isRouting ? (
-            <>
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-primary-foreground border-t-transparent mr-2" />
-              Calculating route...
-            </>
-          ) : (
-            <>
-              <Navigation className="w-4 h-4 mr-2" />
-              Get Directions
-            </>
           )}
-        </Button>
-        <Button onClick={onShowOnMap} variant="outline" className="w-full">
-          Show on Map
-        </Button>
+
+          {/* Contact */}
+          {hotel.contact && (hotel.contact.phone || hotel.contact.website) && (
+            <div>
+              <p className="text-xs text-slate-500 mb-2">যোগাযোগ</p>
+              <div className="space-y-2">
+                {hotel.contact.phone && (
+                  <a
+                    href={`tel:${hotel.contact.phone}`}
+                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  >
+                    <Phone className="w-3.5 h-3.5" />
+                    {hotel.contact.phone}
+                  </a>
+                )}
+                {hotel.contact.website && (
+                  <a
+                    href={`https://${hotel.contact.website}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  >
+                    <Globe className="w-3.5 h-3.5" />
+                    <span className="truncate">{hotel.contact.website}</span>
+                  </a>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Footer Actions */}
+        <div className="p-4 border-t border-slate-700/50 space-y-2">
+          <Button
+            onClick={handleGetDirections}
+            disabled={isCalculating || isRouting}
+            className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-0 shadow-lg"
+          >
+            {isCalculating || isRouting ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                রুট বের করা হচ্ছে...
+              </>
+            ) : (
+              <>
+                <Navigation className="w-4 h-4" />
+                দিক নির্দেশনা দেখুন
+              </>
+            )}
+          </Button>
+          <Button
+            onClick={onShowOnMap}
+            variant="outline"
+            className="w-full border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white"
+          >
+            ম্যাপে দেখুন
+          </Button>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }

@@ -22,54 +22,56 @@ export function UserLocation({ onRequestLocation }: UserLocationProps) {
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-background border rounded-lg">
-        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-        <span className="text-sm text-muted-foreground">Getting location...</span>
+      <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-lg">
+        <div className="w-4 h-4 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
+        <span className="text-sm text-slate-400 hidden sm:inline">লোকেশন নেওয়া হচ্ছে...</span>
       </div>
     );
   }
 
   if (permission === "denied") {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-destructive/10 border border-destructive/20 rounded-lg">
-        <NavigationOff className="w-4 h-4 text-destructive" />
-        <span className="text-sm text-destructive">Location access denied</span>
+      <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 backdrop-blur-xl border border-rose-500/20 rounded-xl shadow-lg">
+        <NavigationOff className="w-4 h-4 text-rose-400" />
+        <span className="text-sm text-rose-400 hidden sm:inline">লোকেশন বন্ধ</span>
       </div>
     );
   }
 
   if (error && !latitude) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-muted rounded-lg">
-        <NavigationOff className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">{error}</span>
+      <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-xl shadow-lg">
+        <NavigationOff className="w-4 h-4 text-slate-500" />
+        <span className="text-sm text-slate-500 hidden sm:inline">{error}</span>
       </div>
     );
   }
 
   if (latitude && longitude) {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-primary/5 border border-primary/20 rounded-lg">
-        <Navigation className="w-4 h-4 text-primary" />
-        <div className="flex flex-col">
-          <span className="text-xs text-muted-foreground">Your location</span>
-          <span className="text-sm font-medium">
-            {latitude.toFixed(5)}, {longitude.toFixed(5)}
-          </span>
-          {accuracy && (
-            <span className="text-xs text-muted-foreground">
-              Accuracy: ±{Math.round(accuracy)}m
-            </span>
-          )}
+      <div className="flex items-center gap-2 px-3 py-2 bg-emerald-500/10 backdrop-blur-xl border border-emerald-500/20 rounded-xl shadow-lg">
+        <div className="relative">
+          <Navigation className="w-4 h-4 text-emerald-400" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full animate-ping" />
+          <div className="absolute -bottom-0.5 -right-0.5 w-2 h-2 bg-emerald-400 rounded-full" />
+        </div>
+        <div className="hidden sm:flex flex-col">
+          <span className="text-xs text-emerald-600 dark:text-emerald-400">আপনার লোকেশন</span>
+          {accuracy && <span className="text-[10px] text-slate-500">±{Math.round(accuracy)}m</span>}
         </div>
       </div>
     );
   }
 
   return (
-    <Button onClick={handleRequestLocation} variant="outline" size="sm">
-      <Navigation className="w-4 h-4 mr-2" />
-      Enable Location
+    <Button
+      onClick={handleRequestLocation}
+      variant="outline"
+      size="sm"
+      className="gap-2 border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white"
+    >
+      <Navigation className="w-4 h-4" />
+      <span className="hidden sm:inline">লোকেশন চালু করুন</span>
     </Button>
   );
 }

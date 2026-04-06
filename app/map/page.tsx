@@ -1,23 +1,64 @@
 "use client";
 
 import { useState } from "react";
-import { MapView, MapControls, GateSelector, GateInfoPanel, UserLocation } from "@/components/map";
-import { RoutePanel, HotelInfoPanel } from "@/components/panels";
+import { MapView, MapControls, GateSelector, UserLocation } from "@/components/map";
 import { useGateProximity } from "@/lib/hooks";
-import { useGateStore, useHotelStore } from "@/lib/store";
+import { useGateStore, useHotelStore, useRouteStore, usePanelStore } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { Button } from "@/components/ui/button";
-import { Hotel } from "lucide-react";
-import { useHotelProximity } from "@/lib/hooks";
+import { Hotel, MapPin } from "lucide-react";
+import Link from "next/link";
+
+// Lazy load panels to avoid render overlap
+import dynamic from "next/dynamic";
+
+const GateInfoPanel = dynamic(
+  () => import("@/components/map/GateInfoPanel").then((mod) => ({ default: mod.GateInfoPanel })),
+  { ssr: false }
+);
+const HotelInfoPanel = dynamic(
+  () =>
+    import("@/components/panels/HotelInfoPanel").then((mod) => ({ default: mod.HotelInfoPanel })),
+  { ssr: false }
+);
+const RoutePanel = dynamic(
+  () => import("@/components/panels/RoutePanel").then((mod) => ({ default: mod.RoutePanel })),
+  { ssr: false }
+);
+const DebugLocationPanel = dynamic(
+  () =>
+    import("@/components/map/DebugLocationPanel").then((mod) => ({
+      default: mod.DebugLocationPanel,
+    })),
+  { ssr: false }
+);
+
+function MosqueIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      className={className}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+    >
+      <path d="M12 3L6 8v12c0 0.55.45 1 1 1h2c0.55 0 1-0.45 1-1v-5h4v5c0 0.55 0.45 1 1 1h2c0.55 0 1-0.45 1-1V8l-6-5z" />
+      <path d="M12 3V1" />
+      <circle cx="12" cy="8.5" r="1.5" fill="currentColor" />
+      <path d="M9 20v2M15 20v2" />
+    </svg>
+  );
+}
 
 export default function MapPage() {
   const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
   const { setGate, setGateDistance, clearGate } = useGateStore();
-  const { setSelectedHotel, clearSelectedHotel } = useHotelStore();
+  const { selectedHotel, setSelectedHotel, clearSelectedHotel } = useHotelStore();
+  const { activeRoute } = useRouteStore();
+  const { activePanel, setActivePanel } = usePanelStore();
+
   const [showHotels, setShowHotels] = useState(false);
-  const [showHotelPanel, setShowHotelPanel] = useState(false);
-  const [selectedHotel, setSelectedHotelLocal] = useState<(typeof NEARBY_HOTELS)[0] | null>(null);
 
   const handleGateClick = (gateId: string) => {
     const gate = HARAM_GATES.find((g) => g.id === gateId);
@@ -25,66 +66,90 @@ export default function MapPage() {
 
     if (gate) {
       setGate(gate);
-
-      // Set distance and walking time from proximity data
       if (proximity) {
         setGateDistance(proximity.distance, proximity.walkingTime);
       }
     }
 
-    // Close hotel panel when selecting a gate
-    setShowHotelPanel(false);
+    clearSelectedHotel();
+    setActivePanel("gate");
   };
 
   const handleHotelClick = (hotelId: string) => {
     const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
     if (hotel) {
       setSelectedHotel(hotel);
-      setSelectedHotelLocal(hotel);
-      setShowHotelPanel(true);
     }
 
-    // Clear gate selection when selecting a hotel
     clearGate();
-  };
-
-  const handleCloseHotelPanel = () => {
-    setShowHotelPanel(false);
-    clearSelectedHotel();
-    setSelectedHotelLocal(null);
+    setActivePanel("hotel");
   };
 
   const handleToggleHotels = () => {
     setShowHotels((prev) => !prev);
-    // Also close panel when toggling off
     if (showHotels) {
-      setShowHotelPanel(false);
       clearSelectedHotel();
-      setSelectedHotelLocal(null);
+      if (activePanel === "hotel") {
+        setActivePanel(null);
+      }
     }
   };
 
-  return (
-    <main className="flex flex-col h-screen">
-      {/* Header */}
-      <header className="flex items-center justify-between px-4 py-3 bg-background border-b z-10">
-        <div>
-          <h1 className="text-xl font-bold">TawafMap</h1>
-          <p className="text-sm text-muted-foreground">Navigate Makkah & Madinah</p>
-        </div>
+  const handleCloseGatePanel = () => {
+    clearGate();
+    setActivePanel(null);
+  };
 
-        <div className="flex items-center gap-3">
-          <UserLocation />
-          <Button
-            variant={showHotels ? "default" : "outline"}
-            size="sm"
-            onClick={handleToggleHotels}
-            className="gap-2"
-          >
-            <Hotel className="w-4 h-4" />
-            <span className="hidden sm:inline">Hotels</span>
-          </Button>
-          <GateSelector />
+  const handleCloseHotelPanel = () => {
+    clearSelectedHotel();
+    setActivePanel(null);
+  };
+
+  const handleCloseRoutePanel = () => {
+    setActivePanel(null);
+  };
+
+  const showGatePanel = activePanel === "gate";
+  const showHotelPanel = activePanel === "hotel" && selectedHotel !== null;
+  const showRoutePanel = activePanel === "route" && activeRoute !== null;
+  const hasActivePanel = activePanel !== null;
+
+  if (activeRoute !== null && activePanel === null) {
+    setActivePanel("route");
+  }
+
+  return (
+    <main className="flex flex-col h-screen bg-slate-950">
+      {/* Header */}
+      <header className="relative px-4 py-3 bg-slate-900 border-b border-slate-800/50 z-10">
+        <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
+          <Link href="/" className="flex items-center gap-3 group">
+            <div className="p-2 bg-emerald-600 rounded-xl shadow-lg">
+              <MosqueIcon className="w-5 h-5 text-white" />
+            </div>
+            <div className="hidden sm:block">
+              <h1 className="text-lg font-bold text-white">TawafMap</h1>
+              <p className="text-xs text-emerald-500">মক্কা-মদিনায় হারাবেন না</p>
+            </div>
+          </Link>
+
+          <div className="flex items-center gap-2 sm:gap-3">
+            <UserLocation />
+            <Button
+              variant={showHotels ? "default" : "outline"}
+              size={showHotels ? "sm" : "icon"}
+              onClick={handleToggleHotels}
+              className={
+                showHotels
+                  ? "bg-emerald-600 text-white border-0 shadow-lg"
+                  : "border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300"
+              }
+            >
+              <Hotel className="w-4 h-4" />
+              <span className="hidden sm:inline">{showHotels ? "Hotels On" : "Hotels"}</span>
+            </Button>
+            <GateSelector />
+          </div>
         </div>
       </header>
 
@@ -98,52 +163,65 @@ export default function MapPage() {
           onHotelClick={handleHotelClick}
         />
 
-        {/* Map Controls - overlaid on map */}
-        <div className="absolute top-4 left-4 z-10">
+        {/* Map Controls */}
+        <div className="absolute top-4 left-4 z-[40]">
           <MapControls />
         </div>
 
-        {/* Gate Info Panel */}
-        <GateInfoPanel />
-
-        {/* Hotel Info Panel */}
+        {/* Info Panels */}
+        {showGatePanel && <GateInfoPanel onClose={handleCloseGatePanel} />}
         {showHotelPanel && selectedHotel && (
-          <HotelInfoPanel
-            hotel={selectedHotel}
-            onClose={handleCloseHotelPanel}
-            onShowOnMap={() => {
-              // Keep panel open, map already centered by MapView
-            }}
-          />
+          <HotelInfoPanel hotel={selectedHotel} onClose={handleCloseHotelPanel} />
         )}
 
         {/* Route Panel */}
-        <RoutePanel />
+        {showRoutePanel && <RoutePanel onClose={handleCloseRoutePanel} />}
+
+        {/* Debug Location Panel */}
+        {!hasActivePanel && <DebugLocationPanel />}
 
         {/* Nearby Gates Panel */}
-        {hasLocation && nearestGate && !showHotelPanel && (
-          <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-background/95 backdrop-blur border rounded-lg p-4 shadow-lg">
-            <h3 className="font-semibold mb-3 flex items-center gap-2">
-              <span>Nearest Gates</span>
-              <span className="text-xs text-muted-foreground">(to your location)</span>
-            </h3>
+        {hasLocation && nearestGate && !hasActivePanel && (
+          <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-slate-900/90 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-4 shadow-2xl z-[60]">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="p-1.5 bg-emerald-500/20 rounded-lg">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              </div>
+              <h3 className="font-semibold text-white">কাছাকাছি গেট</h3>
+              <span className="text-xs text-slate-500">(আপনার লোকেশন থেকে)</span>
+            </div>
 
             <div className="space-y-2">
-              {nearbyGates.map((item) => (
+              {nearbyGates.slice(0, 4).map((item) => (
                 <button
                   key={item.gate.id}
                   onClick={() => handleGateClick(item.gate.id)}
-                  className="w-full flex items-center justify-between p-2 rounded-lg hover:bg-muted transition-colors text-left"
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200 group"
                 >
-                  <div className="flex-1 min-w-0">
-                    <div className="text-sm font-medium truncate">{item.gate.name}</div>
-                    <div className="text-xs text-muted-foreground">
-                      {item.distanceFormatted} • {item.direction} • {item.bearingFormatted}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <div
+                      className={`w-2 h-2 rounded-full flex-shrink-0 ${
+                        item.gate.type === "king_fahd"
+                          ? "bg-blue-500"
+                          : item.gate.type === "umrah"
+                            ? "bg-emerald-500"
+                            : "bg-amber-500"
+                      }`}
+                    />
+                    <div className="text-left min-w-0 flex-1">
+                      <div className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
+                        {item.gate.name}
+                      </div>
+                      <div className="text-xs text-slate-500">
+                        {item.distanceFormatted} • {item.direction}
+                      </div>
                     </div>
                   </div>
-                  <div className="text-xs text-muted-foreground text-right">
-                    <div>{item.walkingTimeFormatted}</div>
-                    <div>walk</div>
+                  <div className="flex-shrink-0 text-right">
+                    <div className="text-sm font-semibold text-emerald-500">
+                      {item.walkingTimeFormatted}
+                    </div>
+                    <div className="text-[10px] text-slate-600">হেঁটে</div>
                   </div>
                 </button>
               ))}
