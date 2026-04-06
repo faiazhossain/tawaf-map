@@ -1,0 +1,344 @@
+"use client";
+
+import { useEffect, useRef, useState, useCallback } from "react";
+import maplibregl, { Map as MapLibreMap, LngLatBoundsLike } from "maplibre-gl";
+import "maplibre-gl/dist/maplibre-gl.css";
+import { useMapStore, useLocationStore, useGateStore, useRouteStore } from "@/lib/store";
+import { HARAM_GATES } from "@/lib/data/gates";
+import { MAP_STYLES, type MapStyleKey } from "@/lib/map/styles";
+import {
+  createGatesSource,
+  createUserLocationSource,
+  createUserAccuracySource,
+  createRouteSource,
+  getGatesBounds,
+} from "@/lib/map/sources";
+import {
+  getLayerConfigs,
+  GATE_MARKER_LAYER_ID,
+  GATE_LABEL_LAYER_ID,
+  ROUTE_LAYER_ID,
+  ROUTE_CASING_LAYER_ID,
+  USER_LOCATION_LAYER_ID,
+  USER_ACCURACY_LAYER_ID,
+} from "@/lib/map/layers";
+
+interface MapViewProps {
+  className?: string;
+  showGates?: boolean;
+  showUserLocation?: boolean;
+  onGateClick?: (gateId: string) => void;
+}
+
+export function MapView({
+  className = "",
+  showGates = true,
+  showUserLocation = true,
+  onGateClick,
+}: MapViewProps) {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapRef = useRef<MapLibreMap | null>(null);
+  const [mapLoaded, setMapLoaded] = useState(false);
+  const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
+
+  // Store state
+  const center = useMapStore((state) => state.center);
+  const zoom = useMapStore((state) => state.zoom);
+  const bearing = useMapStore((state) => state.bearing);
+  const pitch = useMapStore((state) => state.pitch);
+  const style = useMapStore((state) => state.style);
+  const setCenter = useMapStore((state) => state.setCenter);
+  const setZoom = useMapStore((state) => state.setZoom);
+
+  const location = useLocationStore((state) => ({
+    latitude: state.latitude,
+    longitude: state.longitude,
+    accuracy: state.accuracy,
+  }));
+
+  const selectedGate = useGateStore((state) => state.selectedGate.gate);
+  const activeRoute = useRouteStore((state) => state.activeRoute);
+
+  // Initialize map
+  useEffect(() => {
+    if (!mapContainerRef.current || mapRef.current) return;
+
+    const map = new maplibregl.Map({
+      container: mapContainerRef.current,
+      style: MAP_STYLES[style as MapStyleKey] || MAP_STYLES.streets,
+      center: [center[0], center[1]],
+      zoom,
+      bearing,
+      pitch,
+      minZoom: 12,
+      maxZoom: 20,
+      attributionControl: false,
+    });
+
+    // Add navigation control
+    map.addControl(
+      new maplibregl.NavigationControl({
+        showCompass: true,
+        showZoom: true,
+      }),
+      "top-right"
+    );
+
+    // Add fullscreen control
+    map.addControl(new maplibregl.FullscreenControl(), "top-right");
+
+    // Add scale control
+    map.addControl(
+      new maplibregl.ScaleControl({
+        maxWidth: 100,
+        unit: "metric",
+      }),
+      "bottom-left"
+    );
+
+    map.on("load", () => {
+      setMapLoaded(true);
+    });
+
+    map.on("move", () => {
+      const newCenter = map.getCenter();
+      setCenter([newCenter.lng, newCenter.lat]);
+      setZoom(map.getZoom());
+    });
+
+    map.on("zoom", () => {
+      setZoom(map.getZoom());
+    });
+
+    mapRef.current = map;
+
+    return () => {
+      map.remove();
+      mapRef.current = null;
+    };
+  }, []); // Empty deps - initialize once
+
+  // Update map style when changed
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    mapRef.current.setStyle(MAP_STYLES[style as MapStyleKey] || MAP_STYLES.streets);
+  }, [style, mapLoaded]);
+
+  // Add gates source and layers
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showGates) return;
+
+    const map = mapRef.current;
+
+    // Check if source already exists
+    if (map.getSource("gates")) {
+      map.removeSource("gates");
+    }
+
+    // Remove existing layers
+    [GATE_MARKER_LAYER_ID, GATE_LABEL_LAYER_ID].forEach((layerId) => {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+    });
+
+    // Add gates source
+    map.addSource("gates", createGatesSource(HARAM_GATES));
+
+    // Add layers
+    const layerConfigs = getLayerConfigs();
+
+    map.addLayer({
+      id: GATE_MARKER_LAYER_ID,
+      type: "circle",
+      source: "gates",
+      paint: layerConfigs.gateMarkers.paint,
+    });
+
+    map.addLayer({
+      id: GATE_LABEL_LAYER_ID,
+      type: "symbol",
+      source: "gates",
+      layout: layerConfigs.gateLabels.layout,
+      paint: layerConfigs.gateLabels.paint,
+      minzoom: 15,
+    });
+
+    // Click handler for gates
+    map.on("click", GATE_MARKER_LAYER_ID, (e) => {
+      if (e.features && e.features[0]) {
+        const gateId = e.features[0].properties?.id;
+        if (gateId && onGateClick) {
+          onGateClick(gateId);
+        }
+      }
+    });
+
+    // Cursor pointer on hover
+    map.on("mouseenter", GATE_MARKER_LAYER_ID, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", GATE_MARKER_LAYER_ID, () => {
+      map.getCanvas().style.cursor = "";
+    });
+
+    // Fit bounds to show all gates
+    map.fitBounds(getGatesBounds(HARAM_GATES), {
+      padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      duration: 1000,
+    });
+  }, [mapLoaded, showGates, onGateClick]);
+
+  // Update user location
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showUserLocation) return;
+
+    const map = mapRef.current;
+
+    // Add/update user location source
+    if (!map.getSource("user-location")) {
+      map.addSource("user-location", createUserLocationSource(null, null));
+    }
+    (map.getSource("user-location") as any)?.setData(
+      createUserLocationSource(location.latitude, location.longitude).data
+    );
+
+    // Add user location layer if not exists
+    if (!map.getLayer(USER_LOCATION_LAYER_ID)) {
+      const layerConfigs = getLayerConfigs();
+      map.addLayer({
+        id: USER_LOCATION_LAYER_ID,
+        type: "circle",
+        source: "user-location",
+        paint: layerConfigs.userLocation.paint,
+      });
+    }
+
+    // Add/update accuracy ring
+    if (!map.getSource("user-accuracy")) {
+      map.addSource("user-accuracy", createUserAccuracySource(null, null, null));
+    }
+    (map.getSource("user-accuracy") as any)?.setData(
+      createUserAccuracySource(location.latitude, location.longitude, location.accuracy).data
+    );
+
+    if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
+      const layerConfigs = getLayerConfigs();
+      map.addLayer({
+        id: USER_ACCURACY_LAYER_ID,
+        type: "fill",
+        source: "user-accuracy",
+        paint: layerConfigs.userAccuracy.paint,
+      });
+    }
+  }, [mapLoaded, showUserLocation, location.latitude, location.longitude, location.accuracy]);
+
+  // Update selected gate marker style
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !mapRef.current.getLayer(GATE_MARKER_LAYER_ID)) return;
+
+    const map = mapRef.current;
+    const gateId = selectedGate?.id || null;
+
+    if (gateId !== selectedGateId) {
+      setSelectedGateId(gateId);
+
+      if (gateId) {
+        // Set filter to highlight selected gate
+        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-radius", [
+          "case",
+          ["==", ["get", "id"], gateId],
+          12,
+          ["match", ["get", "type"], "king_fahd", 8, "umrah", 8, "salah", 8, 8],
+        ]);
+
+        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-stroke-width", [
+          "case",
+          ["==", ["get", "id"], gateId],
+          3,
+          2,
+        ]);
+
+        // Fly to selected gate
+        const gate = HARAM_GATES.find((g) => g.id === gateId);
+        if (gate) {
+          map.flyTo({
+            center: gate.location.coordinates as [number, number],
+            zoom: 17,
+            duration: 1000,
+          });
+        }
+      } else {
+        // Reset to default style
+        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-radius", 8);
+        map.setPaintProperty(GATE_MARKER_LAYER_ID, "circle-stroke-width", 2);
+      }
+    }
+  }, [selectedGate, mapLoaded, selectedGateId]);
+
+  // Update route
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+
+    if (!map.getSource("route")) {
+      map.addSource("route", createRouteSource(null));
+    }
+    (map.getSource("route") as any)?.setData(createRouteSource(activeRoute).data);
+
+    const layerConfigs = getLayerConfigs();
+
+    if (activeRoute) {
+      if (!map.getLayer(ROUTE_CASING_LAYER_ID)) {
+        map.addLayer({
+          id: ROUTE_CASING_LAYER_ID,
+          type: "line",
+          source: "route",
+          paint: layerConfigs.routeCasing.paint,
+          layout: layerConfigs.routeCasing.layout,
+        });
+      }
+
+      if (!map.getLayer(ROUTE_LAYER_ID)) {
+        map.addLayer({
+          id: ROUTE_LAYER_ID,
+          type: "line",
+          source: "route",
+          paint: layerConfigs.routeLine.paint,
+          layout: layerConfigs.routeLine.layout,
+        });
+      }
+
+      // Fit bounds to show route
+      if (activeRoute.geometry.length > 0) {
+        const coords = activeRoute.geometry;
+        const bounds: LngLatBoundsLike = [
+          [Math.min(...coords.map((c) => c[0])), Math.min(...coords.map((c) => c[1]))],
+          [Math.max(...coords.map((c) => c[0])), Math.max(...coords.map((c) => c[1]))],
+        ];
+        map.fitBounds(bounds, {
+          padding: { top: 100, bottom: 100, left: 100, right: 100 },
+          duration: 1000,
+        });
+      }
+    } else {
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.removeLayer(ROUTE_LAYER_ID);
+      }
+      if (map.getLayer(ROUTE_CASING_LAYER_ID)) {
+        map.removeLayer(ROUTE_CASING_LAYER_ID);
+      }
+    }
+  }, [activeRoute, mapLoaded]);
+
+  return (
+    <div
+      ref={mapContainerRef}
+      className={`w-full h-full ${className}`}
+      style={{ position: "relative" }}
+    />
+  );
+}
