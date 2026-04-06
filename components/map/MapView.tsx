@@ -1,11 +1,10 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MapLibreMap, LngLatBoundsLike } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useMapStore, useLocationStore, useGateStore, useRouteStore } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
-import { MAP_STYLES, type MapStyleKey } from "@/lib/map/styles";
 import {
   createGatesSource,
   createUserLocationSource,
@@ -30,6 +29,10 @@ interface MapViewProps {
   onGateClick?: (gateId: string) => void;
 }
 
+// Barikoi Map Style URL
+const BARIKOI_MAP_STYLE =
+  "https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=NDE2NzpVNzkyTE5UMUoy";
+
 export function MapView({
   className = "",
   showGates = true,
@@ -46,7 +49,6 @@ export function MapView({
   const zoom = useMapStore((state) => state.zoom);
   const bearing = useMapStore((state) => state.bearing);
   const pitch = useMapStore((state) => state.pitch);
-  const style = useMapStore((state) => state.style);
   const setCenter = useMapStore((state) => state.setCenter);
   const setZoom = useMapStore((state) => state.setZoom);
 
@@ -60,12 +62,13 @@ export function MapView({
   const activeRoute = useRouteStore((state) => state.activeRoute);
 
   // Initialize map
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
-      style: MAP_STYLES[style as MapStyleKey] || MAP_STYLES.streets,
+      style: BARIKOI_MAP_STYLE,
       center: [center[0], center[1]],
       zoom,
       bearing,
@@ -117,13 +120,6 @@ export function MapView({
       mapRef.current = null;
     };
   }, []); // Empty deps - initialize once
-
-  // Update map style when changed
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    mapRef.current.setStyle(MAP_STYLES[style as MapStyleKey] || MAP_STYLES.streets);
-  }, [style, mapLoaded]);
 
   // Add gates source and layers
   useEffect(() => {

@@ -2,10 +2,10 @@
 
 import { Button } from "@/components/ui/button";
 import { useMapStore } from "@/lib/store";
-import { Plus, Minus, RotateCw, Navigation } from "lucide-react";
+import { Plus, Minus, RotateCw } from "lucide-react";
 
 export function MapControls() {
-  const { zoom, setZoom, setBearing, setPitch, style, setStyle } = useMapStore();
+  const { zoom, setZoom, setBearing, setPitch } = useMapStore();
 
   const handleZoomIn = () => {
     setZoom(Math.min(zoom + 1, 20));
@@ -20,13 +20,6 @@ export function MapControls() {
     setPitch(0);
   };
 
-  const cycleStyle = () => {
-    const styles: Array<"streets" | "satellite" | "dark"> = ["streets", "satellite", "dark"];
-    const currentIndex = styles.indexOf(style as any);
-    const nextStyle = styles[(currentIndex + 1) % styles.length];
-    setStyle(nextStyle);
-  };
-
   return (
     <div className="flex flex-col gap-2">
       <div className="flex flex-col bg-background border rounded-lg overflow-hidden shadow-lg">
@@ -35,6 +28,7 @@ export function MapControls() {
           variant="ghost"
           size="icon"
           className="rounded-none border-b"
+          title="Zoom in"
         >
           <Plus className="w-4 h-4" />
         </Button>
@@ -43,6 +37,7 @@ export function MapControls() {
           variant="ghost"
           size="icon"
           className="rounded-none border-b"
+          title="Zoom out"
         >
           <Minus className="w-4 h-4" />
         </Button>
@@ -50,19 +45,10 @@ export function MapControls() {
           onClick={handleReset}
           variant="ghost"
           size="icon"
-          className="rounded-none border-b"
+          className="rounded-none"
           title="Reset orientation"
         >
           <RotateCw className="w-4 h-4" />
-        </Button>
-        <Button
-          onClick={cycleStyle}
-          variant="ghost"
-          size="icon"
-          className="rounded-none"
-          title={`Change style (${style})`}
-        >
-          <Navigation className="w-4 h-4" />
         </Button>
       </div>
     </div>
