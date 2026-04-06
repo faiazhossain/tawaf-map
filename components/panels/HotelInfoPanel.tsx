@@ -227,6 +227,7 @@ export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: Ho
       }}
       snapPoints={[0.3, 0.6, 0.92]}
       defaultSnap={1}
+      showBackdrop={false}
       className="max-h-[90dvh]"
     >
       <BottomSheet.Header>

@@ -169,6 +169,7 @@ export function DebugLocationPanel() {
         onOpenChange={setIsExpanded}
         snapPoints={[0.5, 0.85]}
         defaultSnap={0}
+        showBackdrop={false}
       >
         <BottomSheet.Header>
           <div className="flex items-center gap-3 flex-1">

@@ -22,6 +22,7 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
           onOpenChange={() => {}}
           snapPoints={[0.2, 0.45]}
           defaultSnap={0}
+          showBackdrop={false}
           dismissOnBackdropClick={false}
           dismissOnDragDown={false}
           showHandle={true}

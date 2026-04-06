@@ -172,13 +172,16 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
       }}
       snapPoints={[0.25, 0.5, 0.85]}
       defaultSnap={1}
+      showBackdrop={false}
       className="max-h-[85dvh]"
     >
-      {isRouting && <RouteLoadingContent />}
-      {routeError && <RouteErrorContent error={routeError} onDismiss={handleClose} />}
-      {!isRouting && !routeError && activeRoute && (
-        <RoutePanelContent route={activeRoute} onClose={handleClose} />
-      )}
+      <div className="px-4">
+        {isRouting && <RouteLoadingContent />}
+        {routeError && <RouteErrorContent error={routeError} onDismiss={handleClose} />}
+        {!isRouting && !routeError && activeRoute && (
+          <RoutePanelContent route={activeRoute} onClose={handleClose} />
+        )}
+      </div>
     </BottomSheet>
   );
 

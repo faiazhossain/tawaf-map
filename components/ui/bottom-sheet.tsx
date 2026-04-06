@@ -36,6 +36,7 @@ export interface BottomSheetProps {
   className?: string;
   contentClassName?: string;
   showHandle?: boolean;
+  showBackdrop?: boolean;
   dismissOnBackdropClick?: boolean;
   dismissOnDragDown?: boolean;
 }
@@ -56,6 +57,7 @@ export function BottomSheet({
   className,
   contentClassName,
   showHandle = true,
+  showBackdrop = true,
   dismissOnBackdropClick = true,
   dismissOnDragDown = true,
 }: BottomSheetProps) {
@@ -237,15 +239,17 @@ export function BottomSheet({
   return (
     <BottomSheetContext.Provider value={contextValue}>
       {/* Backdrop */}
-      <div
-        ref={backdropRef}
-        className={cn(
-          "fixed inset-0 z-[100] bg-black/40 transition-opacity duration-300",
-          isClosing ? "opacity-0" : "opacity-100"
-        )}
-        onClick={handleBackdropClick}
-        aria-hidden="true"
-      />
+      {showBackdrop && (
+        <div
+          ref={backdropRef}
+          className={cn(
+            "fixed inset-0 z-[100] bg-black/40 transition-opacity duration-300",
+            isClosing ? "opacity-0" : "opacity-100"
+          )}
+          onClick={handleBackdropClick}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Sheet */}
       <div
@@ -262,6 +266,8 @@ export function BottomSheet({
         style={{
           height: `${currentHeight * 100}dvh`,
           transform: `translateY(0)`,
+          paddingLeft: "env(safe-area-inset-left, 0px)",
+          paddingRight: "env(safe-area-inset-right, 0px)",
         }}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}

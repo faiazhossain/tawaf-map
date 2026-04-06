@@ -236,22 +236,25 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
       }}
       snapPoints={[0.35, 0.65, 0.9]}
       defaultSnap={1}
+      showBackdrop={false}
       className="max-h-[90dvh]"
     >
       <BottomSheet.Header>
         <div className="flex-1" />
         <BottomSheet.CloseButton />
       </BottomSheet.Header>
-      <GateInfoContent
-        gate={gate}
-        distance={distance}
-        walkingTime={walkingTime}
-        config={config}
-        isCalculating={isCalculating}
-        isRouting={isRouting}
-        onGetDirections={handleGetDirections}
-        hasLocation={hasLocation}
-      />
+      <div className="px-4">
+        <GateInfoContent
+          gate={gate}
+          distance={distance}
+          walkingTime={walkingTime}
+          config={config}
+          isCalculating={isCalculating}
+          isRouting={isRouting}
+          onGetDirections={handleGetDirections}
+          hasLocation={hasLocation}
+        />
+      </div>
     </BottomSheet>
   );
 
