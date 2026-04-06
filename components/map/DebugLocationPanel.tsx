@@ -161,92 +161,34 @@ export function DebugLocationPanel() {
     setIsExpanded(false);
   };
 
-  // Mobile bottom sheet
-  const mobileContent = (
+  return (
     <>
-      <BottomSheet
-        open={isExpanded}
-        onOpenChange={setIsExpanded}
-        snapPoints={[0.5, 0.85]}
-        defaultSnap={0}
-        showBackdrop={false}
-      >
-        <BottomSheet.Header>
-          <div className="flex items-center gap-3 flex-1">
-            <div className="p-2 bg-emerald-500/20 rounded-xl">
-              <MapPin className="w-4 h-4 text-emerald-400" />
-            </div>
-            <div className="text-left">
-              <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
-              <span className="text-xs text-slate-500 block">
-                {latitude !== null && longitude !== null
-                  ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-                  : "সেট করা নেই"}
-              </span>
-            </div>
-          </div>
-          <BottomSheet.CloseButton />
-        </BottomSheet.Header>
-        <div className="px-4 pb-4">
-          <TestLocationContent
-            latitude={latitude}
-            longitude={longitude}
-            customLat={customLat}
-            customLng={customLng}
-            setCustomLat={setCustomLat}
-            setCustomLng={setCustomLng}
-            onSetLocation={handleSetLocation}
-            onSetCustomLocation={handleSetCustomLocation}
-            onClearLocation={handleClearLocation}
-          />
-        </div>
-      </BottomSheet>
-
-      {/* Mobile toggle button */}
-      <button
-        onClick={() => setIsExpanded(true)}
-        className="sm:hidden absolute bottom-4 right-4 z-[50] p-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg transition-colors"
-        aria-label="Open test location"
-      >
-        <MapPin className="w-5 h-5 text-white" />
-      </button>
-    </>
-  );
-
-  // Desktop floating panel
-  const desktopContent = (
-    <div className="hidden sm:block absolute bottom-4 right-4 z-[50] w-72">
-      <div className="bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
-        {/* Header - always visible */}
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+      {/* Mobile bottom sheet */}
+      <div className="block sm:hidden">
+        <BottomSheet
+          open={isExpanded}
+          onOpenChange={setIsExpanded}
+          snapPoints={[0.5, 0.85]}
+          defaultSnap={0}
+          showBackdrop={false}
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-emerald-500/20 rounded-xl">
-              <MapPin className="w-4 h-4 text-emerald-400" />
+          <BottomSheet.Header>
+            <div className="flex items-center gap-3 flex-1">
+              <div className="p-2 bg-emerald-500/20 rounded-xl">
+                <MapPin className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
+                <span className="text-xs text-slate-500 block">
+                  {latitude !== null && longitude !== null
+                    ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                    : "সেট করা নেই"}
+                </span>
+              </div>
             </div>
-            <div className="text-left">
-              <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
-              <span className="text-xs text-slate-500 block">
-                {latitude !== null && longitude !== null
-                  ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
-                  : "সেট করা নেই"}
-              </span>
-            </div>
-          </div>
-          <div className="p-1.5 rounded-lg bg-slate-800">
-            {isExpanded ? (
-              <ChevronDown className="w-4 h-4 text-slate-400" />
-            ) : (
-              <ChevronUp className="w-4 h-4 text-slate-400" />
-            )}
-          </div>
-        </button>
-
-        {/* Expanded content */}
-        {isExpanded && (
-          <div className="border-t border-slate-700/50 p-4">
+            <BottomSheet.CloseButton />
+          </BottomSheet.Header>
+          <div className="px-4 pb-4">
             <TestLocationContent
               latitude={latitude}
               longitude={longitude}
@@ -259,15 +201,66 @@ export function DebugLocationPanel() {
               onClearLocation={handleClearLocation}
             />
           </div>
-        )}
-      </div>
-    </div>
-  );
+        </BottomSheet>
 
-  return (
-    <>
-      {mobileContent}
-      {desktopContent}
+        {/* Mobile toggle button */}
+        <button
+          onClick={() => setIsExpanded(true)}
+          className="absolute bottom-4 right-4 z-[50] p-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg transition-colors"
+          aria-label="Open test location"
+        >
+          <MapPin className="w-5 h-5 text-white" />
+        </button>
+      </div>
+
+      {/* Desktop floating panel */}
+      <div className="hidden sm:block absolute bottom-4 right-4 z-[50] w-72">
+        <div className="bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header - always visible */}
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-emerald-500/20 rounded-xl">
+                <MapPin className="w-4 h-4 text-emerald-400" />
+              </div>
+              <div className="text-left">
+                <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
+                <span className="text-xs text-slate-500 block">
+                  {latitude !== null && longitude !== null
+                    ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
+                    : "সেট করা নেই"}
+                </span>
+              </div>
+            </div>
+            <div className="p-1.5 rounded-lg bg-slate-800">
+              {isExpanded ? (
+                <ChevronDown className="w-4 h-4 text-slate-400" />
+              ) : (
+                <ChevronUp className="w-4 h-4 text-slate-400" />
+              )}
+            </div>
+          </button>
+
+          {/* Expanded content */}
+          {isExpanded && (
+            <div className="border-t border-slate-700/50 p-4">
+              <TestLocationContent
+                latitude={latitude}
+                longitude={longitude}
+                customLat={customLat}
+                customLng={customLng}
+                setCustomLat={setCustomLat}
+                setCustomLng={setCustomLng}
+                onSetLocation={handleSetLocation}
+                onSetCustomLocation={handleSetCustomLocation}
+                onClearLocation={handleClearLocation}
+              />
+            </div>
+          )}
+        </div>
+      </div>
     </>
   );
 }

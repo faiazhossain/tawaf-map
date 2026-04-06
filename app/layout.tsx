@@ -9,6 +9,10 @@ export const metadata: Metadata = {
   description: "Localized AI navigation platform for pilgrims in Makkah and Madinah",
   applicationName: "TawafMap",
   authors: [{ name: "TawafMap Team" }],
+  icons: {
+    icon: "/icons/Tawafmap.webp",
+    apple: "/icons/Tawafmap.webp",
+  },
 };
 
 export const viewport: Viewport = {

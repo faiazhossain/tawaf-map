@@ -15,6 +15,7 @@ import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { Button } from "@/components/ui/button";
 import { Hotel, MapPin } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 // Lazy load panels to avoid render overlap
 import dynamic from "next/dynamic";
@@ -39,23 +40,6 @@ const DebugLocationPanel = dynamic(
     })),
   { ssr: false }
 );
-
-function MosqueIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-    >
-      <path d="M12 3L6 8v12c0 0.55.45 1 1 1h2c0.55 0 1-0.45 1-1v-5h4v5c0 0.55 0.45 1 1 1h2c0.55 0 1-0.45 1-1V8l-6-5z" />
-      <path d="M12 3V1" />
-      <circle cx="12" cy="8.5" r="1.5" fill="currentColor" />
-      <path d="M9 20v2M15 20v2" />
-    </svg>
-  );
-}
 
 export default function MapPage() {
   const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
@@ -130,8 +114,8 @@ export default function MapPage() {
       <header className="relative px-4 py-3 bg-slate-900 border-b border-slate-800/50 z-10">
         <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="p-2 bg-emerald-600 rounded-xl shadow-lg">
-              <MosqueIcon className="w-5 h-5 text-white" />
+            <div className="p-1.5 rounded-xl shadow-lg">
+              <Image src="/icons/Tawafmap.webp" alt="TawafMap Logo" width={42} height={42} />
             </div>
             <div className="hidden sm:block">
               <h1 className="text-lg font-bold text-white">TawafMap</h1>

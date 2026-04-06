@@ -272,8 +272,8 @@ export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: Ho
 
   return (
     <>
-      {mobileContent}
-      <div className="hidden md:block">{desktopContent}</div>
+      <div className="block sm:hidden">{mobileContent}</div>
+      <div className="hidden sm:block">{desktopContent}</div>
     </>
   );
 }

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import {
   MapPin,
@@ -22,8 +23,8 @@ export default function HomePage() {
           <div className="flex justify-center mb-6">
             <div className="relative">
               <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full animate-pulse" />
-              <div className="relative p-5 bg-emerald-600 rounded-2xl shadow-2xl">
-                <MosqueIcon className="w-10 h-10 text-white" />
+              <div className="relative p-3 rounded-2xl shadow-2xl">
+                <Image src="/icons/Tawafmap.webp" alt="TawafMap Logo" width={84} height={84} />
               </div>
             </div>
           </div>
@@ -240,7 +241,13 @@ export default function HomePage() {
         <div className="relative max-w-md mx-auto">
           <div className="absolute inset-0 bg-emerald-500/20 blur-3xl rounded-full" />
           <div className="relative bg-slate-900 border border-slate-800 rounded-3xl p-8 sm:p-10">
-            <MosqueIcon className="w-12 h-12 text-emerald-400 mx-auto mb-4" />
+            <Image
+              src="/icons/Tawafmap.webp"
+              alt="TawafMap Logo"
+              width={48}
+              height={48}
+              className="mx-auto mb-4"
+            />
             <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">আজই শুরু করুন</h2>
             <p className="text-slate-400 mb-6">
               মক্কা-মদিনায় চিন্তা ছাড়া ঘুরুন, TawafMap আছে পাশে
@@ -328,24 +335,6 @@ function OpaqueIcon() {
     >
       <path d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
       <path d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-    </svg>
-  );
-}
-
-function MosqueIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      className={className}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={1.5}
-    >
-      <path d="M12 3L6 8v12c0 0.55.45 1 1 1h2c0.55 0 1-0.45 1-1v-5h4v5c0 0.55 0.45 1 1 1h2c0.55 0 1-0.45 1-1V8l-6-5z" />
-      <path d="M12 3V1" />
-      <circle cx="12" cy="8.5" r="1.5" />
-      <path d="M9 20v2M15 20v2" />
-      <path d="M12 8.5v3.5" />
     </svg>
   );
 }
