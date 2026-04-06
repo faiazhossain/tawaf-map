@@ -17,36 +17,38 @@ interface UseGeolocationOptions {
 export function useGeolocation(options: UseGeolocationOptions = {}) {
   const { watch = true, enableHighAccuracy = true, timeout = 10000, maximumAge = 5000 } = options;
 
-  const locationStore = useLocationStore();
   const watchIdRef = useRef<number>();
 
   useEffect(() => {
+    // Get the store instance directly - this doesn't trigger re-renders
+    const store = useLocationStore.getState();
+
     // Check if geolocation is supported
     if (!navigator.geolocation) {
-      locationStore.setError("Geolocation is not supported by this browser");
-      locationStore.setPermission("unknown");
+      store.setError("Geolocation is not supported by this browser");
+      store.setPermission("unknown");
       return;
     }
 
     // Request permission and get initial location
     const startPosition = () => {
-      locationStore.setLoading(true);
+      store.setLoading(true);
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          locationStore.setLocation(
+          store.setLocation(
             position.coords.latitude,
             position.coords.longitude,
             position.coords.accuracy
           );
           if (position.coords.heading !== null) {
-            locationStore.setHeading(position.coords.heading);
+            store.setHeading(position.coords.heading);
           }
           if (position.coords.speed !== null) {
-            locationStore.setSpeed(position.coords.speed);
+            store.setSpeed(position.coords.speed);
           }
-          locationStore.setPermission("granted");
-          locationStore.setLoading(false);
+          store.setPermission("granted");
+          store.setLoading(false);
         },
         (error) => {
           const errorMessage =
@@ -56,11 +58,11 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
               [GeolocationPositionError.TIMEOUT]: "Location request timed out",
             }[error.code] || "Unknown location error";
 
-          locationStore.setError(errorMessage);
-          locationStore.setPermission(
+          store.setError(errorMessage);
+          store.setPermission(
             error.code === GeolocationPositionError.PERMISSION_DENIED ? "denied" : "prompt"
           );
-          locationStore.setLoading(false);
+          store.setLoading(false);
         },
         { enableHighAccuracy, timeout, maximumAge }
       );
@@ -72,16 +74,16 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
     if (watch) {
       watchIdRef.current = navigator.geolocation.watchPosition(
         (position) => {
-          locationStore.setLocation(
+          store.setLocation(
             position.coords.latitude,
             position.coords.longitude,
             position.coords.accuracy
           );
           if (position.coords.heading !== null) {
-            locationStore.setHeading(position.coords.heading);
+            store.setHeading(position.coords.heading);
           }
           if (position.coords.speed !== null) {
-            locationStore.setSpeed(position.coords.speed);
+            store.setSpeed(position.coords.speed);
           }
         },
         (error) => {
@@ -92,8 +94,8 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
               [GeolocationPositionError.TIMEOUT]: "Location request timed out",
             }[error.code] || "Unknown location error";
 
-          locationStore.setError(errorMessage);
-          locationStore.setPermission(
+          store.setError(errorMessage);
+          store.setPermission(
             error.code === GeolocationPositionError.PERMISSION_DENIED ? "denied" : "prompt"
           );
         },
@@ -107,19 +109,32 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
         navigator.geolocation.clearWatch(watchIdRef.current);
       }
     };
-  }, [watch, enableHighAccuracy, timeout, maximumAge, locationStore]);
+  }, [watch, enableHighAccuracy, timeout, maximumAge]);
+
+  // Get current state values using individual selectors
+  const latitude = useLocationStore((state) => state.latitude);
+  const longitude = useLocationStore((state) => state.longitude);
+  const accuracy = useLocationStore((state) => state.accuracy);
+  const heading = useLocationStore((state) => state.heading);
+  const speed = useLocationStore((state) => state.speed);
+  const timestamp = useLocationStore((state) => state.timestamp);
+  const error = useLocationStore((state) => state.error);
+  const loading = useLocationStore((state) => state.loading);
+  const permission = useLocationStore((state) => state.permission);
+  const requestLocation = useLocationStore((state) => state.requestLocation);
+  const clearLocation = useLocationStore((state) => state.clearLocation);
 
   return {
-    latitude: locationStore.latitude,
-    longitude: locationStore.longitude,
-    accuracy: locationStore.accuracy,
-    heading: locationStore.heading,
-    speed: locationStore.speed,
-    timestamp: locationStore.timestamp,
-    error: locationStore.error,
-    loading: locationStore.loading,
-    permission: locationStore.permission,
-    requestLocation: locationStore.requestLocation,
-    clearLocation: locationStore.clearLocation,
+    latitude,
+    longitude,
+    accuracy,
+    heading,
+    speed,
+    timestamp,
+    error,
+    loading,
+    permission,
+    requestLocation,
+    clearLocation,
   };
 }
