@@ -1,6 +1,7 @@
 import type { LngLatBoundsLike } from "maplibre-gl";
 import type { Gate } from "@/types/gate";
 import type { Route } from "@/types/navigation";
+import type { Hotel } from "@/types/hotel";
 
 /**
  * GeoJSON source for gates
@@ -173,6 +174,53 @@ export function getGatesBounds(gates: Gate[]): LngLatBoundsLike {
 
   const lngs = gates.map((g) => g.location.coordinates[0]);
   const lats = gates.map((g) => g.location.coordinates[1]);
+
+  const padding = 0.005;
+  return [
+    [Math.min(...lngs) - padding, Math.min(...lats) - padding],
+    [Math.max(...lngs) + padding, Math.max(...lats) + padding],
+  ];
+}
+
+/**
+ * GeoJSON source for hotels
+ */
+export function createHotelsSource(hotels: Hotel[]) {
+  return {
+    type: "geojson" as const,
+    data: {
+      type: "FeatureCollection" as const,
+      features: hotels.map((hotel) => ({
+        type: "Feature" as const,
+        properties: {
+          id: hotel.id,
+          name: hotel.name,
+          nameAr: hotel.nameAr,
+          starRating: hotel.starRating,
+          priceLevel: hotel.priceLevel,
+        },
+        geometry: {
+          type: "Point" as const,
+          coordinates: hotel.location.coordinates,
+        },
+      })),
+    },
+  };
+}
+
+/**
+ * Get bounds for hotels
+ */
+export function getHotelsBounds(hotels: Hotel[]): LngLatBoundsLike {
+  if (hotels.length === 0) {
+    return [
+      [39.8, 21.4],
+      [39.85, 21.45],
+    ];
+  }
+
+  const lngs = hotels.map((h) => h.location.coordinates[0]);
+  const lats = hotels.map((h) => h.location.coordinates[1]);
 
   const padding = 0.005;
   return [

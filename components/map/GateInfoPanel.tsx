@@ -1,14 +1,18 @@
 "use client";
 
-import { useMemo } from "react";
-import { useGateStore } from "@/lib/store";
+import { useMemo, useState } from "react";
+import { useGateStore, useLocationStore } from "@/lib/store";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, X, Accessibility, Zap, Droplet } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
+import { useMapRouting } from "@/lib/hooks";
 
 export function GateInfoPanel() {
   const { selectedGate, clearGate } = useGateStore();
+  const { latitude, longitude } = useLocationStore();
+  const { calculateRoute, isCalculating } = useMapRouting();
+  const [isRouting, setIsRouting] = useState(false);
 
   const gate = selectedGate.gate;
   const distance = selectedGate.distance;
@@ -21,9 +25,19 @@ export function GateInfoPanel() {
     wheelchair: <Accessibility className="w-4 h-4" />,
   };
 
+  const handleGetDirections = async () => {
+    if (!gate || latitude === null || longitude === null) return;
+
+    setIsRouting(true);
+    await calculateRoute(gate.location.coordinates);
+    setIsRouting(false);
+  };
+
   if (!gate) {
     return null;
   }
+
+  const hasLocation = latitude !== null && longitude !== null;
 
   return (
     <Card className="absolute top-4 right-4 z-10 w-80 max-h-[80vh] overflow-y-auto">
@@ -119,6 +133,32 @@ export function GateInfoPanel() {
           <div className="text-xs font-mono mt-1">
             {gate.location.coordinates[1].toFixed(6)}, {gate.location.coordinates[0].toFixed(6)}
           </div>
+        </div>
+
+        {/* Get Directions Button */}
+        <div className="pt-2 border-t">
+          <Button
+            onClick={handleGetDirections}
+            disabled={!hasLocation || isCalculating || isRouting}
+            className="w-full"
+          >
+            {isCalculating || isRouting ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2" />
+                Calculating route...
+              </>
+            ) : (
+              <>
+                <Navigation className="w-4 h-4 mr-2" />
+                Get Directions
+              </>
+            )}
+          </Button>
+          {!hasLocation && (
+            <p className="text-xs text-muted-foreground text-center mt-2">
+              Enable location to get directions
+            </p>
+          )}
         </div>
       </CardContent>
     </Card>

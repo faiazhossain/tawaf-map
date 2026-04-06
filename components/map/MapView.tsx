@@ -3,13 +3,21 @@
 import { useEffect, useRef, useState } from "react";
 import maplibregl, { Map as MapLibreMap, LngLatBoundsLike } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
-import { useMapStore, useLocationStore, useGateStore, useRouteStore } from "@/lib/store";
+import {
+  useMapStore,
+  useLocationStore,
+  useGateStore,
+  useRouteStore,
+  useHotelStore,
+} from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
+import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import {
   createGatesSource,
   createUserLocationSource,
   createUserAccuracySource,
   createRouteSource,
+  createHotelsSource,
   getGatesBounds,
 } from "@/lib/map/sources";
 import {
@@ -20,13 +28,17 @@ import {
   ROUTE_CASING_LAYER_ID,
   USER_LOCATION_LAYER_ID,
   USER_ACCURACY_LAYER_ID,
+  HOTEL_MARKER_LAYER_ID,
+  HOTEL_LABEL_LAYER_ID,
 } from "@/lib/map/layers";
 
 interface MapViewProps {
   className?: string;
   showGates?: boolean;
+  showHotels?: boolean;
   showUserLocation?: boolean;
   onGateClick?: (gateId: string) => void;
+  onHotelClick?: (hotelId: string) => void;
 }
 
 // Barikoi Map Style URL
@@ -36,8 +48,10 @@ const BARIKOI_MAP_STYLE =
 export function MapView({
   className = "",
   showGates = true,
+  showHotels = false,
   showUserLocation = true,
   onGateClick,
+  onHotelClick,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -59,6 +73,7 @@ export function MapView({
 
   const selectedGate = useGateStore((state) => state.selectedGate.gate);
   const activeRoute = useRouteStore((state) => state.activeRoute);
+  const selectedHotel = useHotelStore((state) => state.selectedHotel);
 
   // Initialize map
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -118,7 +133,9 @@ export function MapView({
       map.remove();
       mapRef.current = null;
     };
-  }, []); // Empty deps - initialize once
+    // Initialize map once with initial store values - these are only used for initial setup
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Add gates source and layers
   useEffect(() => {
@@ -185,6 +202,85 @@ export function MapView({
       duration: 1000,
     });
   }, [mapLoaded, showGates, onGateClick]);
+
+  // Add hotels source and layers
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showHotels) return;
+
+    const map = mapRef.current;
+
+    // Remove existing layers first (before removing source)
+    [HOTEL_MARKER_LAYER_ID, HOTEL_LABEL_LAYER_ID].forEach((layerId) => {
+      if (map.getLayer(layerId)) {
+        map.removeLayer(layerId);
+      }
+    });
+
+    // Then remove the source if it exists
+    if (map.getSource("hotels")) {
+      map.removeSource("hotels");
+    }
+
+    // Add hotels source
+    map.addSource("hotels", createHotelsSource(NEARBY_HOTELS));
+
+    // Add layers
+    const layerConfigs = getLayerConfigs();
+
+    map.addLayer({
+      id: HOTEL_MARKER_LAYER_ID,
+      type: "circle",
+      source: "hotels",
+      paint: layerConfigs.hotelMarkers.paint,
+    });
+
+    map.addLayer({
+      id: HOTEL_LABEL_LAYER_ID,
+      type: "symbol",
+      source: "hotels",
+      layout: layerConfigs.hotelLabels.layout,
+      paint: layerConfigs.hotelLabels.paint,
+      minzoom: 15,
+    });
+
+    // Click handler for hotels
+    map.on("click", HOTEL_MARKER_LAYER_ID, (e) => {
+      if (e.features && e.features[0]) {
+        const hotelId = e.features[0].properties?.id;
+        if (hotelId && onHotelClick) {
+          onHotelClick(hotelId);
+        }
+      }
+    });
+
+    // Cursor pointer on hover
+    map.on("mouseenter", HOTEL_MARKER_LAYER_ID, () => {
+      map.getCanvas().style.cursor = "pointer";
+    });
+
+    map.on("mouseleave", HOTEL_MARKER_LAYER_ID, () => {
+      map.getCanvas().style.cursor = "";
+    });
+  }, [mapLoaded, showHotels, onHotelClick]);
+
+  // Remove hotels when toggled off
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+
+    if (!showHotels) {
+      [HOTEL_MARKER_LAYER_ID, HOTEL_LABEL_LAYER_ID].forEach((layerId) => {
+        if (map.getLayer(layerId)) {
+          map.removeLayer(layerId);
+        }
+      });
+
+      if (map.getSource("hotels")) {
+        map.removeSource("hotels");
+      }
+    }
+  }, [mapLoaded, showHotels]);
 
   // Update user location
   useEffect(() => {
@@ -272,6 +368,47 @@ export function MapView({
       }
     }
   }, [selectedGate, mapLoaded, selectedGateId]);
+
+  // Update selected hotel marker style
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !mapRef.current.getLayer(HOTEL_MARKER_LAYER_ID)) return;
+
+    const map = mapRef.current;
+    const hotelId = selectedHotel?.id || null;
+
+    if (hotelId) {
+      // Highlight selected hotel
+      map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-radius", [
+        "case",
+        ["==", ["get", "id"], hotelId],
+        14,
+        10,
+      ]);
+
+      map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-stroke-width", [
+        "case",
+        ["==", ["get", "id"], hotelId],
+        4,
+        2,
+      ]);
+
+      // Fly to selected hotel
+      const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
+      if (hotel) {
+        map.flyTo({
+          center: hotel.location.coordinates as [number, number],
+          zoom: 17,
+          duration: 1000,
+        });
+      }
+    } else {
+      // Reset to default style
+      if (map.getLayer(HOTEL_MARKER_LAYER_ID)) {
+        map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-radius", 10);
+        map.setPaintProperty(HOTEL_MARKER_LAYER_ID, "circle-stroke-width", 2);
+      }
+    }
+  }, [selectedHotel, mapLoaded]);
 
   // Update route
   useEffect(() => {

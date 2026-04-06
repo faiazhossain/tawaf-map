@@ -1,13 +1,23 @@
 "use client";
 
+import { useState } from "react";
 import { MapView, MapControls, GateSelector, GateInfoPanel, UserLocation } from "@/components/map";
+import { RoutePanel, HotelInfoPanel } from "@/components/panels";
 import { useGateProximity } from "@/lib/hooks";
-import { useGateStore } from "@/lib/store";
+import { useGateStore, useHotelStore } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
+import { NEARBY_HOTELS } from "@/lib/data/hotels";
+import { Button } from "@/components/ui/button";
+import { Hotel } from "lucide-react";
+import { useHotelProximity } from "@/lib/hooks";
 
 export default function MapPage() {
   const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
   const { setGate, setGateDistance, clearGate } = useGateStore();
+  const { setSelectedHotel, clearSelectedHotel } = useHotelStore();
+  const [showHotels, setShowHotels] = useState(false);
+  const [showHotelPanel, setShowHotelPanel] = useState(false);
+  const [selectedHotel, setSelectedHotelLocal] = useState<(typeof NEARBY_HOTELS)[0] | null>(null);
 
   const handleGateClick = (gateId: string) => {
     const gate = HARAM_GATES.find((g) => g.id === gateId);
@@ -20,6 +30,37 @@ export default function MapPage() {
       if (proximity) {
         setGateDistance(proximity.distance, proximity.walkingTime);
       }
+    }
+
+    // Close hotel panel when selecting a gate
+    setShowHotelPanel(false);
+  };
+
+  const handleHotelClick = (hotelId: string) => {
+    const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
+    if (hotel) {
+      setSelectedHotel(hotel);
+      setSelectedHotelLocal(hotel);
+      setShowHotelPanel(true);
+    }
+
+    // Clear gate selection when selecting a hotel
+    clearGate();
+  };
+
+  const handleCloseHotelPanel = () => {
+    setShowHotelPanel(false);
+    clearSelectedHotel();
+    setSelectedHotelLocal(null);
+  };
+
+  const handleToggleHotels = () => {
+    setShowHotels((prev) => !prev);
+    // Also close panel when toggling off
+    if (showHotels) {
+      setShowHotelPanel(false);
+      clearSelectedHotel();
+      setSelectedHotelLocal(null);
     }
   };
 
@@ -34,13 +75,28 @@ export default function MapPage() {
 
         <div className="flex items-center gap-3">
           <UserLocation />
+          <Button
+            variant={showHotels ? "default" : "outline"}
+            size="sm"
+            onClick={handleToggleHotels}
+            className="gap-2"
+          >
+            <Hotel className="w-4 h-4" />
+            <span className="hidden sm:inline">Hotels</span>
+          </Button>
           <GateSelector />
         </div>
       </header>
 
       {/* Map */}
       <div className="relative flex-1">
-        <MapView showGates showUserLocation onGateClick={handleGateClick} />
+        <MapView
+          showGates
+          showHotels={showHotels}
+          showUserLocation
+          onGateClick={handleGateClick}
+          onHotelClick={handleHotelClick}
+        />
 
         {/* Map Controls - overlaid on map */}
         <div className="absolute top-4 left-4 z-10">
@@ -50,8 +106,22 @@ export default function MapPage() {
         {/* Gate Info Panel */}
         <GateInfoPanel />
 
+        {/* Hotel Info Panel */}
+        {showHotelPanel && selectedHotel && (
+          <HotelInfoPanel
+            hotel={selectedHotel}
+            onClose={handleCloseHotelPanel}
+            onShowOnMap={() => {
+              // Keep panel open, map already centered by MapView
+            }}
+          />
+        )}
+
+        {/* Route Panel */}
+        <RoutePanel />
+
         {/* Nearby Gates Panel */}
-        {hasLocation && nearestGate && (
+        {hasLocation && nearestGate && !showHotelPanel && (
           <div className="absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-background/95 backdrop-blur border rounded-lg p-4 shadow-lg">
             <h3 className="font-semibold mb-3 flex items-center gap-2">
               <span>Nearest Gates</span>

@@ -18,6 +18,10 @@ export const ROUTE_CASING_LAYER_ID = "active-route-casing";
 export const USER_LOCATION_LAYER_ID = "user-location";
 export const USER_ACCURACY_LAYER_ID = "user-accuracy";
 
+// Hotel marker layer
+export const HOTEL_MARKER_LAYER_ID = "hotel-markers";
+export const HOTEL_LABEL_LAYER_ID = "hotel-labels";
+
 /**
  * Gate marker paint properties
  */
@@ -95,6 +99,28 @@ export const userAccuracyPaint: any = {
 };
 
 /**
+ * Hotel marker paint properties - color by price level
+ */
+export const hotelMarkerPaint: any = {
+  "circle-color": [
+    "match",
+    ["get", "priceLevel"],
+    1,
+    "#22c55e", // green - budget
+    2,
+    "#3b82f6", // blue - moderate
+    3,
+    "#f59e0b", // amber - expensive
+    4,
+    "#8b5cf6", // purple - luxury
+    "#6b7280", // gray fallback
+  ],
+  "circle-radius": 10,
+  "circle-stroke-width": 2,
+  "circle-stroke-color": "#ffffff",
+};
+
+/**
  * Get layer configurations for a map instance
  */
 export function getLayerConfigs() {
@@ -113,6 +139,27 @@ export function getLayerConfigs() {
         "text-offset": [0, 1.25] as any,
         "text-anchor": "top" as any,
         "text-size": 12,
+      } as any,
+      paint: {
+        "text-color": "#1f2937",
+        "text-halo-color": "#ffffff",
+        "text-halo-width": 2,
+      },
+    },
+    hotelMarkers: {
+      id: HOTEL_MARKER_LAYER_ID,
+      type: "circle",
+      paint: hotelMarkerPaint,
+    },
+    hotelLabels: {
+      id: HOTEL_LABEL_LAYER_ID,
+      type: "symbol",
+      layout: {
+        "text-field": ["get", "name"] as any,
+        "text-font": ["Open Sans Semibold", "Arial Unicode MS Bold"] as any,
+        "text-offset": [0, 1.25] as any,
+        "text-anchor": "top" as any,
+        "text-size": 11,
       } as any,
       paint: {
         "text-color": "#1f2937",

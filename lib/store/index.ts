@@ -3,3 +3,4 @@ export { useLocationStore } from "./locationStore";
 export { useGateStore } from "./gateStore";
 export { useRouteStore } from "./routeStore";
 export { usePOIStore } from "./poiStore";
+export { useHotelStore } from "./hotelStore";
