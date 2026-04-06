@@ -178,12 +178,20 @@ export function MapView({
         });
       }
       map.setTerrain({ source: terrainSource, exaggeration: 2.5 });
-      map.easeTo({ pitch: 60, duration: 1000 });
+      // Wait for terrain to load before changing pitch, with fallback
+      const terrainTimeout = setTimeout(() => {
+        map.easeTo({ pitch: 60, duration: 1000 });
+      }, 500);
+      map.once("terrainloaded", () => {
+        clearTimeout(terrainTimeout);
+        map.easeTo({ pitch: 60, duration: 1000 });
+      });
     } else {
       if (map.getLayer(hillshadeLayerId)) {
         map.removeLayer(hillshadeLayerId);
       }
       map.setTerrain(null);
+      // Reset to flat view immediately
       map.easeTo({ pitch: 0, duration: 1000 });
     }
   }, [mapLoaded, showTerrain]);
