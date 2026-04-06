@@ -89,6 +89,7 @@ export function MapView({
       minZoom: 12,
       maxZoom: 20,
       attributionControl: false,
+      hash: "map",
     });
 
     // Add navigation control
