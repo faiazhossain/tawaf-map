@@ -30,6 +30,7 @@ interface MapViewProps {
   showGates?: boolean;
   showHotels?: boolean;
   showUserLocation?: boolean;
+  showTerrain?: boolean;
   onGateClick?: (gateId: string) => void;
   onHotelClick?: (hotelId: string) => void;
 }
@@ -43,6 +44,7 @@ export function MapView({
   showGates = true,
   showHotels = false,
   showUserLocation = true,
+  showTerrain = false,
   onGateClick,
   onHotelClick,
 }: MapViewProps) {
@@ -133,6 +135,57 @@ export function MapView({
     // Initialize map once with initial store values - these are only used for initial setup
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Configure terrain
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+    const terrainSource = "maptiler-terrain";
+    const hillshadeLayerId = "hillshade";
+    const maptilerKey = process.env.NEXT_PUBLIC_MAPTILER_KEY;
+
+    if (!maptilerKey) {
+      console.warn("MapTiler API key not found. Terrain will not be available.");
+      return;
+    }
+
+    // Add terrain source if it doesn't exist
+    if (!map.getSource(terrainSource)) {
+      map.addSource(terrainSource, {
+        type: "raster-dem",
+        url: `https://api.maptiler.com/tiles/terrain-rgb/tiles.json?key=${maptilerKey}`,
+        tileSize: 256,
+      });
+    }
+
+    // Add or remove hillshade layer for terrain coloring
+    if (showTerrain) {
+      if (!map.getLayer(hillshadeLayerId)) {
+        map.addLayer({
+          id: hillshadeLayerId,
+          source: terrainSource,
+          type: "hillshade",
+          layout: { visibility: "visible" },
+          paint: {
+            "hillshade-shadow-color": "#1a1a2e",
+            "hillshade-highlight-color": "#F5F0E5",
+            "hillshade-accent-color": "#2d2d4a",
+            "hillshade-illumination-direction": 315,
+            "hillshade-exaggeration": 0.5,
+          },
+        });
+      }
+      map.setTerrain({ source: terrainSource, exaggeration: 2.5 });
+      map.easeTo({ pitch: 60, duration: 1000 });
+    } else {
+      if (map.getLayer(hillshadeLayerId)) {
+        map.removeLayer(hillshadeLayerId);
+      }
+      map.setTerrain(null);
+      map.easeTo({ pitch: 0, duration: 1000 });
+    }
+  }, [mapLoaded, showTerrain]);
 
   // Add/update gate markers
   useEffect(() => {

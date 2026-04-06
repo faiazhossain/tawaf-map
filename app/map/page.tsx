@@ -13,7 +13,7 @@ import { useGateStore, useHotelStore, useRouteStore, usePanelStore } from "@/lib
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { Button } from "@/components/ui/button";
-import { Hotel, MapPin } from "lucide-react";
+import { Hotel, MapPin, Mountain } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -49,6 +49,7 @@ export default function MapPage() {
   const { activePanel, setActivePanel } = usePanelStore();
 
   const [showHotels, setShowHotels] = useState(false);
+  const [showTerrain, setShowTerrain] = useState(false);
 
   const handleGateClick = (gateId: string) => {
     const gate = HARAM_GATES.find((g) => g.id === gateId);
@@ -132,11 +133,24 @@ export default function MapPage() {
               className={
                 showHotels
                   ? "bg-emerald-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900 hover:bg-slate-800 text-slate-300"
+                  : "border-slate-700 px-8 bg-slate-900 hover:bg-slate-800 text-slate-300"
               }
             >
               <Hotel className="w-4 h-4" />
               <span className="hidden sm:inline">{showHotels ? "Hotels On" : "Hotels"}</span>
+            </Button>
+            <Button
+              variant={showTerrain ? "default" : "outline"}
+              size={showTerrain ? "sm" : "icon"}
+              onClick={() => setShowTerrain((prev) => !prev)}
+              className={
+                showTerrain
+                  ? "bg-blue-600 text-white border-0 shadow-lg"
+                  : "border-slate-700 px-8 bg-slate-900 hover:bg-slate-800 text-slate-300"
+              }
+            >
+              <Mountain className="w-4 h-4" />
+              <span className="hidden sm:inline">{showTerrain ? "Terrain On" : "Terrain"}</span>
             </Button>
             <GateSelector />
           </div>
@@ -149,6 +163,7 @@ export default function MapPage() {
           showGates
           showHotels={showHotels}
           showUserLocation
+          showTerrain={showTerrain}
           onGateClick={handleGateClick}
           onHotelClick={handleHotelClick}
         />
