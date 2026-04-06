@@ -16,11 +16,11 @@ Project Tawaf is a visual, localized navigation platform engineered specifically
 
 ### Ground Reality Challenges
 
-| Challenge | Description |
-|-----------|-------------|
+| Challenge                 | Description                                                                                                              |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | **Gate-Based Navigation** | Standard street addresses are irrelevant. Pilgrims navigate using specific gate numbers and names in Makkah and Madinah. |
-| **Spatial Blindness** | Heavy research required to understand actual walkable distance between hotels and the Haram. |
-| **Opaque Amenities** | Lack of immediate, transparent access to local transport options and nearby eateries. |
+| **Spatial Blindness**     | Heavy research required to understand actual walkable distance between hotels and the Haram.                             |
+| **Opaque Amenities**      | Lack of immediate, transparent access to local transport options and nearby eateries.                                    |
 
 ## The Solution: TawafMap
 
@@ -47,10 +47,10 @@ A comprehensive digital ecosystem built for local spatial reality, designed for 
 
 The ultimate vision is an intelligent, location-based assistant for everyone performing Umrah and Hajj.
 
-| Module | Capability |
-|--------|------------|
-| **See (Visual Engine)** | Dynamic rendering of spatial data, gate proximity, and visual navigation cues |
-| **Listen (Auditory Interface)** | Voice-guided localization and contextual audio assistance for hands-free guidance in dense crowds |
+| Module                            | Capability                                                                                                   |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| **See (Visual Engine)**           | Dynamic rendering of spatial data, gate proximity, and visual navigation cues                                |
+| **Listen (Auditory Interface)**   | Voice-guided localization and contextual audio assistance for hands-free guidance in dense crowds            |
 | **Act (Actionable Intelligence)** | Direct integration with logistics, transport booking, and dynamic route adjustments based on real-time needs |
 
 ## Strategic Context

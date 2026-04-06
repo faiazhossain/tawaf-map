@@ -70,13 +70,13 @@ pnpm dev
 
 ### File Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase | `MapView.tsx` |
-| Hooks | camelCase with 'use' prefix | `useGeolocation.ts` |
-| Utilities | camelCase | `distance.ts` |
-| Types | camelCase | `map.ts` |
-| Constants | SCREAMING_SNAKE_CASE | `API_ENDPOINTS.ts` |
+| Type       | Convention                  | Example             |
+| ---------- | --------------------------- | ------------------- |
+| Components | PascalCase                  | `MapView.tsx`       |
+| Hooks      | camelCase with 'use' prefix | `useGeolocation.ts` |
+| Utilities  | camelCase                   | `distance.ts`       |
+| Types      | camelCase                   | `map.ts`            |
+| Constants  | SCREAMING_SNAKE_CASE        | `API_ENDPOINTS.ts`  |
 
 ---
 
@@ -94,15 +94,15 @@ We use [Conventional Commits](https://www.conventionalcommits.org/) format:
 
 ### Types
 
-| Type | Usage |
-|------|-------|
-| `feat` | New feature |
-| `fix` | Bug fix |
-| `chore` | Maintenance tasks |
-| `docs` | Documentation changes |
-| `refactor` | Code refactoring |
-| `test` | Adding or updating tests |
-| `perf` | Performance improvements |
+| Type       | Usage                    |
+| ---------- | ------------------------ |
+| `feat`     | New feature              |
+| `fix`      | Bug fix                  |
+| `chore`    | Maintenance tasks        |
+| `docs`     | Documentation changes    |
+| `refactor` | Code refactoring         |
+| `test`     | Adding or updating tests |
+| `perf`     | Performance improvements |
 
 ### Examples
 
@@ -175,13 +175,8 @@ pnpm lint-staged
 // package.json
 {
   "lint-staged": {
-    "*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
-    ],
-    "*.{json,md}": [
-      "prettier --write"
-    ]
+    "*.{ts,tsx}": ["eslint --fix", "prettier --write"],
+    "*.{json,md}": ["prettier --write"]
   }
 }
 ```
@@ -199,6 +194,7 @@ Use descriptive branch names following this pattern:
 ```
 
 Examples:
+
 - `feature/gate-navigation`
 - `fix/location-tracking`
 - `refactor/store-architecture`
@@ -215,9 +211,11 @@ Examples:
 
 ```markdown
 ## Summary
+
 <!-- Brief description of changes -->
 
 ## Type
+
 - [ ] Feature
 - [ ] Bug fix
 - [ ] Refactoring
@@ -225,16 +223,20 @@ Examples:
 - [ ] Tests
 
 ## Changes
+
 - List of main changes
 
 ## Testing
+
 - Describe how you tested these changes
 - Link to test coverage if applicable
 
 ## Screenshots (if applicable)
+
 <!-- Add screenshots for UI changes -->
 
 ## Checklist
+
 - [ ] Code follows project standards
 - [ ] Tests added/updated
 - [ ] Documentation updated
