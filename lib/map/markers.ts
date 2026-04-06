@@ -98,31 +98,30 @@ export function createGateMarkerElement(type: GateType, isSelected = false): HTM
   const el = document.createElement("div");
   el.className = `map-marker map-marker-gate ${isSelected ? "map-marker-selected" : ""}`;
 
-  // Fixed size for consistent rendering
-  const size = isSelected ? 42 : 34;
-  const strokeWidth = isSelected ? 2.5 : 2;
+  const circleSize = isSelected ? 44 : 36;
+  const iconSize = isSelected ? 24 : 20;
+  const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${size}px`,
-    height: `${size}px`,
+    width: `${circleSize}px`,
+    height: `${circleSize}px`,
     cursor: "pointer",
   });
 
-  // SVG with pin tip exactly at bottom-center (x=20, y=40 in viewBox)
-  // Gate icon - represents an entrance/gate door
   el.innerHTML = `
-    <svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
-      <!-- Pin shape - tip at (20, 40) which is bottom center -->
-      <path d="M20 40C20 40 4 24 4 14C4 6.268 10.268 0 20 0C29.732 0 36 6.268 36 14C36 24 20 40 20 40Z" fill="${color}" stroke="white" stroke-width="${strokeWidth}"/>
-      <!-- Inner white circle -->
-      <circle cx="20" cy="14" r="8" fill="white" fill-opacity="0.95"/>
-      <!-- Gate/door icon -->
-      <path d="M15 9v6a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V9M15 12h10" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- Door opening -->
-      <path d="M20 9v5" stroke="${color}" stroke-width="1.5" stroke-linecap="round"/>
-      <!-- Arch top -->
-      <path d="M17 9a3 3 0 0 1 6 0" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
+    <div style="
+      width: ${circleSize}px;
+      height: ${circleSize}px;
+      border-radius: 50%;
+      background: white;
+      border: ${strokeWidth}px solid ${color};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+    ">
+      <img src="/markers/gate.png" width="${iconSize}" height="${iconSize}" alt="Gate marker" style="display:block;" />
+    </div>
   `;
   return el;
 }
@@ -135,29 +134,30 @@ export function createHotelMarkerElement(priceLevel: PriceLevel, isSelected = fa
   const el = document.createElement("div");
   el.className = `map-marker map-marker-hotel ${isSelected ? "map-marker-selected" : ""}`;
 
-  // Fixed size for consistent rendering
-  const size = isSelected ? 42 : 34;
-  const strokeWidth = isSelected ? 2.5 : 2;
+  const circleSize = isSelected ? 44 : 36;
+  const iconSize = isSelected ? 24 : 20;
+  const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${size}px`,
-    height: `${size}px`,
+    width: `${circleSize}px`,
+    height: `${circleSize}px`,
     cursor: "pointer",
   });
 
-  // SVG with pin tip exactly at bottom-center (x=20, y=40 in viewBox)
-  // Hotel icon - building with H symbol
   el.innerHTML = `
-    <svg width="${size}" height="${size}" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block;filter:drop-shadow(0 2px 4px rgba(0,0,0,0.25));">
-      <!-- Pin shape - tip at (20, 40) which is bottom center -->
-      <path d="M20 40C20 40 4 24 4 14C4 6.268 10.268 0 20 0C29.732 0 36 6.268 36 14C36 24 20 40 20 40Z" fill="${color}" stroke="white" stroke-width="${strokeWidth}"/>
-      <!-- Inner white circle -->
-      <circle cx="20" cy="14" r="8" fill="white" fill-opacity="0.95"/>
-      <!-- Hotel building icon -->
-      <path d="M14 17V9h12v8M14 11h12M17 17v-3M20 17v-3M23 17v-3" stroke="${color}" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-      <!-- H letter for Hotel -->
-      <path d="M17 10v3M23 10v3M17 11.5h2M21 11.5h2" stroke="${color}" stroke-width="1.2" stroke-linecap="round"/>
-    </svg>
+    <div style="
+      width: ${circleSize}px;
+      height: ${circleSize}px;
+      border-radius: 50%;
+      background: white;
+      border: ${strokeWidth}px solid ${color};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.25));
+    ">
+      <img src="/markers/hotel.png" width="${iconSize}" height="${iconSize}" alt="Hotel marker" style="display:block;" />
+    </div>
   `;
   return el;
 }
