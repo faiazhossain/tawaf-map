@@ -11,7 +11,7 @@ describe("HomePage", () => {
 
   it("renders the description", () => {
     render(<HomePage />);
-    const description = screen.getByText(/Navigate Makkah & Madinah/i);
+    const description = screen.getByText(/মক্কা-মদিনায় হারাবেন না আর কখনও/);
     expect(description).toBeDefined();
   });
 });
