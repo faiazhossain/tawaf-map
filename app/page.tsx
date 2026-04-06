@@ -35,8 +35,8 @@ export default function HomePage() {
             মক্কা-মদিনায় হারাবেন না আর কখনও
           </p>
           <p className="text-base sm:text-lg text-center text-slate-400 max-w-xl mx-auto leading-relaxed">
-            AI দিয়ে তৈরি স্মার্ট ম্যাপ - যেখানে আপনি পাবেন গেট নাম্বার, হাঁটার দূরত্ব, খাবারের
-            দোকান আর ট্রান্সপোর্টের সব তথ্য
+            স্মার্ট ম্যাপ - যেখানে আপনি পাবেন গেট নাম্বার, হাঁটার দূরত্ব, খাবারের দোকান আর
+            ট্রান্সপোর্টের সব তথ্য
           </p>
         </div>
       </section>
