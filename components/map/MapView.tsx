@@ -44,7 +44,7 @@ export function MapView({
   const [mapLoaded, setMapLoaded] = useState(false);
   const [selectedGateId, setSelectedGateId] = useState<string | null>(null);
 
-  // Store state
+  // Store state - use individual selectors to avoid object creation issues
   const center = useMapStore((state) => state.center);
   const zoom = useMapStore((state) => state.zoom);
   const bearing = useMapStore((state) => state.bearing);
@@ -52,11 +52,10 @@ export function MapView({
   const setCenter = useMapStore((state) => state.setCenter);
   const setZoom = useMapStore((state) => state.setZoom);
 
-  const location = useLocationStore((state) => ({
-    latitude: state.latitude,
-    longitude: state.longitude,
-    accuracy: state.accuracy,
-  }));
+  // Location state - individual selectors to avoid object creation on every render
+  const latitude = useLocationStore((state) => state.latitude);
+  const longitude = useLocationStore((state) => state.longitude);
+  const accuracy = useLocationStore((state) => state.accuracy);
 
   const selectedGate = useGateStore((state) => state.selectedGate.gate);
   const activeRoute = useRouteStore((state) => state.activeRoute);
@@ -198,7 +197,7 @@ export function MapView({
       map.addSource("user-location", createUserLocationSource(null, null));
     }
     (map.getSource("user-location") as any)?.setData(
-      createUserLocationSource(location.latitude, location.longitude).data
+      createUserLocationSource(latitude, longitude).data
     );
 
     // Add user location layer if not exists
@@ -217,7 +216,7 @@ export function MapView({
       map.addSource("user-accuracy", createUserAccuracySource(null, null, null));
     }
     (map.getSource("user-accuracy") as any)?.setData(
-      createUserAccuracySource(location.latitude, location.longitude, location.accuracy).data
+      createUserAccuracySource(latitude, longitude, accuracy).data
     );
 
     if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
@@ -229,7 +228,7 @@ export function MapView({
         paint: layerConfigs.userAccuracy.paint,
       });
     }
-  }, [mapLoaded, showUserLocation, location.latitude, location.longitude, location.accuracy]);
+  }, [mapLoaded, showUserLocation, latitude, longitude, accuracy]);
 
   // Update selected gate marker style
   useEffect(() => {
