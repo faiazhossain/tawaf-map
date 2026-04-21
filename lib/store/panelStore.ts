@@ -1,6 +1,6 @@
 import { create } from "zustand";
 
-export type PanelType = "gate" | "hotel" | "route" | null;
+export type PanelType = "gate" | "hotel" | "tourist-place" | "route" | null;
 export type PanelPosition = "top-right" | "bottom-right" | "bottom-left";
 export type SheetSnapPoint = "peek" | "half" | "full";
 

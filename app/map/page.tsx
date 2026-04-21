@@ -7,13 +7,21 @@ import {
   GateSelector,
   UserLocation,
   NearbyGatesPanel,
+  TouristPlacesList,
 } from "@/components/map";
 import { useGateProximity } from "@/lib/hooks";
-import { useGateStore, useHotelStore, useRouteStore, usePanelStore } from "@/lib/store";
+import {
+  useGateStore,
+  useHotelStore,
+  useRouteStore,
+  usePanelStore,
+  useTouristPlaceStore,
+} from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
+import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
-import { Hotel, MapPin, Mountain } from "lucide-react";
+import { Hotel, MapPin, Mountain, Building2, X } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -33,6 +41,13 @@ const RoutePanel = dynamic(
   () => import("@/components/panels/RoutePanel").then((mod) => ({ default: mod.RoutePanel })),
   { ssr: false }
 );
+const TouristPlaceInfoPanel = dynamic(
+  () =>
+    import("@/components/panels/TouristPlaceInfoPanel").then((mod) => ({
+      default: mod.TouristPlaceInfoPanel,
+    })),
+  { ssr: false }
+);
 const DebugLocationPanel = dynamic(
   () =>
     import("@/components/map/DebugLocationPanel").then((mod) => ({
@@ -47,9 +62,18 @@ export default function MapPage() {
   const { selectedHotel, setSelectedHotel, clearSelectedHotel } = useHotelStore();
   const { activeRoute } = useRouteStore();
   const { activePanel, setActivePanel } = usePanelStore();
+  const {
+    setPlace: setTouristPlace,
+    clearPlace: clearTouristPlace,
+    selectedPlace,
+  } = useTouristPlaceStore();
 
   const [showHotels, setShowHotels] = useState(false);
   const [showTerrain, setShowTerrain] = useState(false);
+  const [showTouristPlaces, setShowTouristPlaces] = useState(false);
+  const [showTouristList, setShowTouristList] = useState(false);
+  // Default to Makkah for tourist places
+  const [selectedTouristCity, setSelectedTouristCity] = useState<"makkah" | "madinah">("makkah");
 
   const handleGateClick = (gateId: string) => {
     const gate = HARAM_GATES.find((g) => g.id === gateId);
@@ -73,7 +97,21 @@ export default function MapPage() {
     }
 
     clearGate();
+    clearTouristPlace();
     setActivePanel("hotel");
+    setShowTouristList(false);
+  };
+
+  const handleTouristPlaceClick = (placeId: string) => {
+    const place = TOURIST_PLACES.find((p) => p.id === placeId);
+    if (place) {
+      setTouristPlace(place);
+    }
+
+    clearGate();
+    clearSelectedHotel();
+    setActivePanel("tourist-place");
+    setShowTouristList(false);
   };
 
   const handleToggleHotels = () => {
@@ -81,6 +119,17 @@ export default function MapPage() {
     if (showHotels) {
       clearSelectedHotel();
       if (activePanel === "hotel") {
+        setActivePanel(null);
+      }
+    }
+  };
+
+  const handleToggleTouristPlaces = () => {
+    setShowTouristPlaces((prev) => !prev);
+    setShowTouristList(false);
+    if (showTouristPlaces) {
+      clearTouristPlace();
+      if (activePanel === "tourist-place") {
         setActivePanel(null);
       }
     }
@@ -96,12 +145,18 @@ export default function MapPage() {
     setActivePanel(null);
   };
 
+  const handleCloseTouristPlacePanel = () => {
+    clearTouristPlace();
+    setActivePanel(null);
+  };
+
   const handleCloseRoutePanel = () => {
     setActivePanel(null);
   };
 
   const showGatePanel = activePanel === "gate";
   const showHotelPanel = activePanel === "hotel" && selectedHotel !== null;
+  const showTouristPlacePanel = activePanel === "tourist-place";
   const showRoutePanel = activePanel === "route" && activeRoute !== null;
   const hasActivePanel = activePanel !== null;
 
@@ -140,6 +195,19 @@ export default function MapPage() {
               <span className="hidden sm:inline">{showHotels ? "Hotels On" : "Hotels"}</span>
             </Button>
             <Button
+              variant={showTouristPlaces ? "default" : "outline"}
+              size={showTouristPlaces ? "sm" : "icon"}
+              onClick={handleToggleTouristPlaces}
+              className={
+                showTouristPlaces
+                  ? "bg-purple-600 text-white border-0 shadow-lg"
+                  : "border-slate-700 px-8 bg-slate-900 hover:bg-slate-800 text-slate-300"
+              }
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">{showTouristPlaces ? "Places On" : "Places"}</span>
+            </Button>
+            <Button
               variant={showTerrain ? "default" : "outline"}
               size={showTerrain ? "sm" : "icon"}
               onClick={() => setShowTerrain((prev) => !prev)}
@@ -162,10 +230,13 @@ export default function MapPage() {
         <MapView
           showGates
           showHotels={showHotels}
+          showTouristPlaces={showTouristPlaces}
+          touristCity={selectedTouristCity}
           showUserLocation
           showTerrain={showTerrain}
           onGateClick={handleGateClick}
           onHotelClick={handleHotelClick}
+          onTouristPlaceClick={handleTouristPlaceClick}
         />
 
         {/* Map Controls */}
@@ -173,10 +244,38 @@ export default function MapPage() {
           <MapControls />
         </div>
 
+        {/* Tourist Places List */}
+        {showTouristList && !hasActivePanel && (
+          <div className="absolute top-4 left-4 z-[40] w-80 sm:w-96">
+            <div className="relative">
+              <button
+                onClick={() => setShowTouristList(false)}
+                className="absolute -top-2 -right-2 p-1 bg-slate-800 hover:bg-slate-700 rounded-full z-10"
+              >
+                <X className="w-4 h-4 text-white" />
+              </button>
+              <TouristPlacesList
+                initialCity={selectedTouristCity}
+                onCityChange={setSelectedTouristCity}
+                onPlaceClick={(placeId) => {
+                  handleTouristPlaceClick(placeId);
+                  setShowTouristList(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Info Panels */}
         {showGatePanel && <GateInfoPanel onClose={handleCloseGatePanel} />}
         {showHotelPanel && selectedHotel && (
           <HotelInfoPanel hotel={selectedHotel} onClose={handleCloseHotelPanel} />
+        )}
+        {showTouristPlacePanel && selectedPlace.place && (
+          <TouristPlaceInfoPanel
+            place={selectedPlace.place}
+            onClose={handleCloseTouristPlacePanel}
+          />
         )}
 
         {/* Route Panel */}
@@ -188,6 +287,24 @@ export default function MapPage() {
         {/* Nearby Gates Panel */}
         {hasLocation && nearestGate && !hasActivePanel && (
           <NearbyGatesPanel onGateClick={handleGateClick} />
+        )}
+
+        {/* Tourist Places Floating Button (when list is closed) */}
+        {!showTouristList && !hasActivePanel && (
+          <div className="absolute bottom-20 left-4 z-[40]">
+            <Button
+              onClick={() => {
+                setShowTouristList(true);
+                setShowTouristPlaces(true);
+              }}
+              size="sm"
+              className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg flex items-center gap-2"
+            >
+              <Building2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Browse Places</span>
+              <span className="sm:hidden">Places</span>
+            </Button>
+          </div>
         )}
       </div>
     </main>

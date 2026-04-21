@@ -9,9 +9,11 @@ import {
   useGateStore,
   useRouteStore,
   useHotelStore,
+  useTouristPlaceStore,
 } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
+import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { createUserAccuracySource, createRouteSource, getGatesBounds } from "@/lib/map/sources";
 import {
   getLayerConfigs,
@@ -22,6 +24,7 @@ import {
 import {
   createGateMarkerElement,
   createHotelMarkerElement,
+  createTouristPlaceMarkerElement,
   createUserLocationElement,
 } from "@/lib/map/markers";
 
@@ -29,10 +32,13 @@ interface MapViewProps {
   className?: string;
   showGates?: boolean;
   showHotels?: boolean;
+  showTouristPlaces?: boolean;
+  touristCity?: "makkah" | "madinah";
   showUserLocation?: boolean;
   showTerrain?: boolean;
   onGateClick?: (gateId: string) => void;
   onHotelClick?: (hotelId: string) => void;
+  onTouristPlaceClick?: (placeId: string) => void;
 }
 
 // Barikoi Map Style URL
@@ -43,10 +49,13 @@ export function MapView({
   className = "",
   showGates = true,
   showHotels = false,
+  showTouristPlaces = false,
+  touristCity = "makkah",
   showUserLocation = true,
   showTerrain = false,
   onGateClick,
   onHotelClick,
+  onTouristPlaceClick,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -55,6 +64,7 @@ export function MapView({
   // Store references to markers for removal/update
   const gateMarkersRef = useRef<Map<string, Marker>>(new Map());
   const hotelMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const touristPlaceMarkersRef = useRef<Map<string, Marker>>(new Map());
   const userLocationMarkerRef = useRef<Marker | null>(null);
 
   // Store state - use individual selectors to avoid object creation issues
@@ -73,6 +83,7 @@ export function MapView({
   const selectedGate = useGateStore((state) => state.selectedGate.gate);
   const activeRoute = useRouteStore((state) => state.activeRoute);
   const selectedHotel = useHotelStore((state) => state.selectedHotel);
+  const selectedTouristPlace = useTouristPlaceStore((state) => state.selectedPlace.place);
 
   // Initialize map
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -274,6 +285,64 @@ export function MapView({
     }
   }, [mapLoaded, showHotels, selectedHotel?.id, onHotelClick]);
 
+  // Add/update tourist place markers
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+    const markersMap = touristPlaceMarkersRef.current;
+
+    // Remove all existing tourist place markers
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    if (showTouristPlaces) {
+      // Filter places by selected city (Makkah or Madinah)
+      const placesToShow = TOURIST_PLACES.filter((place) => place.city === touristCity);
+
+      // Add tourist place markers
+      placesToShow.forEach((place) => {
+        const isSelected = selectedTouristPlace?.id === place.id;
+        const el = createTouristPlaceMarkerElement(place.category, isSelected, place.popular);
+
+        const marker = new Marker({
+          element: el,
+          anchor: "bottom",
+        })
+          .setLngLat(place.location.coordinates as [number, number])
+          .addTo(map);
+
+        // Add click handler using DOM event
+        el.addEventListener("click", () => {
+          if (onTouristPlaceClick) {
+            onTouristPlaceClick(place.id);
+          }
+        });
+
+        markersMap.set(place.id, marker);
+      });
+
+      // Optionally fit bounds to show the selected city's places
+      if (placesToShow.length > 0 && touristCity === "makkah") {
+        // For Makkah, we can fit bounds since places are clustered
+        const bounds: LngLatBoundsLike = [
+          [
+            Math.min(...placesToShow.map((p) => p.location.coordinates[0])),
+            Math.min(...placesToShow.map((p) => p.location.coordinates[1])),
+          ],
+          [
+            Math.max(...placesToShow.map((p) => p.location.coordinates[0])),
+            Math.max(...placesToShow.map((p) => p.location.coordinates[1])),
+          ],
+        ];
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: 50, right: 50 },
+          duration: 1000,
+        });
+      }
+    }
+  }, [mapLoaded, showTouristPlaces, selectedTouristPlace?.id, onTouristPlaceClick, touristCity]);
+
   // Add/update user location marker
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !showUserLocation) return;
@@ -341,6 +410,18 @@ export function MapView({
       duration: 1000,
     });
   }, [selectedHotel, mapLoaded]);
+
+  // Fly to selected tourist place
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !selectedTouristPlace) return;
+
+    const map = mapRef.current;
+    map.flyTo({
+      center: selectedTouristPlace.location.coordinates as [number, number],
+      zoom: 16,
+      duration: 1000,
+    });
+  }, [selectedTouristPlace, mapLoaded]);
 
   // Update route
   useEffect(() => {

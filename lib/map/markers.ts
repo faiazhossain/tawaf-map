@@ -3,9 +3,19 @@
  * Generates SVG data URLs for map markers using lucide-style icons
  */
 
-export type MarkerType = "gate" | "hotel" | "poi";
+export type MarkerType = "gate" | "hotel" | "poi" | "tourist-place";
 export type GateType = "king_fahd" | "umrah" | "salah";
 export type PriceLevel = 1 | 2 | 3 | 4;
+export type TouristPlaceCategory =
+  | "historical_site"
+  | "museum"
+  | "mosque"
+  | "park"
+  | "mountain"
+  | "shopping"
+  | "cultural_center"
+  | "landmark"
+  | "agriculture";
 
 /**
  * Get color for gate type
@@ -192,6 +202,109 @@ export function createUserLocationElement(): HTMLElement {
         background-color: white;
         border-radius: 50%;
       "></div>
+    </div>
+  `;
+  return el;
+}
+
+/**
+ * Get color for tourist place category
+ */
+export function getTouristPlaceCategoryColor(category: TouristPlaceCategory): string {
+  switch (category) {
+    case "historical_site":
+      return "#f59e0b"; // amber
+    case "mosque":
+      return "#10b981"; // emerald
+    case "museum":
+      return "#8b5cf6"; // purple
+    case "park":
+      return "#22c55e"; // green
+    case "mountain":
+      return "#78716c"; // stone
+    case "shopping":
+      return "#f43f5e"; // rose
+    case "cultural_center":
+      return "#6366f1"; // indigo
+    case "landmark":
+      return "#3b82f6"; // blue
+    case "agriculture":
+      return "#84cc16"; // lime
+  }
+}
+
+/**
+ * Create HTML element for a tourist place marker
+ */
+export function createTouristPlaceMarkerElement(
+  category: TouristPlaceCategory,
+  isSelected = false,
+  isPopular = false
+): HTMLElement {
+  const color = getTouristPlaceCategoryColor(category);
+  const el = document.createElement("div");
+  el.className = `map-marker map-marker-tourist-place ${isSelected ? "map-marker-selected" : ""}`;
+
+  const circleSize = isSelected ? 44 : 40;
+  const iconSize = isSelected ? 22 : 18;
+  const strokeWidth = isSelected ? 3 : 2;
+
+  Object.assign(el.style, {
+    width: `${circleSize}px`,
+    height: `${circleSize}px`,
+    cursor: "pointer",
+  });
+
+  // SVG icons for each category
+  const icons: Record<TouristPlaceCategory, string> = {
+    historical_site: `<path d="M3 21h18v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2-2H3v2z"/><path d="M5 21V7l8-4 8 4v14"/><path d="M8 21v-2a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>`,
+    mosque: `<path d="M7 21v-8a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v8"/><path d="M12 3v6"/><path d="M7 7l5-4 5 4"/><path d="M5 21h14"/><path d="M7 9h10v2H7z"/>`,
+    museum: `<path d="M3 21h18v-2a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2H7a2 2 0 0 0-2-2H3v2z"/><rect x="4" y="7" width="16" height="12"/><rect x="9" y="3" width="6" height="4"/><path d="M9 11h1v1H9zm2 0h1v1h-1zm2 0h1v1h-1zm-4 2h1v1H9zm2 0h1v1h-1zm2 0h1v1h-1z"/>`,
+    park: `<path d="M12 2L9 12H5l7 5 7-5h-4L12 2z"/><circle cx="12" cy="14" r="3"/><path d="M12 17v4"/><path d="M8 19h8"/>`,
+    mountain: `<path d="M3 21h18"/><path d="M12 3l-8 14h16L12 3z"/><path d="M12 8l-5 9h10L12 8z"/>`,
+    shopping: `<path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><path d="M3 6h18"/><path d="M16 10a4 4 0 0 1-8 0"/>`,
+    cultural_center: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6h5"/><path d="M12 10h5"/><path d="M12 14h5"/><path d="M12 18h5"/>`,
+    landmark: `<path d="M12 2L2 22h20L12 2z"/><path d="M12 6v10"/><circle cx="12" cy="14" r="2"/>`,
+    agriculture: `<path d="M12 22V7"/><path d="M5 12l7-5 7 5"/><path d="M12 7v8"/><circle cx="12" cy="3" r="2"/><path d="M7 16h10"/><path d="M9 18h6"/><path d="M11 20h2"/>`,
+  };
+
+  el.innerHTML = `
+    <div style="
+      width: ${circleSize}px;
+      height: ${circleSize}px;
+      border-radius: 50%;
+      background: ${color};
+      border: ${strokeWidth}px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+      position: relative;
+    ">
+      <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${icons[category]}
+      </svg>
+      ${
+        isPopular
+          ? `<div style="
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            width: 16px;
+            height: 16px;
+            background: #fbbf24;
+            border: 2px solid white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+          ">
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="#78350f">
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>`
+          : ""
+      }
     </div>
   `;
   return el;
