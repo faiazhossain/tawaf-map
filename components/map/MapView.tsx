@@ -33,7 +33,7 @@ interface MapViewProps {
   showGates?: boolean;
   showHotels?: boolean;
   showTouristPlaces?: boolean;
-  touristCity?: "makkah" | "madinah";
+  touristCity?: "makkah" | "madinah" | null;
   showUserLocation?: boolean;
   showTerrain?: boolean;
   onGateClick?: (gateId: string) => void;
@@ -188,7 +188,7 @@ export function MapView({
           },
         });
       }
-      map.setTerrain({ source: terrainSource, exaggeration: 2.5 });
+      map.setTerrain({ source: terrainSource, exaggeration: 1 });
       // Wait for terrain to load before changing pitch, with fallback
       const terrainTimeout = setTimeout(() => {
         map.easeTo({ pitch: 60, duration: 1000 });
@@ -297,8 +297,10 @@ export function MapView({
     markersMap.clear();
 
     if (showTouristPlaces) {
-      // Filter places by selected city (Makkah or Madinah)
-      const placesToShow = TOURIST_PLACES.filter((place) => place.city === touristCity);
+      // Filter places by selected city (Makkah or Madinah), or show all if null
+      const placesToShow = touristCity
+        ? TOURIST_PLACES.filter((place) => place.city === touristCity)
+        : TOURIST_PLACES;
 
       // Add tourist place markers
       placesToShow.forEach((place) => {

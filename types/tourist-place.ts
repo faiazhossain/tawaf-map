@@ -7,7 +7,9 @@ export type TouristPlaceCategory =
   | "shopping"
   | "cultural_center"
   | "landmark"
-  | "agriculture";
+  | "agriculture"
+  | "religious_site"
+  | "cemetery";
 
 export type City = "makkah" | "madinah";
 
@@ -21,6 +23,7 @@ export type TicketInfo = {
     currency: string;
   };
   bookingUrl?: string;
+  note?: string;
 };
 
 export interface HistoricalInfo {
@@ -80,6 +83,7 @@ export interface TouristPlace {
   popular: boolean;
   distanceFromHaram?: number; // in meters
   tags: string[];
+  searchTerms?: string[]; // English/alternate names for search
 }
 
 export interface TouristPlaceFilters {

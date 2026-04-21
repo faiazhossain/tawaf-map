@@ -23,6 +23,8 @@ import {
   ShoppingBag,
   Library,
   Leaf,
+  Trees,
+  Star as ReligiousIcon,
 } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
 import { Button } from "@/components/ui/button";
@@ -119,6 +121,24 @@ const categoryConfigs = {
     textLight: "text-lime-400",
     icon: Leaf,
   },
+  religious_site: {
+    color: "yellow",
+    label: "Religious Site",
+    bg: "bg-yellow-600",
+    bgLight: "bg-yellow-500/10",
+    borderLight: "border-yellow-500/20",
+    textLight: "text-yellow-400",
+    icon: ReligiousIcon,
+  },
+  cemetery: {
+    color: "gray",
+    label: "Cemetery",
+    bg: "bg-gray-600",
+    bgLight: "bg-gray-500/10",
+    borderLight: "border-gray-500/20",
+    textLight: "text-gray-400",
+    icon: Trees,
+  },
 };
 
 function TouristPlaceInfoContent({
@@ -140,9 +160,9 @@ function TouristPlaceInfoContent({
   const IconComponent = config.icon;
 
   return (
-    <>
+    <div className="flex flex-col h-full overflow-hidden">
       {/* Header with image and gradient based on category */}
-      <div className={`relative h-36 sm:h-32 ${config.bg} -mx-4 -mt-2 sm:mx-0 sm:mt-0`}>
+      <div className={`relative h-40 sm:h-36 ${config.bg} shrink-0`}>
         {/* Background image if available */}
         {place.images?.main && (
           <div className="absolute inset-0 overflow-hidden">
@@ -190,8 +210,8 @@ function TouristPlaceInfoContent({
         </div>
       </div>
 
-      {/* Content */}
-      <div className="space-y-4 -mx-4 px-4 sm:mx-0 sm:px-0">
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto space-y-4 px-4 scrollbar-tourist">
         {/* Short Description */}
         <div className="p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
           <p className="text-sm text-slate-300 leading-relaxed">{place.description.short}</p>
@@ -426,7 +446,7 @@ function TouristPlaceInfoContent({
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-slate-700/50 -mx-4 mt-auto sm:mx-0">
+      <div className="p-4 border-t border-slate-700/50 shrink-0">
         <Button
           onClick={onGetDirections}
           disabled={isCalculating || isRouting}
@@ -445,7 +465,7 @@ function TouristPlaceInfoContent({
           )}
         </Button>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -476,15 +496,14 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
       onOpenChange={(open) => {
         if (!open) handleClose();
       }}
-      snapPoints={[0.35, 0.6, 0.95]}
-      defaultSnap={1}
+      snapPoints={[0.6, 0.85]}
+      defaultSnap={0}
       showBackdrop={false}
-      className="max-h-[95dvh]"
     >
       <BottomSheet.Header>
         <BottomSheet.CloseButton />
       </BottomSheet.Header>
-      <div className="px-4">
+      <div className="flex flex-col h-full overflow-hidden">
         <TouristPlaceInfoContent
           place={place}
           distance={distance}
@@ -499,8 +518,8 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
 
   // Desktop floating panel
   const desktopContent = (
-    <div className="absolute top-4 right-4 z-[100] w-96 max-h-[calc(100vh-2rem)]">
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+    <div className="absolute top-4 right-4 z-[100] w-96 h-[calc(100vh-7rem)]">
+      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 z-10 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors"
@@ -509,7 +528,7 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
           <X className="w-4 h-4 text-white" />
         </button>
 
-        <div className="p-4 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className="flex-1 overflow-hidden">
           <TouristPlaceInfoContent
             place={place}
             distance={distance}

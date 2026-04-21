@@ -15,7 +15,9 @@ export type TouristPlaceCategory =
   | "shopping"
   | "cultural_center"
   | "landmark"
-  | "agriculture";
+  | "agriculture"
+  | "religious_site"
+  | "cemetery";
 
 /**
  * Get color for gate type
@@ -230,6 +232,10 @@ export function getTouristPlaceCategoryColor(category: TouristPlaceCategory): st
       return "#3b82f6"; // blue
     case "agriculture":
       return "#84cc16"; // lime
+    case "religious_site":
+      return "#14b8a6"; // teal
+    case "cemetery":
+      return "#6b7280"; // gray
   }
 }
 
@@ -266,6 +272,8 @@ export function createTouristPlaceMarkerElement(
     cultural_center: `<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><path d="M12 6h5"/><path d="M12 10h5"/><path d="M12 14h5"/><path d="M12 18h5"/>`,
     landmark: `<path d="M12 2L2 22h20L12 2z"/><path d="M12 6v10"/><circle cx="12" cy="14" r="2"/>`,
     agriculture: `<path d="M12 22V7"/><path d="M5 12l7-5 7 5"/><path d="M12 7v8"/><circle cx="12" cy="3" r="2"/><path d="M7 16h10"/><path d="M9 18h6"/><path d="M11 20h2"/>`,
+    religious_site: `<path d="M12 2L2 12h3v9h6v-6h2v6h6v-9h3L12 2z"/><circle cx="12" cy="8" r="2"/>`,
+    cemetery: `<path d="M12 2v20"/><path d="M8 6l4-4 4 4"/><path d="M9 10h6v2H9z"/><path d="M10 14h4v2h-4z"/><path d="M12 16v4"/><circle cx="12" cy="20" r="1"/>`,
   };
 
   el.innerHTML = `

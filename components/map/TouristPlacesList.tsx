@@ -14,13 +14,14 @@ import {
   Library,
   Landmark as LandmarkIcon,
   Leaf,
+  Minus,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTouristPlaceStore, usePanelStore } from "@/lib/store";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import type { TouristPlaceCategory, City } from "@/types/tourist-place";
 
-const categoryIcons = {
+const categoryIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   historical_site: LandmarkIcon,
   mosque: Building2, // Using Building2 as mosque icon
   museum: Building2,
@@ -30,9 +31,11 @@ const categoryIcons = {
   cultural_center: Library,
   landmark: MapPin,
   agriculture: Leaf,
+  religious_site: LandmarkIcon,
+  cemetery: Minus,
 };
 
-const categoryLabels: Record<TouristPlaceCategory, string> = {
+const categoryLabels: Record<string, string> = {
   historical_site: "Historical Sites",
   mosque: "Mosques",
   museum: "Museums",
@@ -42,6 +45,8 @@ const categoryLabels: Record<TouristPlaceCategory, string> = {
   cultural_center: "Cultural Centers",
   landmark: "Landmarks",
   agriculture: "Agriculture",
+  religious_site: "Religious Sites",
+  cemetery: "Cemeteries",
 };
 
 interface TouristPlacesListProps {
@@ -60,8 +65,8 @@ export function TouristPlacesList({
   const { setActivePanel } = usePanelStore();
   const { setPlace, setShowOnMap, showPlacesOnMap, toggleShowOnMap } = useTouristPlaceStore();
   const [searchQuery, setSearchQuery] = useState("");
-  // Use initialCity prop to sync with parent component
-  const [selectedCity, setSelectedCity] = useState<City | null>(initialCity);
+  // Start with null to show all places by default
+  const [selectedCity, setSelectedCity] = useState<City | null>(null);
   const [selectedCategory, setSelectedCategory] = useState<TouristPlaceCategory | null>(null);
   const [showFilters, setShowFilters] = useState(false);
 
@@ -86,9 +91,12 @@ export function TouristPlacesList({
       const query = searchQuery.toLowerCase();
       return (
         place.name.toLowerCase().includes(query) ||
+        (place.nameBn && place.nameBn.toLowerCase().includes(query)) ||
         place.nameAr.includes(query) ||
+        place.id.toLowerCase().includes(query) ||
         place.tags.some((tag) => tag.toLowerCase().includes(query)) ||
-        place.description.short.toLowerCase().includes(query)
+        place.description.short.toLowerCase().includes(query) ||
+        (place.searchTerms && place.searchTerms.some((term) => term.toLowerCase().includes(query)))
       );
     }
 
@@ -301,8 +309,8 @@ export function TouristPlacesList({
   );
 }
 
-function getCategoryBgColor(category: TouristPlaceCategory): string {
-  const colors = {
+function getCategoryBgColor(category: string): string {
+  const colors: Record<string, string> = {
     historical_site: "bg-amber-500",
     mosque: "bg-emerald-500",
     museum: "bg-purple-500",
@@ -312,8 +320,10 @@ function getCategoryBgColor(category: TouristPlaceCategory): string {
     cultural_center: "bg-indigo-500",
     landmark: "bg-blue-500",
     agriculture: "bg-lime-500",
+    religious_site: "bg-teal-500",
+    cemetery: "bg-gray-500",
   };
-  return colors[category];
+  return colors[category] || "bg-slate-500";
 }
 
 function formatDistance(meters: number): string {

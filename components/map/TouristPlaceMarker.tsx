@@ -10,6 +10,8 @@ import {
   Landmark,
   Library,
   Leaf,
+  Star,
+  Trees,
 } from "lucide-react";
 import type { TouristPlace } from "@/types/tourist-place";
 
@@ -31,6 +33,8 @@ const CategoryIcons = {
   cultural_center: Library,
   landmark: MapPin,
   agriculture: Leaf,
+  religious_site: Star,
+  cemetery: Trees,
 };
 
 // Category colors with distinct visual styles
@@ -79,6 +83,16 @@ const categoryStyles = {
     bg: "bg-lime-500",
     border: "border-lime-600",
     iconBg: "bg-lime-600",
+  },
+  religious_site: {
+    bg: "bg-yellow-500",
+    border: "border-yellow-600",
+    iconBg: "bg-yellow-600",
+  },
+  cemetery: {
+    bg: "bg-gray-500",
+    border: "border-gray-600",
+    iconBg: "bg-gray-600",
   },
 };
 
@@ -171,6 +185,8 @@ function formatCategory(category: TouristPlace["category"]): string {
     cultural_center: "Culture",
     landmark: "Landmark",
     agriculture: "Agriculture",
+    religious_site: "Religious",
+    cemetery: "Cemetery",
   };
   return labels[category];
 }
@@ -203,6 +219,8 @@ export function TouristPlaceMarkerLegend({
     { key: "cultural_center", label: "Cultural Centers", icon: Library },
     { key: "landmark", label: "Landmarks", icon: MapPin },
     { key: "agriculture", label: "Agriculture", icon: Leaf },
+    { key: "religious_site", label: "Religious Sites", icon: Star },
+    { key: "cemetery", label: "Cemeteries", icon: Trees },
   ];
 
   return (
