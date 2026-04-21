@@ -226,7 +226,7 @@ export default function MapPage() {
             >
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline whitespace-nowrap">
-                {showTouristPlaces ? "Places On" : "Places"}
+                {showTouristPlaces ? "Historical On" : "Historical"}
               </span>
             </Button>
             <Button
@@ -339,8 +339,8 @@ export default function MapPage() {
               className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg flex items-center gap-2"
             >
               <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Browse Places</span>
-              <span className="sm:hidden">Places</span>
+              <span className="hidden sm:inline">Browse Historical</span>
+              <span className="sm:hidden">Historical</span>
             </Button>
           </div>
         )}
