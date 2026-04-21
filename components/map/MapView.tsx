@@ -86,7 +86,7 @@ export function MapView({
       zoom,
       bearing,
       pitch,
-      minZoom: 12,
+      minZoom: 6,
       maxZoom: 20,
       attributionControl: false,
       hash: "map",
@@ -220,19 +220,11 @@ export function MapView({
           .setLngLat(gate.location.coordinates as [number, number])
           .addTo(map);
 
-        // Add click handler
+        // Add click handler using DOM event (MapLibre's Marker uses standard DOM events for custom elements)
         el.addEventListener("click", () => {
           if (onGateClick) {
             onGateClick(gate.id);
           }
-        });
-
-        // Add hover cursor
-        el.addEventListener("mouseenter", () => {
-          el.style.cursor = "pointer";
-        });
-        el.addEventListener("mouseleave", () => {
-          el.style.cursor = "";
         });
 
         markersMap.set(gate.id, marker);
@@ -270,19 +262,11 @@ export function MapView({
           .setLngLat(hotel.location.coordinates as [number, number])
           .addTo(map);
 
-        // Add click handler
+        // Add click handler using DOM event (MapLibre's Marker uses standard DOM events for custom elements)
         el.addEventListener("click", () => {
           if (onHotelClick) {
             onHotelClick(hotel.id);
           }
-        });
-
-        // Add hover cursor
-        el.addEventListener("mouseenter", () => {
-          el.style.cursor = "pointer";
-        });
-        el.addEventListener("mouseleave", () => {
-          el.style.cursor = "";
         });
 
         markersMap.set(hotel.id, marker);

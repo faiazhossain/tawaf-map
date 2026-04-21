@@ -1,0 +1,12 @@
+services:
+  tawaf-frontend:
+    container_name: tawaf-frontend
+    image: rilusmahmud/tawaf-map:latest
+    restart: unless-stopped
+    env_file:
+      - .env.production
+    environment:
+      - NODE_ENV=production
+      - PORT=4005
+    ports:
+      - "127.0.0.1:4005:4005"

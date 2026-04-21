@@ -1,0 +1,21 @@
+.git
+.github
+.next
+node_modules
+npm-debug.log
+yarn-error.log
+coverage
+playwright-report
+test-results
+
+# Local env files and secrets
+.env.local
+.env.*.local
+
+# Editor and OS files
+.DS_Store
+.vscode
+
+# Docs and plans not required for runtime build
+TAWAF_IMPLEMENTATION_PLAN.md
+README_TAWAF.md
