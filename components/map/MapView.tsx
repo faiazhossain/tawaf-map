@@ -43,7 +43,7 @@ interface MapViewProps {
 
 // Barikoi Map Style URL
 const BARIKOI_MAP_STYLE =
-  "https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=NDE2NzpVNzkyTE5UMUoy";
+  "https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=MjY0NDpHRUswODE3R1VV";
 
 export function MapView({
   className = "",
