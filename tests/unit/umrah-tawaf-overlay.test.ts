@@ -140,13 +140,13 @@ describe("buildSaiProgressGeoJSON - সাঈ অগ্রগতি", () => {
     expect(states.filter((s) => s === "future")).toHaveLength(2);
   });
 
-  it("সাফা (পূর্ব) থেকে মারওয়া (পশ্চিম-প্রান্ত) পর্যন্ত বিস্তৃত", () => {
+  it("সাফা (দক্ষিণ) থেকে মারওয়া (উত্তর-প্রান্ত) পর্যন্ত বিস্তৃত", () => {
     const fc = buildSaiProgressGeoJSON(1);
     const first = fc.features[0].geometry.coordinates[0];
     const last = fc.features[6].geometry.coordinates;
     const lastPt = last[last.length - 1];
-    // সাফা lng ৩৯.৮২৭..., মারও়া lng ৩৯.৮৩১... (পূর্ব দিকে বৃদ্ধি)
-    expect(first[0]).toBeLessThan(lastPt[0]);
+    // সাফা lat ২১.৪২১৯..., মারওয়া lat ২১.৪২৫৩... (উত্তর দিকে বৃদ্ধি)
+    expect(first[1]).toBeLessThan(lastPt[1]);
   });
 });
 
@@ -226,8 +226,8 @@ describe("getSaiLapCoords - সাঈ ভাগের ঘন স্থানা�
   it("সাফা থেকে শুরু", () => {
     const coords = getSaiLapCoords(0);
     expect(coords.length).toBeGreaterThanOrEqual(10);
-    expect(coords[0][0]).toBeCloseTo(39.82753, 5);
-    expect(coords[0][1]).toBeCloseTo(21.42208, 5);
+    expect(coords[0][0]).toBeCloseTo(39.8274, 4);
+    expect(coords[0][1]).toBeCloseTo(21.4218, 4);
   });
 });
 
@@ -252,19 +252,25 @@ describe("getTawafCircleCoords - সম্পূর্ণ তওয়াফ ব
 });
 
 describe("getSaiCorridorCoords - সম্পূর্ণ সাঈ করিডোর", () => {
-  it("safa-to-marwa: সাফা থেকে মারওয়া পর্যন্ত", () => {
+  it("safa-to-marwa: সাফা (দক্ষিণ) থেকে মারওয়া (উত্তর), বাঁকা পথ অনুসরণ করে", () => {
     const coords = getSaiCorridorCoords("safa-to-marwa");
-    expect(coords[0][0]).toBeCloseTo(39.82753, 5);
-    expect(coords[coords.length - 1][0]).toBeCloseTo(39.8319, 5);
+    expect(coords.length).toBeGreaterThanOrEqual(20);
+    // দক্ষিণ প্রান্ত (সাফা) থেকে উত্তর প্রান্ত (মারওয়া)
+    expect(coords[0][1]).toBeLessThan(coords[coords.length - 1][1]);
+    // মাঝের বিন্দু সরল রেখার চেয়ে পূর্বে - অর্থাৎ সরল রেখা নয়, পলিলাইন অনুসরণ করছে
+    const midLng = coords[Math.floor(coords.length / 2)][0];
+    const chordLng = (coords[0][0] + coords[coords.length - 1][0]) / 2;
+    expect(midLng).toBeGreaterThan(chordLng);
   });
 
-  it("marwa-to-safa: বিপরীত দিক (উল্টানো)", () => {
+  it("marwa-to-safa: বিপরীত দিক (উত্তর থেকে দক্ষিণ)", () => {
     const fwd = getSaiCorridorCoords("safa-to-marwa");
     const rev = getSaiCorridorCoords("marwa-to-safa");
-    expect(rev[0][0]).toBeCloseTo(39.8319, 5);
-    expect(rev[rev.length - 1][0]).toBeCloseTo(39.82753, 5);
-    // মোট বিন্দু সমান
     expect(rev.length).toBe(fwd.length);
+    // উত্তর প্রান্ত (মারওয়া) থেকে দক্ষিণ প্রান্ত (সাফা)
+    expect(rev[0][1]).toBeGreaterThan(rev[rev.length - 1][1]);
+    // শেষ বিন্দু সাফার কাছে (লুপ প্রায় বন্ধ - ফেরার পথের শেষ ≈ যাওয়ার পথের শুরু)
+    expect(rev[rev.length - 1][1]).toBeCloseTo(fwd[0][1], 4);
   });
 });
 
@@ -325,19 +331,30 @@ describe("buildDirectionArrowsGeoJSON - দিকনির্দেশক তী
     expect(fromNorth).toBeLessThan(20);
   });
 
-  it("সাঈ (খোলা পথ): সাফা→মারওয়া পূর্বাভিমুখী (~৯০°)", () => {
+  it("সাঈ (খোলা পথ): প্রতিটি তীর বৈধ bearing পায় [০, ৩৬০)", () => {
     const fc = buildDirectionArrowsGeoJSON(getSaiCorridorCoords("safa-to-marwa"), 4, false);
-    const b0 = fc.features[0].properties.bearing as number;
-    expect(b0).toBeGreaterThan(70);
-    expect(b0).toBeLessThan(110);
+    expect(fc.features).toHaveLength(4);
+    fc.features.forEach((f) => {
+      const b = f.properties.bearing as number;
+      expect(b).toBeGreaterThanOrEqual(0);
+      expect(b).toBeLessThan(360);
+      expect(Number.isNaN(b)).toBe(false);
+    });
   });
 
-  it("পথ উল্টালে বিয়ারিংও উল্টে যায় (marwa→safa পশ্চিমাভিমুখী)", () => {
-    const fwd = buildDirectionArrowsGeoJSON(getSaiCorridorCoords("safa-to-marwa"), 4, false);
-    const rev = buildDirectionArrowsGeoJSON(getSaiCorridorCoords("marwa-to-safa"), 4, false);
-    const f0 = fwd.features[0].properties.bearing as number;
-    const r0 = rev.features[0].properties.bearing as number;
-    const diff = Math.abs(f0 - r0);
+  it("সাঈ: সাফা→মারওয়া মোট দিশা উত্তরাভিমুখী (সাফা দক্ষিণ, মারওয়া উত্তর)", () => {
+    // সাফার ক্যাপে স্থানীয় স্পর্শক দক্ষিণমুখী হতে পারে, তাই মোট সরণের দিশা দেখি।
+    const coords = getSaiCorridorCoords("safa-to-marwa");
+    const b = bearing(coords[0] as [number, number], coords[coords.length - 1] as [number, number]);
+    expect(Math.min(b, 360 - b)).toBeLessThan(20);
+  });
+
+  it("পথ উল্টালে মোট দিশাও উল্টে যায় (মারওয়া→সাফা ~১৮০°)", () => {
+    const fwd = getSaiCorridorCoords("safa-to-marwa");
+    const rev = getSaiCorridorCoords("marwa-to-safa");
+    const fb = bearing(fwd[0] as [number, number], fwd[fwd.length - 1] as [number, number]);
+    const rb = bearing(rev[0] as [number, number], rev[rev.length - 1] as [number, number]);
+    const diff = Math.abs(fb - rb);
     expect(Math.min(diff, 360 - diff)).toBeCloseTo(180, 0);
   });
 

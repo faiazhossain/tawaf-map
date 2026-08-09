@@ -59,6 +59,37 @@ export function ellipseRingCoordinates(
 
 const KAABA_CENTER: [number, number] = [39.8262, 21.4225];
 
+/**
+ * সাঈ করিডোরের পলিলাইন (সাফা -> মারওয়া -> সাফা) - প্রকৃত মাসআ করিডোরের জিওজেসন
+ * থেকে নেওয়া। দুটি লেনের গোলাকার পথ; দক্ষিণ প্রান্তে সাফা, উত্তর প্রান্তে মারওয়া।
+ * স্থির লেয়ার (createRitualOverlayGeoJSON) ও অ্যানিমেশন (সাঈ অগ্রগতি/দিক তীর) একই
+ * উৎস ব্যবহার করে, যাতে আঁকা পথ আর অ্যানিমেশন কখনো আলাদা না হয়।
+ */
+const SAI_CORRIDOR_PATH: [number, number][] = [
+  [39.827404, 21.4217662], // সাফা (দক্ষিণ প্রান্ত)
+  [39.8274774, 21.4217577],
+  [39.8275553, 21.4218089],
+  [39.8275874, 21.4219156],
+  [39.8275553, 21.4221589],
+  [39.8272478, 21.4251221],
+  [39.8272238, 21.4252623],
+  [39.8271756, 21.4252988],
+  [39.8271296, 21.4252979], // মারওয়া (উত্তর প্রান্ত - ঘুরে ফেরার বিন্দু)
+  [39.8270943, 21.4252988],
+  [39.8270431, 21.4252707],
+  [39.8270039, 21.425209],
+  [39.8271046, 21.4243134],
+  [39.827236, 21.4229954],
+  [39.82736, 21.4217861],
+  [39.8273819, 21.4217725], // সাফায় ফিরে
+];
+
+/** সাফা -> মারওয়া গামী (পূর্ব লেন) অংশ (সূচক ০..৮)। */
+const SAI_OUTBOUND: [number, number][] = SAI_CORRIDOR_PATH.slice(0, 9);
+
+/** মারওয়া -> সাফা গামী (পশ্চিম লেন) অংশ (সূচক ৮..১২; ইতিমধ্যে মারওয়া->সাফা ক্রমে)। */
+const SAI_RETURN: [number, number][] = SAI_CORRIDOR_PATH.slice(8);
+
 // ---------------------------------------------------------------------------
 // লেয়ার/সোর্স আইডি
 // ---------------------------------------------------------------------------
@@ -116,16 +147,13 @@ export function createRitualOverlayGeoJSON() {
           coordinates: ellipseRingCoordinates(KAABA_CENTER, 20, 18, 64),
         },
       },
-      // সাঈ করিডোর (সাফা -> মারওয়া)
+      // সাঈ করিডোর (সাফা -> মারওয়া) - SAI_CORRIDOR_PATH থেকে (স্থির লেয়ার ও অ্যানিমেশন একই পথ)।
       {
         type: "Feature" as const,
         properties: { kind: "sai-corridor" },
         geometry: {
           type: "LineString" as const,
-          coordinates: [
-            [39.82753, 21.42208], // সাফা
-            [39.8319, 21.42213], // মারওয়া
-          ],
+          coordinates: SAI_CORRIDOR_PATH,
         },
       },
       // সাঈ-এর দুই সবুজ মাইলের জোন (দৌড়ের অংশ)
@@ -136,15 +164,16 @@ export function createRitualOverlayGeoJSON() {
           type: "Polygon" as const,
           coordinates: [
             (() => {
-              const start: [number, number] = [39.829, 21.4221];
-              const end: [number, number] = [39.8304, 21.4221];
-              const rLng = 3 * degPerMLng(21.4221);
+              const midLng = 39.8273;
+              const latStart = 21.4232;
+              const latEnd = 21.424;
+              const rLng = 3 * degPerMLng(21.4236);
               return [
-                [start[0], start[1] - rLng],
-                [end[0], end[1] - rLng],
-                [end[0], end[1] + rLng],
-                [start[0], start[1] + rLng],
-                [start[0], start[1] - rLng],
+                [midLng - rLng, latStart],
+                [midLng - rLng, latEnd],
+                [midLng + rLng, latEnd],
+                [midLng + rLng, latStart],
+                [midLng - rLng, latStart],
               ];
             })(),
           ],
@@ -324,9 +353,7 @@ export function createSacredPointsGeoJSON() {
 
 export type ArcState = "completed" | "active" | "future";
 
-/** সাফা ও মারওয়ার স্থানাঙ্ক (সাঈ করিডোরের দুই প্রান্ত - anchors.ts-এর সাথে সঙগত) */
-const SAI_START: [number, number] = [39.82753, 21.42208]; // সাফা
-const SAI_END: [number, number] = [39.8319, 21.42213]; // মারওয়া
+/** সাফা ও মারওয়ার স্থানাঙ্ক SAI_CORRIDOR_PATH-এর প্রান্তবিন্দু (anchors.ts-এর সাথে সঙগত)। */
 
 /**
  * একটি উপবৃত্তকে `segments` সমান চাপে ভাগ করে। প্রতিটি চাপ একটি খোলা LineString
@@ -375,6 +402,76 @@ export function splitLineSegments(
   return arcs;
 }
 
+// ---------------------------------------------------------------------------
+// পলিলাইন স্যাম্পলিং - সাঈ করিডোরের বাঁকা পথ অনুসরণ করতে (সরল রেখার বদলে)
+// ---------------------------------------------------------------------------
+
+/** পলিলাইনের ক্রমিক চাপ-দৈর্ঘ্য (মিটার): [0, d0, d0+d1, ...] */
+function polylineCumulativeLengths(path: [number, number][]): number[] {
+  const cum = [0];
+  for (let i = 1; i < path.length; i++) {
+    const [lng1, lat1] = path[i - 1];
+    const [lng2, lat2] = path[i];
+    const midLat = (lat1 + lat2) / 2;
+    const dx = (lng2 - lng1) / degPerMLng(midLat); // মিটার
+    const dy = (lat2 - lat1) / DEG_PER_M_LAT; // মিটার
+    cum.push(cum[i - 1] + Math.hypot(dx, dy));
+  }
+  return cum;
+}
+
+/** চাপ-দৈর্ঘ্য `dist` (মিটার) অনুযায়ী পলিলাইনের একটি বিন্দু (রৈখিক ইন্টারপোলেশন)। */
+function pointAtArcLength(path: [number, number][], cum: number[], dist: number): [number, number] {
+  const total = cum[cum.length - 1];
+  if (dist <= 0) return [path[0][0], path[0][1]];
+  if (dist >= total) return [path[path.length - 1][0], path[path.length - 1][1]];
+  let i = 1;
+  while (i < cum.length && cum[i] < dist) i++;
+  const segLen = cum[i] - cum[i - 1];
+  const frac = segLen > 0 ? (dist - cum[i - 1]) / segLen : 0;
+  const [lng1, lat1] = path[i - 1];
+  const [lng2, lat2] = path[i];
+  return [lng1 + (lng2 - lng1) * frac, lat1 + (lat2 - lat1) * frac];
+}
+
+/**
+ * পলিলাইনকে চাপ-দৈর্ঘ্য অনুযায়ী সমান-দূরত্বের `totalPoints` বিন্দুতে রিস্যাম্পল করে।
+ * প্রথম ও শেষ বিন্দু অপরিবর্তিত থাকে। বিশুদ্ধ ফাংশন।
+ */
+export function densifyPolyline(path: [number, number][], totalPoints: number): number[][] {
+  const cum = polylineCumulativeLengths(path);
+  const total = cum[cum.length - 1];
+  const out: number[][] = [];
+  for (let i = 0; i < totalPoints; i++) {
+    const t = totalPoints > 1 ? i / (totalPoints - 1) : 0;
+    out.push(pointAtArcLength(path, cum, total * t));
+  }
+  return out;
+}
+
+/**
+ * পলিলাইনকে `segments` সমান চাপ-দৈর্ঘ্যের ভাগে ভাগ করে (প্রতিটিতে `ptsPerArc + 1` বিন্দু)।
+ * সাঈ করিডোরের বাঁকা পথ ধরে অগ্রগতি দেখাতে ব্যবহৃত। বিশুদ্ধ ফাংশন।
+ */
+export function splitPolylineSegments(
+  path: [number, number][],
+  segments = 7,
+  ptsPerArc = 6
+): number[][][] {
+  const cum = polylineCumulativeLengths(path);
+  const total = cum[cum.length - 1];
+  const arcs: number[][][] = [];
+  for (let s = 0; s < segments; s++) {
+    const arc: number[][] = [];
+    for (let i = 0; i <= ptsPerArc; i++) {
+      const t = (s + i / ptsPerArc) / segments;
+      arc.push(pointAtArcLength(path, cum, total * t));
+    }
+    arcs.push(arc);
+  }
+  return arcs;
+}
+
 /**
  * একটি চাপের অবস্থা নির্ধারণ। `current` = ১-থেকে-শুরু বর্তমান চক্কর/পাক নম্বর।
  *   index <  current-1 => সম্পন্ন (সবুজ)
@@ -413,7 +510,8 @@ export function buildTawafProgressGeoJSON(current: number, max = 7, drawingLap?:
  * `drawingLap` একইভাবে কাজ করে।
  */
 export function buildSaiProgressGeoJSON(current: number, max = 7, drawingLap?: number | null) {
-  const arcs = splitLineSegments(SAI_START, SAI_END, max);
+  // সাফা -> মারওয়া গামী পথ (SAI_OUTBOUND) ধরে সমান ভাগে অগ্রগতি।
+  const arcs = splitPolylineSegments(SAI_OUTBOUND, max);
   return {
     type: "FeatureCollection" as const,
     features: arcs.map((coordinates, index) => ({
@@ -434,7 +532,7 @@ export function getTawafLapCoords(lapIndex: number, max = 7, ptsPerArc = 24): nu
 
 /** একটি নির্দিষ্ট সাঈ ভাগের ঘন স্থানাঙ্ক (অঙ্কন অ্যানিমেশনের জন্য, বিশুদ্ধ)। */
 export function getSaiLapCoords(lapIndex: number, max = 7, ptsPerArc = 14): number[][] {
-  return splitLineSegments(SAI_START, SAI_END, max, ptsPerArc)[lapIndex] ?? [];
+  return splitPolylineSegments(SAI_OUTBOUND, max, ptsPerArc)[lapIndex] ?? [];
 }
 
 /** সম্পূর্ণ তওয়াফ বৃত্তের ঘন স্থানাঙ্ক - এক পূর্ণ চক্কর, ঘড়ির বিপরীত দিকে (বিশুদ্ধ)। */
@@ -443,19 +541,17 @@ export function getTawafCircleCoords(pts = 72): number[][] {
 }
 
 /** সাঈ-এর সম্পূর্ণ করিডোরের ঘন স্থানাঙ্ক - এক পূর্ণ পাক (দিক অনুযায়ী, বিশুদ্ধ)। */
+/**
+ * সাঈ-এর করিডোরের ঘন স্থানাঙ্ক (এক পাক, দিক অনুযায়ী) - প্রকৃত পলিলাইন পথ অনুসরণ করে।
+ * "safa-to-marwa" = পূর্ব লেন (SAI_OUTBOUND), "marwa-to-safa" = পশ্চিম লেন (SAI_RETURN)।
+ * বিশুদ্ধ ফাংশন।
+ */
 export function getSaiCorridorCoords(
   direction: "safa-to-marwa" | "marwa-to-safa" = "safa-to-marwa",
   pts = 48
 ): number[][] {
-  const coords: number[][] = [];
-  for (let i = 0; i <= pts; i++) {
-    const t = i / pts;
-    coords.push([
-      SAI_START[0] + (SAI_END[0] - SAI_START[0]) * t,
-      SAI_START[1] + (SAI_END[1] - SAI_START[1]) * t,
-    ]);
-  }
-  return direction === "marwa-to-safa" ? [...coords].reverse() : coords;
+  const path = direction === "marwa-to-safa" ? SAI_RETURN : SAI_OUTBOUND;
+  return densifyPolyline(path, pts);
 }
 
 // ----- অগ্রগতি সোর্স আইডি -----

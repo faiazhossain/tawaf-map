@@ -130,7 +130,7 @@ export const UMRAH_ANCHORS: RitualAnchor[] = [
     },
     nameAr: "الصفا",
     role: "sai-start",
-    location: { coordinates: [39.82753, 21.42208] },
+    location: { coordinates: [39.8274384, 21.421763] },
     image: "/images/tourist-places/makkah-al-safa-al-marwa.jpeg",
     sourceRefs: [
       "https://islamqa.info/en/answers/31819",
@@ -145,7 +145,7 @@ export const UMRAH_ANCHORS: RitualAnchor[] = [
     },
     nameAr: "المروة",
     role: "sai-end",
-    location: { coordinates: [39.8319, 21.42213] },
+    location: { coordinates: [39.8271296, 21.4252979] },
     sourceRefs: [
       "https://islamqa.info/en/answers/31819",
       "https://en.wikipedia.org/wiki/Safa_and_Marwa",
@@ -159,7 +159,7 @@ export const UMRAH_ANCHORS: RitualAnchor[] = [
     },
     nameAr: "الميلان الأخضران",
     role: "sai-green-markers",
-    location: { coordinates: [39.8297, 21.4221] },
+    location: { coordinates: [39.8273, 21.4236] },
     sourceRefs: ["https://umrah.nusuk.sa/Journey", "https://islamqa.info/en/answers/31819"],
   },
 ];
