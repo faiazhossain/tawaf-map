@@ -30,11 +30,13 @@
 ## 1. Vision and Goals
 
 ### One-line vision
+
 A pilgrim from Bangladesh opens the app, tells it who they are and how they are traveling, and
 the map walks them through Umrah **step by step** - showing where they are, where to go next,
 which gate to use, what to do and say at each point, and what to do if something goes wrong.
 
 ### Primary goals
+
 1. **Map-first, visual guidance.** Every step is anchored to a real place on the map. The map is
    the hero; text supports it, not the other way around.
 2. **Personalized flow.** The guide branches on gender, travel method, and companionship
@@ -47,6 +49,7 @@ which gate to use, what to do and say at each point, and what to do if something
    path Dhaka -> Jeddah, offline-friendly, low-data conscious.
 
 ### Non-goals (for v1)
+
 - Hajj rites (Mina/Muzdalifah/Arafat/Rami). TawafMap already has these as place data; the
   guided flow targets **Umrah** only. Hajj can be a later mode.
 - Live crowd/heat data, ticketing, group chat, payments.
@@ -60,17 +63,17 @@ which gate to use, what to do and say at each point, and what to do if something
 The Explore pass confirmed TawafMap is already a strong foundation for this feature. Relevant
 facts that shape the plan:
 
-| Area | Current state | Implication for Umrah guide |
-|---|---|---|
-| Stack | Next.js 15 (App Router), TypeScript, standalone build | Add an `/umrah` mode within `app/map/page.tsx` or a parallel route |
-| Map | `maplibre-gl` 4.7, hardcoded Barikoi basestyle, Makkah-centered, DOM markers, `flyTo`, `fitBounds`, terrain+pitch toggle | Reuse marker/fly-to/terrain patterns; ritual overlay is additive |
-| State | `zustand` (8 stores) + `@tanstack/react-query` (unused so far) | Add an `umrahGuideStore`; no backend needed for v1 |
-| Data | Hardcoded TS in `lib/data/` (gates, hotels, tourist-places) with rich bilingual schemas | Add `lib/data/umrah/...` in the same style |
-| UI | Tailwind + shadcn-style (`button/card/badge/input/bottom-sheet`), dark slate theme, dual mobile `BottomSheet` + desktop floating panel | Reuse the dual-panel pattern and color system |
-| Existing ritual content | Safa/Marwa, Zamzam, Tan'eem miqat, etc. exist as passive tourist-place entries | Promote these into first-class ritual steps; reuse their coordinates |
-| Routing | `useMapRouting` simulates routes client-side (real Barikoi routing marked TODO) | Adequate for guide "go to next step"; upgrade to Barikoi later |
-| Geolocation | `useGeolocation` watch hook exists | Powers "where am I / nearest gate" |
-| Docs | `TAWAF_IMPLEMENTATION_PLAN.md`, `README_TAWAF.md`, deploy runbooks | This guide is a new track alongside the existing phases |
+| Area                    | Current state                                                                                                                          | Implication for Umrah guide                                          |
+| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Stack                   | Next.js 15 (App Router), TypeScript, standalone build                                                                                  | Add an `/umrah` mode within `app/map/page.tsx` or a parallel route   |
+| Map                     | `maplibre-gl` 4.7, hardcoded Barikoi basestyle, Makkah-centered, DOM markers, `flyTo`, `fitBounds`, terrain+pitch toggle               | Reuse marker/fly-to/terrain patterns; ritual overlay is additive     |
+| State                   | `zustand` (8 stores) + `@tanstack/react-query` (unused so far)                                                                         | Add an `umrahGuideStore`; no backend needed for v1                   |
+| Data                    | Hardcoded TS in `lib/data/` (gates, hotels, tourist-places) with rich bilingual schemas                                                | Add `lib/data/umrah/...` in the same style                           |
+| UI                      | Tailwind + shadcn-style (`button/card/badge/input/bottom-sheet`), dark slate theme, dual mobile `BottomSheet` + desktop floating panel | Reuse the dual-panel pattern and color system                        |
+| Existing ritual content | Safa/Marwa, Zamzam, Tan'eem miqat, etc. exist as passive tourist-place entries                                                         | Promote these into first-class ritual steps; reuse their coordinates |
+| Routing                 | `useMapRouting` simulates routes client-side (real Barikoi routing marked TODO)                                                        | Adequate for guide "go to next step"; upgrade to Barikoi later       |
+| Geolocation             | `useGeolocation` watch hook exists                                                                                                     | Powers "where am I / nearest gate"                                   |
+| Docs                    | `TAWAF_IMPLEMENTATION_PLAN.md`, `README_TAWAF.md`, deploy runbooks                                                                     | This guide is a new track alongside the existing phases              |
 
 **Key load-bearing files** the implementation will touch: `app/map/page.tsx`,
 `components/map/MapView.tsx`, `lib/store/panelStore.ts`, `lib/map/markers.ts`,
@@ -91,11 +94,11 @@ content the guide must encode, each item tagged so the data model in Section 7 c
 
 - **Ghusl** (ritual bath) and grooming (clip nails, remove hair). Sunnah, not obligatory.
   [Islamic Relief](https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/how-to-perform-umrah/)
-- **Men apply perfume** before putting on Ihram garments (perfume becomes forbidden *after*
+- **Men apply perfume** before putting on Ihram garments (perfume becomes forbidden _after_
   ihram). [IslamQA #31819](https://islamqa.info/en/answers/31819)
-- **Men don the Ihram dress:** two unstitched white sheets - *izar* (lower) and *rida'* (upper).
+- **Men don the Ihram dress:** two unstitched white sheets - _izar_ (lower) and _rida'_ (upper).
   Footwear: unstitched sandals not covering the ankle bone. The right shoulder is uncovered
-  (*idtiba'*) when Tawaf begins.
+  (_idtiba'_) when Tawaf begins.
   [Nusuk](https://umrah.nusuk.sa/Journey);
   [Islamic Relief](https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/how-to-perform-umrah/)
 - **Women** wear normal modest Islamic dress (any colour, may be stitched); see gender rules
@@ -111,8 +114,9 @@ content the guide must encode, each item tagged so the data model in Section 7 c
   [Nusuk](https://umrah.nusuk.sa/Journey)
 
 **Talbiyah wording (for the app's dua content):**
-> *Labbaik Allahumma labbaik. Labbaik la sharika laka labbaik. Innal-hamda wan-ni'mata laka
-> wal-mulk. La sharika lak.* (Plus: *Labbaika ilahal-haqq.*)
+
+> _Labbaik Allahumma labbaik. Labbaik la sharika laka labbaik. Innal-hamda wan-ni'mata laka
+> wal-mulk. La sharika lak._ (Plus: _Labbaika ilahal-haqq._)
 > Meaning: "Here I am, O Allah, here I am. Here I am, You have no partner, here I am. Indeed all
 > praise, grace and sovereignty belong to You. You have no partner."
 > [Duas.com](https://duas.com/dua/371/the-talbiyah-chant-of-hajj-and-umrah);
@@ -124,29 +128,30 @@ Prophet-designated points (hadith of Ibn Abbas, al-Bukhari 1524, Muslim 1181).
 [Hajj Umrah Planner](https://hajjumrahplanner.com/miqat/);
 [Bakkah Transport](https://bakkahtransport.com/blog/miqat-points/)
 
-| Miqat | Direction from Makkah | ~Distance | Serves |
-|---|---|---|---|
-| Dhul-Hulayfah / Abyar Ali | North | ~410-450 km | Those coming via Madinah |
-| Al-Juhfah (near Rabigh) | Northwest | ~187 km | Egypt, Sham, North/West Africa |
-| Qarn al-Manazil / As-Sayl al-Kabir | East/NE | ~75-82 km | Najd, Ta'if |
-| Yalamlam (as-Sa'diyyah) | South | ~54 km | Yemen, southern regions |
-| Dhat 'Irq | Northeast | ~85 km | Iraq, Iran, NE |
+| Miqat                              | Direction from Makkah | ~Distance   | Serves                         |
+| ---------------------------------- | --------------------- | ----------- | ------------------------------ |
+| Dhul-Hulayfah / Abyar Ali          | North                 | ~410-450 km | Those coming via Madinah       |
+| Al-Juhfah (near Rabigh)            | Northwest             | ~187 km     | Egypt, Sham, North/West Africa |
+| Qarn al-Manazil / As-Sayl al-Kabir | East/NE               | ~75-82 km   | Najd, Ta'if                    |
+| Yalamlam (as-Sa'diyyah)            | South                 | ~54 km      | Yemen, southern regions        |
+| Dhat 'Irq                          | Northeast             | ~85 km      | Iraq, Iran, NE                 |
 
 **Special cases the app must handle:**
+
 - **Flying into Jeddah (the common Bangladesh path):** assume ihram **on the aircraft before
   crossing the miqat** - typically aligned with **Yalamlam** (south/sea approach) or
   **Qarn al-Manazil** depending on flight path. Airlines announce ~30-45 min before landing.
-  Assuming ihram at Jeddah airport is impermissible and may require a *dam*.
+  Assuming ihram at Jeddah airport is impermissible and may require a _dam_.
   [Saudi Ministry of Hajj & Umrah](https://www.facebook.com/SaudiMOHUEn/posts/695696863193701/);
   [AboutIslam](https://aboutislam.net/counseling/ask-the-scholar/umrah/can-assume-ihram-umrah-jeddah-airport/);
   [Jordan Iftaa #2982](https://www.aliftaa.jo/research-fatwa-english/2982/)
 - **Via Madinah first:** miqat is **Dhul-Hulayfah / Abyar Ali** (~450 km).
-- **Already within the miqat boundary (the *Hill*)** e.g. Jeddah residents: assume ihram from
+- **Already within the miqat boundary (the _Hill_)** e.g. Jeddah residents: assume ihram from
   where they live. [IslamOnline Fiqh](https://fiqh.islamonline.net/en/miqat-for-those-who-live-in-jeddah/)
 - **Already inside the Haram boundary of Makkah:** go out to the nearest Hill point -
   **Masjid Aisha / Tan'eem** (~7 km north), per Aisha's (RA) practice.
   [IslamQA #32845](https://islamqa.info/en/answers/32845);
-  [Discover Makkah](https://www.discovermakkah.sa/en/places-worth-visiting/landmarks/al-taneem-mosque-(lady-aisha))
+  [Discover Makkah](<https://www.discovermakkah.sa/en/places-worth-visiting/landmarks/al-taneem-mosque-(lady-aisha)>)
 
 > This is the single most common error for international pilgrims. The app's Miqat engine
 > (Section 5.4) is built around it.
@@ -154,23 +159,26 @@ Prophet-designated points (hadith of Ibn Abbas, al-Bukhari 1524, Muslim 1181).
 ### 3.4 Gender-specific rules
 
 **Men**
+
 - Two unstitched sheets only; no stitched/fitted clothes, no underwear, no head covering.
   [Islamic Relief](https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/how-to-perform-umrah/)
-- *Idtiba'* (right shoulder bare) and *raml* (brisk short steps) in the first 3 Tawaf circuits.
+- _Idtiba'_ (right shoulder bare) and _raml_ (brisk short steps) in the first 3 Tawaf circuits.
   [Nusuk](https://umrah.nusuk.sa/Journey)
-- *Halq* (shave head) preferred, *taqsir* (trim) also valid. [IslamQA #31819](https://islamqa.info/en/answers/31819)
+- _Halq_ (shave head) preferred, _taqsir_ (trim) also valid. [IslamQA #31819](https://islamqa.info/en/answers/31819)
 
 **Women**
+
 - Modest dress, any colour, may be stitched. Must NOT wear **niqab** (face veil tied to face) or
   **gloves** (al-Bukhari 1707). A loose cloth held over the face without tying is permitted.
   [Saudi MOHU](https://www.facebook.com/SaudiMOHUEn/posts/979986444764740/);
   [iLink Tours](https://ilinktours.com/umrah-rules-for-women/)
-- No *raml*, no *idtiba'*; walk normally. In Sa'i, do not jog between the green markers.
+- No _raml_, no _idtiba'_; walk normally. In Sa'i, do not jog between the green markers.
   [Nusuk](https://umrah.nusuk.sa/Journey)
 - **Taqsir only** - trim a fingertip-length (~1-2 cm) from hair ends; shaving is forbidden.
   [IslamQA #31819](https://islamqa.info/en/answers/31819)
 
 **Mahram requirement - scholars differ (the app must present both, not choose):**
+
 - Majority (Hanafi, Hanbali, and a Maliki position): a woman must travel with a **mahram**.
   [Islamic Portal](https://islamicportal.co.uk/is-travelling-without-mahram-permissible-according-to-imam-shafiee/)
 - Shafi'i school and a known Maliki view: mahram not strictly required; condition is **safety of
@@ -183,6 +191,7 @@ Prophet-designated points (hadith of Ibn Abbas, al-Bukhari 1524, Muslim 1181).
   [Islamic Relief - Umrah Rules](https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/umrah-rules/)
 
 ### 3.5 Stage C - Entering Masjid al-Haram
+
 - Enter with the right foot first, reciting the mosque-entry supplication and salawat.
   [Islamic Relief](https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/how-to-perform-umrah/)
 
@@ -192,17 +201,18 @@ Prophet-designated points (hadith of Ibn Abbas, al-Bukhari 1524, Muslim 1181).
    [Nusuk](https://umrah.nusuk.sa/Journey)
 2. Touch/kiss it if possible, else point with the right hand, say **"Allahu Akbar,"** begin.
 3. **Counter-clockwise**, Kaaba always on the left.
-4. **Men only:** *idtiba'* + *raml* in circuits 1-3.
+4. **Men only:** _idtiba'_ + _raml_ in circuits 1-3.
 5. At the **Rukn al-Yamani (Yemeni corner):** touch if possible, do NOT kiss, do NOT say takbir.
    [IslamQA #31819](https://islamqa.info/en/answers/31819)
-6. **Between the Yemeni corner and the Black Stone** recite: *"Rabbana atina fid-dunya hasanah,
-   wa fil-akhirati hasanah, wa qina 'adhab an-nar"* (Quran 2:201).
+6. **Between the Yemeni corner and the Black Stone** recite: _"Rabbana atina fid-dunya hasanah,
+   wa fil-akhirati hasanah, wa qina 'adhab an-nar"_ (Quran 2:201).
    [Duas.com #373](https://duas.com/dua/373/dua-said-between-the-yemeni-corner-and-the-black-stone)
 7. Complete **7 circuits**, each restarting at the Black Stone. The **Hijr Ismail / Hatim** is
-   enclosed *inside* the circuit - walk around it, not through it.
+   enclosed _inside_ the circuit - walk around it, not through it.
    [Wikipedia - Hijr Ismail](https://en.wikipedia.org/wiki/Hijr_Ismail)
 
 **Distances (use ranges, not single numbers):**
+
 - One circuit ~80 m (close, ground floor) to ~200-300 m (crowded/upper floors).
 - 7 circuits total ~1.2-1.5 km ground level close in, ~2 km+ on upper levels.
   [Madain Project](https://madainproject.com/tawaf_distance);
@@ -210,20 +220,24 @@ Prophet-designated points (hadith of Ibn Abbas, al-Bukhari 1524, Muslim 1181).
 - Kaaba base perimeter ~47.8 m (12.86 x 11.03 m). [Wikipedia - Kaaba](https://en.wikipedia.org/wiki/Kaaba)
 
 ### 3.7 Stage E - Two rak'ahs after Tawaf
+
 - Pray 2 rak'ahs near/behind **Maqam Ibrahim** (Quran 2:125); if impractical, anywhere in the
   mosque. Sunnah: Surah al-Kafirun (109) then al-Ikhlas (112). Drink **Zamzam** after.
   [IslamQA #31819](https://islamqa.info/en/answers/31819);
   [Nusuk](https://umrah.nusuk.sa/Journey)
 
 ### 3.8 Stage F - Sa'i (Safa -> Marwa, 7 laps)
-1. **Begin at Safa**, recite *"Inna as-Safa wa al-Marwata min sha'a'ir Allah..."* (Quran 2:158).
+
+1. **Begin at Safa**, recite _"Inna as-Safa wa al-Marwata min sha'a'ir Allah..."_ (Quran 2:158).
    [IslamQA #31819](https://islamqa.info/en/answers/31819)
 2. Walk toward Marwa. Between the **two green markers (al-mila al-akhdarayn)** men jog; women walk.
    [Nusuk](https://umrah.nusuk.sa/Journey)
 3. Reaching Marwa = lap 1; return to Safa = lap 2; ... **end at Marwa on lap 7.**
+
 - One-way ~450 m; total ~3.15 km. [Wikipedia - Safa and Marwa](https://en.wikipedia.org/wiki/Safa_and_Marwa)
 
 ### 3.9 Stage G - Halq / Taqsir (exit of Ihram)
+
 - **Men:** halq preferred, taqsir valid (Prophet made du'a 3x for those who shaved, 1x for
   trimmers - Muslim 1303). [IslamQA #31819](https://islamqa.info/en/answers/31819)
 - **Women:** taqsir only, fingertip-length (~1-2 cm).
@@ -236,27 +250,27 @@ This classification powers the "is my Umrah valid?" helper. Omitting a **pillar*
 omitting a **wajib** requires expiation but Umrah stays valid; omitting a **sunnah** has no penalty.
 [Guide to Islam](https://guidetoislam.com/en/articles/the-pillars-obligations-and-supererogatory-acts-of-umrah-11002)
 
-| Question | Hanafi | Maliki | Shafi'i | Hanbali |
-|---|---|---|---|---|
-| Is Umrah obligatory? | Sunnah | Sunnah | **Fard** | **Fard** |
-| Sa'i | Wajib | Pillar | Pillar | Pillar |
-| Halq/Taqsir | Wajib | Wajib | Pillar | Pillar |
-| Ihram from miqat | Wajib | Wajib/Sunnah | Wajib | Wajib |
+| Question             | Hanafi | Maliki       | Shafi'i  | Hanbali  |
+| -------------------- | ------ | ------------ | -------- | -------- |
+| Is Umrah obligatory? | Sunnah | Sunnah       | **Fard** | **Fard** |
+| Sa'i                 | Wajib  | Pillar       | Pillar   | Pillar   |
+| Halq/Taqsir          | Wajib  | Wajib        | Pillar   | Pillar   |
+| Ihram from miqat     | Wajib  | Wajib/Sunnah | Wajib    | Wajib    |
 
 > Flag for the app: "Is Umrah fard?" depends on school ([IslamQA #39524](https://islamqa.info/en/answers/39524)). Present both; do not assert one.
 
 ### 3.11 Key locations in Masjid al-Haram (map anchors)
 
-| Location | Role in ritual |
-|---|---|
-| Hajr al-Aswad (Black Stone) | Tawaf start/end; touch/kiss or point, say Allahu Akbar |
-| Maqam Ibrahim | Pray 2 rak'ahs nearby after Tawaf (Quran 2:125) |
-| Hijr Ismail / Hatim | Semi-circular low wall north of Kaaba; **inside** the Tawaf circuit; praying here equals praying inside the Kaaba |
-| Rukn al-Yamani (Yemeni corner) | Touch (no kiss, no takbir) during Tawaf |
-| Al-Multazam | Wall between Kaaba door and Black Stone; cling and make du'a |
-| Mizab al-Rahmah | Gold rain-spout above Hijr Ismail |
-| Safa and Marwa | Sa'i start/end hills (~450 m apart) |
-| Mataf | Open circular area where Tawaf is performed |
+| Location                       | Role in ritual                                                                                                    |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| Hajr al-Aswad (Black Stone)    | Tawaf start/end; touch/kiss or point, say Allahu Akbar                                                            |
+| Maqam Ibrahim                  | Pray 2 rak'ahs nearby after Tawaf (Quran 2:125)                                                                   |
+| Hijr Ismail / Hatim            | Semi-circular low wall north of Kaaba; **inside** the Tawaf circuit; praying here equals praying inside the Kaaba |
+| Rukn al-Yamani (Yemeni corner) | Touch (no kiss, no takbir) during Tawaf                                                                           |
+| Al-Multazam                    | Wall between Kaaba door and Black Stone; cling and make du'a                                                      |
+| Mizab al-Rahmah                | Gold rain-spout above Hijr Ismail                                                                                 |
+| Safa and Marwa                 | Sa'i start/end hills (~450 m apart)                                                                               |
+| Mataf                          | Open circular area where Tawaf is performed                                                                       |
 
 **Notable gates** (pin by name + GPS; treat numbers as advisory because they shift with each
 expansion):
@@ -279,13 +293,14 @@ King Faisal, Ajyad, Bilal.
 
 ### 4.1 The expiation system (powers the "what do I owe?" helper)
 
-| Term | Meaning | Where |
-|---|---|---|
-| **Dam** | Slaughter a sheep (or 1/7 cow/camel) | Inside the Haram; meat to the poor of the Haram |
-| **Sadaqah / Fidyah** | Staple food (~2.25 kg per person to 6 poor) | To the poor |
-| **Siyam** | Fasting (3 days for typical Ihram violations; 10 for omitting a Hajj wajib) | - |
+| Term                 | Meaning                                                                     | Where                                           |
+| -------------------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
+| **Dam**              | Slaughter a sheep (or 1/7 cow/camel)                                        | Inside the Haram; meat to the poor of the Haram |
+| **Sadaqah / Fidyah** | Staple food (~2.25 kg per person to 6 poor)                                 | To the poor                                     |
+| **Siyam**            | Fasting (3 days for typical Ihram violations; 10 for omitting a Hajj wajib) | -                                               |
 
 **Choice (Takhyir) vs Gradation (Tartib):**
+
 - **Majority (Maliki, Shafi'i, Hanbali):** for ordinary non-sexual violations, free choice among
   slaughter 1 sheep OR feed 6 poor OR fast 3 days - any one suffices.
   ([IslamQA #49027](https://islamqa.info/en/answers/49027); [Dar al-Ifta #6531](https://www.dar-alifta.org/en/fatwa/details/6531/))
@@ -295,34 +310,34 @@ King Faisal, Ajyad, Bilal.
 
 ### 4.2 Mistake -> What to do (core table for the assistant)
 
-| Mistake | What to do | Source |
-|---|---|---|
-| Crossed Miqat without Ihram (intending Umrah) | Return to the Miqat and enter Ihram there. If not returned: **Dam (sheep)**. | [IslamQA #69934](https://islamqa.info/en/answers/69934) |
-| Crossed Miqat without intending Umrah | No penalty; enter Ihram from where you are when you decide. | [IslamQA #69934](https://islamqa.info/en/answers/69934) |
-| Started Tawaf from wrong point | Earlier circuits don't count; resume from the Black Stone alignment. | general fiqh |
-| Lost count / unsure of circuits | Build on the **certain (lower)** number, complete to 7. | Saudi MOHU |
-| Tawaf without wudu / wudu broke mid-Tawaf | **Majority:** renew wudu, restart Tawaf. **Ibn Taymiyyah / Abu Hanifah (minor impurity):** valid, renewal recommended. | [IslamQA #34695](https://islamqa.info/en/answers/34695) |
-| Walked between Kaaba and Hateem wall | That circuit is invalid; redo it (Hijr Ismail is part of the Kaaba). | [Discover Haramain](https://discoverharamain.com/guides/hijr-ismail) |
-| Started Sa'i from Marwa | That length doesn't count; restart from Safa. | Saudi MOHU; Quran 2:158 |
-| Did not complete Sa'i | Complete remaining laps (Safa->Marwa = 1 ... end Marwa = 7). | general |
-| Forgot to shave/trim hair | Put Ihram back on, cut hair now, then change. **No penalty** if forgetful/ignorant. | [IslamQA #122795](https://islamqa.info/en/answers/122795) |
-| Period started after Ihram | Wait until pure, then Tawaf then Sa'i then taqsir (Aisha precedent, al-Bukhari 305). Do not reverse order. | [IslamQA #39814](https://islamqa.info/en/answers/39814) |
-| Group leaving before she is pure | Strict: stay/return. Lenient (Ibn Taymiyyah, distant country): medication/pad out of necessity. | [IslamQA #112271](https://islamqa.info/en/answers/112271) |
-| Intercourse before tahallul | **Invalidates Umrah**; complete rites, then make up (qada) + Dam (sheep/person). | [IslamQA #119134](https://islamqa.info/en/answers/119134) |
-| Pushing / harsh behaviour | Sinful; tawbah required; does not invalidate but forfeits reward. | Quran 2:197 |
+| Mistake                                       | What to do                                                                                                             | Source                                                               |
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Crossed Miqat without Ihram (intending Umrah) | Return to the Miqat and enter Ihram there. If not returned: **Dam (sheep)**.                                           | [IslamQA #69934](https://islamqa.info/en/answers/69934)              |
+| Crossed Miqat without intending Umrah         | No penalty; enter Ihram from where you are when you decide.                                                            | [IslamQA #69934](https://islamqa.info/en/answers/69934)              |
+| Started Tawaf from wrong point                | Earlier circuits don't count; resume from the Black Stone alignment.                                                   | general fiqh                                                         |
+| Lost count / unsure of circuits               | Build on the **certain (lower)** number, complete to 7.                                                                | Saudi MOHU                                                           |
+| Tawaf without wudu / wudu broke mid-Tawaf     | **Majority:** renew wudu, restart Tawaf. **Ibn Taymiyyah / Abu Hanifah (minor impurity):** valid, renewal recommended. | [IslamQA #34695](https://islamqa.info/en/answers/34695)              |
+| Walked between Kaaba and Hateem wall          | That circuit is invalid; redo it (Hijr Ismail is part of the Kaaba).                                                   | [Discover Haramain](https://discoverharamain.com/guides/hijr-ismail) |
+| Started Sa'i from Marwa                       | That length doesn't count; restart from Safa.                                                                          | Saudi MOHU; Quran 2:158                                              |
+| Did not complete Sa'i                         | Complete remaining laps (Safa->Marwa = 1 ... end Marwa = 7).                                                           | general                                                              |
+| Forgot to shave/trim hair                     | Put Ihram back on, cut hair now, then change. **No penalty** if forgetful/ignorant.                                    | [IslamQA #122795](https://islamqa.info/en/answers/122795)            |
+| Period started after Ihram                    | Wait until pure, then Tawaf then Sa'i then taqsir (Aisha precedent, al-Bukhari 305). Do not reverse order.             | [IslamQA #39814](https://islamqa.info/en/answers/39814)              |
+| Group leaving before she is pure              | Strict: stay/return. Lenient (Ibn Taymiyyah, distant country): medication/pad out of necessity.                        | [IslamQA #112271](https://islamqa.info/en/answers/112271)            |
+| Intercourse before tahallul                   | **Invalidates Umrah**; complete rites, then make up (qada) + Dam (sheep/person).                                       | [IslamQA #119134](https://islamqa.info/en/answers/119134)            |
+| Pushing / harsh behaviour                     | Sinful; tawbah required; does not invalidate but forfeits reward.                                                      | Quran 2:197                                                          |
 
 ### 4.3 Valid vs Repeat vs Sacrifice (quick triage)
 
-| Situation | Valid? | Repeat (qada)? | Sacrifice (Dam)? |
-|---|---|---|---|
-| Minor violation, forgetful/ignorant | Yes | No | No |
-| Minor violation, deliberate | Yes (sinful) | No | Yes (one of three) |
-| Crossed Miqat, returned to Miqat | Yes | No | No |
-| Crossed Miqat, did not return | Yes (majority) | No | Yes (sheep) |
-| Wudu broke in Tawaf, restarted | Yes | No | No |
-| Wudu broke, not restarted (majority) | Invalid - redo if still in Makkah | redo Tawaf | no / opinion differs if left |
-| Forgot to cut hair; cut when remembered | Yes | No | No (most) |
-| Intercourse before tahallul | **Invalidated** | Yes - make up | Yes - sheep/person |
+| Situation                               | Valid?                            | Repeat (qada)? | Sacrifice (Dam)?             |
+| --------------------------------------- | --------------------------------- | -------------- | ---------------------------- |
+| Minor violation, forgetful/ignorant     | Yes                               | No             | No                           |
+| Minor violation, deliberate             | Yes (sinful)                      | No             | Yes (one of three)           |
+| Crossed Miqat, returned to Miqat        | Yes                               | No             | No                           |
+| Crossed Miqat, did not return           | Yes (majority)                    | No             | Yes (sheep)                  |
+| Wudu broke in Tawaf, restarted          | Yes                               | No             | No                           |
+| Wudu broke, not restarted (majority)    | Invalid - redo if still in Makkah | redo Tawaf     | no / opinion differs if left |
+| Forgot to cut hair; cut when remembered | Yes                               | No             | No (most)                    |
+| Intercourse before tahallul             | **Invalidated**                   | Yes - make up  | Yes - sheep/person           |
 
 > **Guiding principle for the UI copy:** most mistakes do NOT invalidate Umrah. They require
 > nothing (forgetfulness), an expiation (choice), or the act performed/repeated. True
@@ -386,6 +401,7 @@ Three always-available questions, answered from GPS + step state:
 ### 5.4 Miqat engine (the flight-alert feature)
 
 For "Dhaka -> Jeddah by air":
+
 - Explain that Jeddah is **inside** the miqat boundary, so ihram must be assumed **on the plane**
   before crossing **Yalamlam** (or **Qarn al-Manazil**, depending on route).
 - Provide a checklist to do **before boarding**: ghusl, wear Ihram garments, trim nails, perfume
@@ -405,6 +421,7 @@ verse, etc. Audio enables the "Listen" mode the existing vision doc references.
 ### 5.6 "I made a mistake" assistant
 
 A searchable, branchable helper built on Section 4.2. Flow:
+
 1. Pick a category (Ihram violations / Tawaf / Sa'i / purity / forgot something / other).
 2. Answer 1-3 yes/no questions (e.g., "Did you intend Umrah when you passed the miqat?").
 3. Get a clear, calm answer: nothing needed / do X now / expiation (with the Takhyir-vs-Tartib
@@ -497,19 +514,27 @@ path and the active miqat highlighted. Educational + practical.
 
 > Sketches only. They mirror existing schemas (`types/tourist-place.ts`, `lib/data/*`) so the
 > implementation fits naturally. User-facing text fields are objects keyed by locale: `bn`, `en`,
-  with Arabic carried separately for RTL rendering.
+> with Arabic carried separately for RTL rendering.
 
 ### 7.1 Ritual site / anchor
 
 ```ts
 type RitualAnchor = {
-  id: string;                       // "black-stone" | "maqam-ibrahim" | "rukn-yamani" | ...
+  id: string; // "black-stone" | "maqam-ibrahim" | "rukn-yamani" | ...
   name: { bn: string; en: string };
-  nameAr?: string;                  // Arabic, rendered dir="rtl"
-  role: "tawaf-start" | "tawaf-corner" | "pray-after-tawaf" | "sai-start" | "sai-end"
-      | "sai-green-markers" | "kaaba" | "hateem" | "multazam";
-  location: { coordinates: [number, number] };   // [lng, lat]
-  image?: string;                   // reuse /public/images where possible
+  nameAr?: string; // Arabic, rendered dir="rtl"
+  role:
+    | "tawaf-start"
+    | "tawaf-corner"
+    | "pray-after-tawaf"
+    | "sai-start"
+    | "sai-end"
+    | "sai-green-markers"
+    | "kaaba"
+    | "hateem"
+    | "multazam";
+  location: { coordinates: [number, number] }; // [lng, lat]
+  image?: string; // reuse /public/images where possible
 };
 ```
 
@@ -518,25 +543,25 @@ type RitualAnchor = {
 ```ts
 type GenderFilter = "all" | "male" | "female";
 
-type DuaRef = string;               // id into umrah/duas
+type DuaRef = string; // id into umrah/duas
 
 type UmrahStep = {
-  id: string;                       // "ihram-miqat" | "tawaf" | "tawaf-circuit" | "sai" | ...
+  id: string; // "ihram-miqat" | "tawaf" | "tawaf-circuit" | "sai" | ...
   stage: "prep" | "ihram" | "travel" | "enter" | "tawaf" | "pray" | "sai" | "halq" | "done";
-  order: number;                    // for the linear backbone
+  order: number; // for the linear backbone
   title: { bn: string; en: string };
   summary: { bn: string; en: string };
-  gender: GenderFilter;             // hide/branch by gender
-  anchors?: RitualAnchor["id"][];   // map locations
+  gender: GenderFilter; // hide/branch by gender
+  anchors?: RitualAnchor["id"][]; // map locations
   counter?: { min: number; max: number; label: { bn: string; en: string } }; // 1..7 for tawaf/sai
-  whatToDo: { bn: string; en: string };          // markdown
-  rules?: { bn: string; en: string };            // do/don't
+  whatToDo: { bn: string; en: string }; // markdown
+  rules?: { bn: string; en: string }; // do/don't
   duas?: DuaRef[];
-  commonMistakes?: string[];        // ids into mistakes table (Section 4)
+  commonMistakes?: string[]; // ids into mistakes table (Section 4)
   isCompleteWhen: "manual" | "counter-max" | "proximity" | "manual|proximity";
   tip?: { bn: string; en: string };
-  sourceRefs: string[];             // URLs from Section 12
-  nextStepId?: string | ((ctx: StepContext) => string);  // allow branching
+  sourceRefs: string[]; // URLs from Section 12
+  nextStepId?: string | ((ctx: StepContext) => string); // allow branching
 };
 ```
 
@@ -553,11 +578,11 @@ type TravelPath =
 type UmrahProfile = {
   gender: "male" | "female";
   travelPath: TravelPath;
-  hasMahram?: boolean;              // relevant if female
+  hasMahram?: boolean; // relevant if female
   travelGroup?: "solo" | "group" | "family";
   accessibility?: { wheelchair: boolean; slowPace: boolean };
   madhhab?: "hanafi" | "maliki" | "shafii" | "hanbali" | "all";
-  miqatId: string;                  // resolved by the miqat engine from travelPath
+  miqatId: string; // resolved by the miqat engine from travelPath
   groupLeaderPhone?: string;
   meetingPoint?: { label: string; coordinates: [number, number] };
 };
@@ -567,13 +592,13 @@ type UmrahProfile = {
 
 ```ts
 type Dua = {
-  id: string;                       // "talbiyah" | "yamani-corner-dua" | "safa-verse" ...
+  id: string; // "talbiyah" | "yamani-corner-dua" | "safa-verse" ...
   title: { bn: string; en: string };
-  arabic: string;                   // dir="rtl"
+  arabic: string; // dir="rtl"
   transliteration?: string;
   translation: { bn: string; en: string };
   whenToRecite: { bn: string; en: string };
-  audio?: { ar?: string; bn?: string };   // paths under /public/audio
+  audio?: { ar?: string; bn?: string }; // paths under /public/audio
   sourceRefs: string[];
 };
 ```
@@ -581,13 +606,20 @@ type Dua = {
 ### 7.5 Mistake entry (for the assistant)
 
 ```ts
-type ExpiationType = "none" | "sadaqah" | "dam" | "takhyir" | "tartib" | "qada-plus-dam" | "see-scholar";
+type ExpiationType =
+  | "none"
+  | "sadaqah"
+  | "dam"
+  | "takhyir"
+  | "tartib"
+  | "qada-plus-dam"
+  | "see-scholar";
 
 type Mistake = {
   id: string;
   category: "ihram" | "tawaf" | "sai" | "purity" | "halq" | "other";
   question: { bn: string; en: string };
-  branches?: { condition: string; nextId: string }[];  // simple decision tree
+  branches?: { condition: string; nextId: string }[]; // simple decision tree
   outcome: {
     valid: "valid" | "invalid" | "depends";
     action: { bn: string; en: string };
@@ -600,9 +632,11 @@ type Mistake = {
 ### 7.6 Gate extension (reuse existing)
 
 Add an optional field to the existing gate type:
+
 ```ts
 suitableFor?: { stepId: string; note: { bn: string; en: string } }[];
 ```
+
 so the "which gate" recommender can filter gates by step suitability.
 
 ### 7.7 File layout (proposed)
@@ -630,15 +664,22 @@ A new `umrahGuideStore` (zustand) alongside the existing 8 stores:
 ```ts
 type UmrahGuideState = {
   profile: UmrahProfile | null;
-  stepIds: string[];                 // resolved, personalized sequence
+  stepIds: string[]; // resolved, personalized sequence
   currentIndex: number;
   completed: Record<string, boolean>;
-  counters: Record<string, number>;  // stepId -> circuit/lap number
+  counters: Record<string, number>; // stepId -> circuit/lap number
   mode: "guide" | "mistake-assistant" | "miqat-overview";
   // actions
-  setProfile, startGuide, nextStep, prevStep, goToStep,
-  incrementCounter, decrementCounter, markComplete,
-  openMistakeAssistant, reset,
+  setProfile;
+  startGuide;
+  nextStep;
+  prevStep;
+  goToStep;
+  incrementCounter;
+  decrementCounter;
+  markComplete;
+  openMistakeAssistant;
+  reset;
 };
 ```
 
@@ -662,7 +703,7 @@ Concrete seams in the current code (line references from the Explore pass):
    mutual-exclusion handler. Accent color teal/cyan.
 2. **Panel type** - add `"umrah-step"` to `PanelType` in `lib/store/panelStore.ts` (line ~3) and
    a corresponding panel component following `TouristPlaceInfoPanel.tsx` (dual mobile BottomSheet
-   + desktop floating panel).
+   - desktop floating panel).
 3. **Map integration** - add `showUmrah?: boolean` and `umrahStep?` props to
    `components/map/MapView.tsx`. Add effects mirroring the existing marker/fly-to/route effects
    (lines 245, 328-344, 393-482): draw step markers, draw the journey line and Tawaf/Sa'i
@@ -670,7 +711,7 @@ Concrete seams in the current code (line references from the Explore pass):
 4. **Ritual overlay layers** - add GeoJSON sources/layers to `lib/map/layers.ts` (Tawaf ring,
    Sa'i corridor, sacred points), reusing `ROUTE_LAYER_ID`-style casing+line patterns.
 5. **Markers** - extend `lib/map/markers.ts` with a numbered step marker builder and a
-  "recommended gate" pulsing marker.
+   "recommended gate" pulsing marker.
 6. **Routing** - reuse `useMapRouting` for user->next-step and user->gate; the simulation is
    fine for v1.
 7. **Geolocation** - reuse `useGeolocation`, `useGateProximity` for "where am I / nearest gate."
@@ -680,6 +721,7 @@ Concrete seams in the current code (line references from the Explore pass):
 9. **Dua audio** - drop recitations under `/public/audio/`; reference from `Dua.audio`.
 
 ### Testing
+
 - Unit tests (Vitest) for the step-resolution logic (gender branching, miqat resolution,
   counter auto-advance) - this is the riskiest pure logic.
 - Snapshot the resolved sequence per profile fixture.
@@ -690,43 +732,78 @@ Concrete seams in the current code (line references from the Explore pass):
 
 ## 10. Phased Roadmap
 
-### Phase U1 - Content foundation (no new UI)
+### Phase U1 - Content foundation (no new UI) — [x] DONE
+
+> Shipped: `lib/data/umrah/{steps,duas,mistakes,anchors,miqat}.ts` + `types/umrah.ts`,
+> bilingual (bn/en) + Arabic with `sourceRefs` on every record. Verified by
+> `tests/unit/umrah-content.test.ts`.
+
 - Author `lib/data/umrah/{steps,duas,mistakes,anchors,miqat}.ts` from Sections 3-4, with
   `sourceRefs` on every record. Bengali + English + Arabic.
 - Define `types/umrah.ts`.
 - Get coordinates for anchors (reuse `tourist-places.ts`; verify Kaaba/Hateem/Safa-Marwa/gates).
 - Deliverable: a reviewable content package a scholar can verify.
 
-### Phase U2 - Step engine + onboarding (logic, minimal UI)
+### Phase U2 - Step engine + onboarding (logic, minimal UI) — [x] DONE
+
+> Shipped: `umrahGuideStore` (zustand + persist), `resolveSteps`/counter logic,
+> `UmrahOnboarding` wizard + `UmrahStepList` panel. Verified by
+> `tests/unit/umrah-sequence.test.ts`.
+
 - `umrahGuideStore`, sequence resolution, counter logic, persistence.
 - Onboarding wizard (gender, travel path, companionship, accessibility, optional madhhab).
 - The personalized step list UI (read-only, no map yet).
 - Unit tests for resolution.
 
-### Phase U3 - Map integration (the visual hero)
+### Phase U3 - Map integration (the visual hero) — [x] DONE
+
+> Shipped: `showUmrah` props + ritual overlay (`lib/map/umrah-overlay.ts`), numbered step
+> markers + journey line + fly-to in `MapView.tsx`, gate recommendation, dual panel.
+> Verified by `tests/e2e/umrah-map.spec.ts`.
+
 - `showUmrah` props + step markers + journey line + fly-to in `MapView.tsx`.
 - Ritual overlay layers (Kaaba/Hateem, Tawaf ring, Sa'i corridor, sacred points).
 - "Where am I / where next" using geolocation + `useMapRouting`.
 - Gate recommendation highlight (reuse gates data + proximity).
 - Dual mobile/desktop panel for the active step.
 
-### Phase U4 - Ritual counter views + Miqat engine
-- Tawaf counter view (top-down Mataf, 1-7, raml/Yamani-dua prompts).
-- Sa'i counter view (corridor, 1-7, green-marker jog prompt).
-- Miqat overview map + flight countdown card for air-Dhaka-Jeddah path.
+### Phase U4 - Ritual counter views + Miqat engine — [x] DONE
 
-### Phase U5 - "I made a mistake" assistant
+- [x] Tawaf counter view (1-7, raml/Yamani-dua prompts) — shipped inside the `UmrahStepList`
+      step detail (progress ring + per-round tips). Dedicated top-down Mataf map mode deferred.
+- [x] Sa'i counter view (1-7, green-marker jog prompt) — shipped inside the step detail.
+- [x] Miqat overview map + flight countdown card for air-Dhaka-Jeddah path.
+  - [x] Flight ihram "countdown" card — pre-boarding checklist + manual guidance +
+        collapsible Talbiyah + Dam warning. Shipped: `components/umrah/FlightIhramCard.tsx`,
+        rendered in the prep & ihram-miqat step detail for the air path.
+  - [x] Miqat overview map (5-point ring around Makkah). Shipped:
+        `components/umrah/MiqatOverviewPanel.tsx`, `createMiqatMarkerElement` in `markers.ts`,
+        MapView `showMiqatOverview` (markers + fitBounds), `miqatRingBounds()` in `miqat.ts`,
+        triggered from the guide header. Wires up the previously-unused `miqat-overview` mode.
+
+### Phase U5 - "I made a mistake" assistant — [x] DONE
+
+> Shipped: `MistakeAssistant.tsx` decision-tree UI over `mistakes.ts`, expiation notes
+> (Takhyir vs Tartib), inline sources, reassuring Bangla copy.
+> Verified by `tests/e2e/umrah-mistake.spec.ts`.
+
 - Decision-tree UI over `mistakes.ts`; outcomes with expiation notes (Takhyir vs Tartib).
 - Inline source links.
 - Reassuring copy review.
 
-### Phase U6 - Dua audio + offline + polish
-- Record/source Bengali + Arabic dua audio; "Listen" mode.
-- Offline bundling + graceful routing degradation.
-- Accessibility (wheelchair paths), "lost group" helper, Farewell Tawaf reminder.
-- Reduced-motion, theming, final visual polish.
+### Phase U6 - Dua audio + offline + polish — [~] PARTIAL
+
+- [ ] Record/source Bengali + Arabic dua audio; "Listen" mode. (Deferred — needs audio assets.)
+- [x] Offline bundling + graceful routing degradation. All guide content is bundled as static
+      TS (works with no data); `useMapRouting` degrades to straight-line; `components/umrah/OfflineBadge.tsx`
+      surfaces online/offline status. (Lightweight indicator — no service worker, per scope.)
+- [ ] Accessibility (wheelchair paths), "lost group" helper, Farewell Tawaf reminder. (Deferred
+      this pass — wheelchair is already captured in onboarding & gate recommendation.)
+- [x] Reduced-motion, theming, final visual polish. (`umrah-pulse` + reduced-motion guard in
+      `app/globals.css`; teal/cyan accent system.)
 
 ### Phase U7 (later) - Optional enhancements
+
 - GPS/accelerometer auto-detection of Tawaf circuits.
 - Real Barikoi routing API for walking directions.
 - Flight tracking for the miqat countdown (if a data source is permitted).
@@ -771,6 +848,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
 ## 12. Sources and References
 
 ### Ritual procedure and sequence
+
 - IslamQA #31819 - core Umrah sequence, niyyah, Yemeni corner, dua between corners, halq/taqsir:
   https://islamqa.info/en/answers/31819
 - Nusuk (official Saudi portal) Umrah Journey - step rites, gender raml/idtiba/jogging:
@@ -783,6 +861,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
   https://islamqa.info/en/answers/39524
 
 ### Miqat
+
 - Hajj Umrah Planner - miqat list and distances: https://hajjumrahplanner.com/miqat/
 - Bakkah Transport - miqat points: https://bakkahtransport.com/blog/miqat-points/
 - Wikipedia - Miqat: https://en.wikipedia.org/wiki/Miqat
@@ -800,12 +879,14 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
   https://www.discovermakkah.sa/en/places-worth-visiting/landmarks/al-taneem-mosque-(lady-aisha)
 
 ### Duas
+
 - Duas.com #371 - Talbiyah: https://duas.com/dua/371/the-talbiyah-chant-of-hajj-and-umrah
 - Duas.com #373 - dua between Yemeni corner and Black Stone:
   https://duas.com/dua/373/dua-said-between-the-yemeni-corner-and-the-black-stone
 - Hajj Umrah Planner - Talbiyah timing: https://hajjumrahplanner.com/talbiyah/
 
 ### Gender rules and mahram
+
 - Saudi MOHU - women must not wear niqab/gloves in ihram:
   https://www.facebook.com/SaudiMOHUEn/posts/979986444764740/
 - iLink Tours - women's ihram rules: https://ilinktours.com/umrah-rules-for-women/
@@ -818,6 +899,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
 - Islamic Relief - Umrah rules (visa/mahram policy): https://www.islamic-relief.org.uk/resources/knowledge-base/umrah/umrah-rules/
 
 ### Ihram prohibitions
+
 - Studio Arabiya - ihram rules for men and women: https://studioarabiya.com/ihram-rules-for-men-and-women/
 - Makarem Hotels - prohibitions in ihram: https://makaremhotels.com/en/news/prohibitions-ihram-men-and-women
 - Muslim Planner - ihram rules guide: https://muslimplanner.com/blogs/islamic-productivity/ihram-rules-guide
@@ -825,6 +907,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
 - IslamQA #11356 - things to avoid in ihram: https://islamqa.info/en/answers/11356
 
 ### Geometry and locations
+
 - Wikipedia - Kaaba (dimensions): https://en.wikipedia.org/wiki/Kaaba
 - Wikipedia - Hijr Ismail / Hatim: https://en.wikipedia.org/wiki/Hijr_Ismail
 - Wikipedia - Safa and Marwa (distances): https://en.wikipedia.org/wiki/Safa_and_Marwa
@@ -835,6 +918,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
 - Saif Hajj Umrah - 45 gates list: https://www.saifhajjumrahtravels.com/about-us/blog/45-gates-of-masjid-al-haram
 
 ### Mistakes, expiations, and validity
+
 - IslamQA Topic #133 - mistakes by pilgrims (index): https://islamqa.info/en/categories/topics/133
 - IslamQA #49027 - types of fidyah and the three-option system: https://islamqa.info/en/answers/49027
 - IslamQA #34695 - wudu for Tawaf and Sa'i; Ibn Taymiyyah view: https://islamqa.info/en/answers/34695
@@ -853,6 +937,7 @@ These are worth deciding before Phase U3. Listed so the plan is honest about cho
 - SeekersGuidance (Hanafi) - flying past miqat without ihram: https://seekersguidance.org/answers/hanafi-fiqh/do-i-need-to-pay-expiation-if-we-fly-past-the-miqat-without-ihram/
 
 ### Practical / accessibility
+
 - Saudi Ministry of Hajj & Umrah portal: https://haj.gov.sa/en/Umrah
 - Assist Haramain - electric wheelchair rental: https://assist.haramain.com/
 - Ziyarago - free wheelchairs at Masjid al-Haram: https://ziyarago.com/en/places/rental/equipment-rental-wheelchairs-baby-strollers/free-wheelchair-haram-makkah

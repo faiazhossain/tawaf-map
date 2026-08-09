@@ -110,3 +110,23 @@
     overscroll-behavior: contain;
   }
 }
+
+/* ওমরাহ মার্কারের স্পন্দন অ্যানিমেশন (সক্রিয় ধাপ ও সুপারিশকৃত গেট) */
+@keyframes umrah-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6);
+  }
+  70% {
+    box-shadow: 0 0 0 12px rgba(20, 184, 166, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map-marker-umrah-step,
+  .map-marker-recommended-gate {
+    animation: none !important;
+  }
+}

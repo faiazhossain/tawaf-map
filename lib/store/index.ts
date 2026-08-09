@@ -6,3 +6,5 @@ export { usePOIStore } from "./poiStore";
 export { useHotelStore } from "./hotelStore";
 export { useTouristPlaceStore } from "./touristPlaceStore";
 export { usePanelStore } from "./panelStore";
+export { useUmrahGuideStore } from "./umrahGuideStore";
+export type { UmrahGuideMode } from "./umrahGuideStore";

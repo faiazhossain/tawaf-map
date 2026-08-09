@@ -1,3 +1,5 @@
+import type { GateSuitability } from "@/types/umrah";
+
 export type GateType = "king_fahd" | "umrah" | "salah";
 
 export interface Gate {
@@ -10,6 +12,8 @@ export interface Gate {
   type: GateType;
   facilities: string[];
   nearestLandmarks: string[];
+  /** ওমরাহ গাইডের জন্য - কোন ধাপে এই গেট উপযুক্ত (ঐচ্ছিক) */
+  suitableFor?: GateSuitability[];
 }
 
 export interface SelectedGate {

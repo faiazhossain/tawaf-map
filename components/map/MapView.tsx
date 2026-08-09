@@ -10,10 +10,27 @@ import {
   useRouteStore,
   useHotelStore,
   useTouristPlaceStore,
+  useUmrahGuideStore,
 } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
+import { getStepById } from "@/lib/data/umrah/steps";
+import { getAnchorById } from "@/lib/data/umrah/anchors";
+import { isStepComplete } from "@/lib/data/umrah/sequence";
+import { MIQAT_POINTS, resolveMiqatForTravelPath, miqatRingBounds } from "@/lib/data/umrah/miqat";
+import {
+  UMRAH_OVERLAY_SOURCE,
+  UMRAH_SACRED_SOURCE,
+  UMRAH_JOURNEY_SOURCE,
+  UMRAH_RITUAL_LAYERS,
+  SACRED_POINTS_LAYER,
+  UMRAH_JOURNEY_LAYER,
+  createRitualOverlayGeoJSON,
+  createSacredPointsGeoJSON,
+  sacredPointsLayer,
+  umrahJourneyLayer,
+} from "@/lib/map/umrah-overlay";
 import { createUserAccuracySource, createRouteSource, getGatesBounds } from "@/lib/map/sources";
 import {
   getLayerConfigs,
@@ -26,6 +43,9 @@ import {
   createHotelMarkerElement,
   createTouristPlaceMarkerElement,
   createUserLocationElement,
+  createUmrahStepMarkerElement,
+  createMiqatMarkerElement,
+  type UmrahStepStatus,
 } from "@/lib/map/markers";
 
 interface MapViewProps {
@@ -36,9 +56,13 @@ interface MapViewProps {
   touristCity?: "makkah" | "madinah" | null;
   showUserLocation?: boolean;
   showTerrain?: boolean;
+  showUmrah?: boolean;
+  showMiqatOverview?: boolean;
   onGateClick?: (gateId: string) => void;
   onHotelClick?: (hotelId: string) => void;
   onTouristPlaceClick?: (placeId: string) => void;
+  onUmrahStepClick?: (stepId: string) => void;
+  onMiqatClick?: (miqatId: string) => void;
 }
 
 // Barikoi Map Style URL
@@ -53,9 +77,13 @@ export function MapView({
   touristCity = "makkah",
   showUserLocation = true,
   showTerrain = false,
+  showUmrah = false,
+  showMiqatOverview = false,
   onGateClick,
   onHotelClick,
   onTouristPlaceClick,
+  onUmrahStepClick,
+  onMiqatClick,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -65,6 +93,8 @@ export function MapView({
   const gateMarkersRef = useRef<Map<string, Marker>>(new Map());
   const hotelMarkersRef = useRef<Map<string, Marker>>(new Map());
   const touristPlaceMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const umrahStepMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const miqatMarkersRef = useRef<Map<string, Marker>>(new Map());
   const userLocationMarkerRef = useRef<Marker | null>(null);
 
   // Store state - use individual selectors to avoid object creation issues
@@ -84,6 +114,13 @@ export function MapView({
   const activeRoute = useRouteStore((state) => state.activeRoute);
   const selectedHotel = useHotelStore((state) => state.selectedHotel);
   const selectedTouristPlace = useTouristPlaceStore((state) => state.selectedPlace.place);
+
+  // ওমরাহ গাইড স্টেট - স্থিতিশীল সিলেক্টর (নতুন অবজেক্ট রেফারেন্স এড়াতে হবে)
+  const umrahStepIds = useUmrahGuideStore((s) => s.stepIds);
+  const umrahCurrentIndex = useUmrahGuideStore((s) => s.currentIndex);
+  const umrahCompleted = useUmrahGuideStore((s) => s.completed);
+  const umrahCounters = useUmrahGuideStore((s) => s.counters);
+  const umrahProfile = useUmrahGuideStore((s) => s.profile);
 
   // Initialize map
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -480,6 +517,197 @@ export function MapView({
       }
     }
   }, [activeRoute, mapLoaded]);
+
+  // ----- ওমরাহ: আনুষ্ঠানিক ওভারলে ও পবিত্র বিন্দু -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+
+    const allLayerIds = [
+      ...UMRAH_RITUAL_LAYERS.map((l) => l.id),
+      SACRED_POINTS_LAYER,
+      UMRAH_JOURNEY_LAYER,
+    ];
+    const allSourceIds = [UMRAH_OVERLAY_SOURCE, UMRAH_SACRED_SOURCE, UMRAH_JOURNEY_SOURCE];
+
+    const removeUmrah = () => {
+      allLayerIds.forEach((id) => {
+        if (map.getLayer(id)) map.removeLayer(id);
+      });
+      allSourceIds.forEach((src) => {
+        if (map.getSource(src)) map.removeSource(src);
+      });
+    };
+
+    if (!showUmrah) {
+      removeUmrah();
+      return;
+    }
+
+    // সোর্স যোগ
+    if (!map.getSource(UMRAH_OVERLAY_SOURCE)) {
+      map.addSource(UMRAH_OVERLAY_SOURCE, {
+        type: "geojson",
+        data: createRitualOverlayGeoJSON() as any,
+      });
+    }
+    if (!map.getSource(UMRAH_SACRED_SOURCE)) {
+      map.addSource(UMRAH_SACRED_SOURCE, {
+        type: "geojson",
+        data: createSacredPointsGeoJSON() as any,
+      });
+    }
+
+    // লেয়ার যোগ (idempotent)
+    UMRAH_RITUAL_LAYERS.forEach((layer) => {
+      if (!map.getLayer(layer.id)) {
+        map.addLayer({ ...(layer as any), source: UMRAH_OVERLAY_SOURCE });
+      }
+    });
+    if (!map.getLayer(SACRED_POINTS_LAYER)) {
+      map.addLayer({ ...(sacredPointsLayer as any), source: UMRAH_SACRED_SOURCE });
+    }
+
+    return () => {
+      removeUmrah();
+    };
+  }, [showUmrah, mapLoaded]);
+
+  // ----- ওমরাহ: ধাপ মার্কার ও যাত্রা রেখা -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showUmrah) return;
+    const map = mapRef.current;
+    const markersMap = umrahStepMarkersRef.current;
+
+    // বিদ্যমান মার্কার সরানো
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    // প্রতিটি ধাপের প্রথম অ্যাংকর থেকে অবস্থান; অ্যাংকর না থাকলে মার্কার নেই
+    const positioned: {
+      id: string;
+      coords: [number, number];
+      order: number;
+      status: UmrahStepStatus;
+    }[] = [];
+
+    umrahStepIds.forEach((stepId, index) => {
+      const step = getStepById(stepId);
+      if (!step || !step.anchors || step.anchors.length === 0) return;
+      const anchor = getAnchorById(step.anchors[0]);
+      if (!anchor) return;
+
+      const counterValue = umrahCounters[stepId] ?? step.counter?.min ?? 0;
+      const done = isStepComplete(step, counterValue, !!umrahCompleted[stepId]);
+      const status: UmrahStepStatus = done
+        ? "completed"
+        : index === umrahCurrentIndex
+          ? "active"
+          : "upcoming";
+      // ধাপের সিরিয়াল নম্বর = সমাধানকৃত তালিকায় অবস্থান (1-থেকে শুরু)
+      positioned.push({
+        id: stepId,
+        coords: anchor.location.coordinates,
+        order: index + 1,
+        status,
+      });
+    });
+
+    // যাত্রা রেখা (অবস্থান সহ ধাপগুলোর মধ্যে বিচ্ছিন্ন রেখা)
+    if (positioned.length >= 2) {
+      const journeyData = {
+        type: "Feature" as const,
+        properties: {},
+        geometry: {
+          type: "LineString" as const,
+          coordinates: positioned.map((p) => p.coords),
+        },
+      };
+      if (!map.getSource(UMRAH_JOURNEY_SOURCE)) {
+        map.addSource(UMRAH_JOURNEY_SOURCE, { type: "geojson", data: journeyData as any });
+      } else {
+        (map.getSource(UMRAH_JOURNEY_SOURCE) as any)?.setData(journeyData);
+      }
+      if (!map.getLayer(UMRAH_JOURNEY_LAYER)) {
+        map.addLayer({ ...(umrahJourneyLayer as any), source: UMRAH_JOURNEY_SOURCE });
+      }
+    }
+
+    // DOM মার্কার যোগ
+    positioned.forEach((p) => {
+      const el = createUmrahStepMarkerElement(p.order, p.status);
+      el.addEventListener("click", () => onUmrahStepClick?.(p.id));
+      const marker = new Marker({ element: el, anchor: "center" }).setLngLat(p.coords).addTo(map);
+      markersMap.set(p.id, marker);
+    });
+  }, [
+    showUmrah,
+    mapLoaded,
+    umrahStepIds,
+    umrahCurrentIndex,
+    umrahCompleted,
+    umrahCounters,
+    onUmrahStepClick,
+  ]);
+
+  // ----- ওমরাহ: সক্রিয় ধাপের অ্যাংকরে ফ্লাই-টু (মিকাত সারসংক্ষেপ চলাকালীন বন্ধ) -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showUmrah || showMiqatOverview) return;
+    const map = mapRef.current;
+    const activeId = umrahStepIds[umrahCurrentIndex];
+    if (!activeId) return;
+    const step = getStepById(activeId);
+    if (!step?.anchors?.length) return;
+    const anchor = getAnchorById(step.anchors[0]);
+    if (!anchor) return;
+
+    // তওয়াফ/সাঈ-এর সময় কাছে জুম করা; অন্যথা মাঝারি
+    const targetZoom = step.stage === "tawaf" || step.stage === "sai" ? 18 : 16;
+    map.flyTo({
+      center: anchor.location.coordinates,
+      zoom: targetZoom,
+      duration: 1200,
+    });
+  }, [showUmrah, showMiqatOverview, mapLoaded, umrahCurrentIndex, umrahStepIds]);
+
+  // ----- ওমরাহ: মিকাত সারসংক্ষেপ মানচিত্র (৫ পয়েন্টের রিং) -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+    const map = mapRef.current;
+    const markersMap = miqatMarkersRef.current;
+
+    // বন্ধ হলে বা মোড বন্ধ থাকলে মার্কার পরিষ্কার
+    if (!showMiqatOverview) {
+      markersMap.forEach((marker) => marker.remove());
+      markersMap.clear();
+      return;
+    }
+
+    // ব্যবহারকারীর যাত্রাপথ থেকে সক্রিয় মিকাত নির্ধারণ
+    const activeMiqatId = umrahProfile
+      ? resolveMiqatForTravelPath(umrahProfile.travelPath).miqatId
+      : null;
+
+    // পুরোনো মার্কার পরিষ্কার করে নতুন করে বসানো
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    MIQAT_POINTS.forEach((miqat) => {
+      const isActive = miqat.id === activeMiqatId;
+      const el = createMiqatMarkerElement(miqat.name.bn, isActive);
+      el.addEventListener("click", () => onMiqatClick?.(miqat.id));
+      const marker = new Marker({ element: el, anchor: "center" })
+        .setLngLat(miqat.location.coordinates)
+        .addTo(map);
+      markersMap.set(miqat.id, marker);
+    });
+
+    // সমস্ত মিকাত ঘিরে মানচিত্র সামঞ্জস্য করা
+    map.fitBounds(miqatRingBounds(), {
+      padding: { top: 60, bottom: 60, left: 60, right: 60 },
+      duration: 1000,
+    });
+  }, [showMiqatOverview, mapLoaded, umrahProfile, onMiqatClick]);
 
   return (
     <div

@@ -239,6 +239,157 @@ export function getTouristPlaceCategoryColor(category: TouristPlaceCategory): st
   }
 }
 
+/** ওমরাহ ধাপ মার্কারের অবস্থা */
+export type UmrahStepStatus = "completed" | "active" | "upcoming";
+
+/**
+ * ওমরাহ ধাপের জন্য ক্রমিক নম্বরযুক্ত মার্কার উপাদান তৈরি
+ * (completed = পূর্ণ সবুজ, active = টিল রিং + স্পন্দন, upcoming = ম্লান)
+ */
+export function createUmrahStepMarkerElement(number: number, status: UmrahStepStatus): HTMLElement {
+  const el = document.createElement("div");
+  el.className = `map-marker map-marker-umrah-step umrah-step-${status}`;
+
+  const size = status === "active" ? 40 : 32;
+  const fontSize = status === "active" ? 18 : 14;
+
+  const styles: Record<UmrahStepStatus, { bg: string; border: string; text: string }> = {
+    completed: { bg: "#10b981", border: "#ffffff", text: "#ffffff" },
+    active: { bg: "#14b8a6", border: "#5eead4", text: "#ffffff" },
+    upcoming: { bg: "#475569", border: "#64748b", text: "#cbd5e1" },
+  };
+  const s = styles[status];
+
+  Object.assign(el.style, {
+    width: `${size}px`,
+    height: `${size}px`,
+    cursor: "pointer",
+  });
+
+  const inner = status === "completed" ? checkSvg(18) : String(number);
+
+  el.innerHTML = `
+    <div style="
+      width: ${size}px;
+      height: ${size}px;
+      border-radius: 50%;
+      background: ${s.bg};
+      border: ${status === "active" ? 3 : 2}px solid ${s.border};
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: ${fontSize}px;
+      font-weight: 700;
+      color: ${s.text};
+      ${status === "active" ? "box-shadow: 0 0 0 0 rgba(20,184,166,0.6); animation: umrah-pulse 2s infinite;" : "filter: drop-shadow(0 2px 4px rgba(0,0,0,0.3));"}
+    ">${inner}</div>
+  `;
+  return el;
+}
+
+/**
+ * সুপারিশকৃত গেটের জন্য স্পন্দিত "এখানে শুরু করুন" মার্কার
+ */
+export function createRecommendedGateMarkerElement(label: string): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "map-marker map-marker-recommended-gate";
+
+  Object.assign(el.style, {
+    cursor: "pointer",
+  });
+
+  el.innerHTML = `
+    <div style="
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    ">
+      <div style="
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #14b8a6;
+        border: 3px solid #ffffff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 0 0 0 rgba(20,184,166,0.7);
+        animation: umrah-pulse 2s infinite;
+        filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+      ">
+        ${checkSvg(22, "#ffffff")}
+      </div>
+      <div style="
+        margin-top: 4px;
+        padding: 2px 8px;
+        background: rgba(15,23,42,0.85);
+        color: #5eead4;
+        font-size: 11px;
+        font-weight: 600;
+        border-radius: 6px;
+        white-space: nowrap;
+      ">${label}</div>
+    </div>
+  `;
+  return el;
+}
+
+/** সাদা/রঙিন টিক চিহ্ন SVG */
+function checkSvg(size: number, color = "#ffffff"): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
+}
+
+/** অবস্থান পিন SVG (মিকাত মার্কারের জন্য) */
+function pinSvg(size: number, color: string): string {
+  return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#ffffff" stroke="none"/></svg>`;
+}
+
+/**
+ * মিকাত পয়েন্টের জন্য লেবেলযুক্ত পিন মার্কার (মিকাত সারসংক্ষেপ মানচিত্রের জন্য)।
+ * সক্রিয় (ব্যবহারকারীর নিজস্ব) মিকাত = টিল রঙ + স্পন্দন + "আপনার মিকাত" ট্যাগ।
+ */
+export function createMiqatMarkerElement(label: string, isActive: boolean): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "map-marker map-marker-umrah-miqat";
+  if (isActive) el.classList.add("map-marker-recommended-gate");
+
+  const accent = "#14b8a6"; // teal-500
+  const muted = "#64748b"; // slate-500
+
+  el.innerHTML = `
+    <div style="position: relative; display: flex; flex-direction: column; align-items: center; cursor: pointer;">
+      <div style="
+        position: relative;
+        width: ${isActive ? 34 : 26}px;
+        height: ${isActive ? 34 : 26}px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        ${isActive ? "box-shadow: 0 0 0 0 rgba(20,184,166,0.6); animation: umrah-pulse 2s infinite;" : "filter: drop-shadow(0 2px 3px rgba(0,0,0,0.4));"}
+      ">
+        ${pinSvg(isActive ? 30 : 22, isActive ? accent : muted)}
+      </div>
+      <div style="
+        margin-top: 3px;
+        padding: 2px 7px;
+        background: ${isActive ? "rgba(20,184,166,0.92)" : "rgba(15,23,42,0.82)"};
+        color: #ffffff;
+        font-size: 11px;
+        font-weight: ${isActive ? 700 : 500};
+        border-radius: 6px;
+        white-space: nowrap;
+        max-width: 150px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        border: 1px solid ${isActive ? "#5eead4" : "rgba(255,255,255,0.12)"};
+      ">${label}</div>
+      ${isActive ? `<div style="margin-top:3px; padding:1px 6px; background:rgba(15,23,42,0.85); color:#5eead4; font-size:10px; font-weight:600; border-radius:5px; white-space:nowrap;">আপনার মিকাত</div>` : ""}
+    </div>
+  `;
+  return el;
+}
+
 /**
  * Create HTML element for a tourist place marker
  */

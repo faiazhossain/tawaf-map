@@ -9,6 +9,7 @@ import {
   NearbyGatesPanel,
   TouristPlacesList,
 } from "@/components/map";
+import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
 import { useGateProximity } from "@/lib/hooks";
 import {
   useGateStore,
@@ -16,12 +17,13 @@ import {
   useRouteStore,
   usePanelStore,
   useTouristPlaceStore,
+  useUmrahGuideStore,
 } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
-import { Hotel, MapPin, Mountain, Building2, X, DoorOpen } from "lucide-react";
+import { Hotel, MapPin, Mountain, Building2, X, DoorOpen, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -67,14 +69,39 @@ export default function MapPage() {
     clearPlace: clearTouristPlace,
     selectedPlace,
   } = useTouristPlaceStore();
+  const umrahOnboarded = useUmrahGuideStore((s) => s.onboarded);
 
   const [showGates, setShowGates] = useState(true);
   const [showHotels, setShowHotels] = useState(false);
   const [showTerrain, setShowTerrain] = useState(false);
   const [showTouristPlaces, setShowTouristPlaces] = useState(false);
   const [showTouristList, setShowTouristList] = useState(false);
+  const [showUmrahOnboarding, setShowUmrahOnboarding] = useState(false);
+  const [showUmrahGuide, setShowUmrahGuide] = useState(false);
+  const [showMiqatOverview, setShowMiqatOverview] = useState(false);
   // Show all cities by default
   const [selectedTouristCity, setSelectedTouristCity] = useState<"makkah" | "madinah" | null>(null);
+
+  // ওমরাহ গাইড বোতাম: অনবোর্ডিং না থাকলে উইজার্ড, থাকলে ধাপ-তালিকা
+  const handleToggleUmrah = () => {
+    if (!umrahOnboarded) {
+      setShowUmrahOnboarding(true);
+    } else {
+      setShowUmrahGuide((prev) => !prev);
+    }
+  };
+
+  // মিকাত সারসংক্ষেপ মানচিত্র খোলা/বন্ধ (স্টোর মোড সিঙ্ক্রোনাইজ; ধাপ-তালিকার সাথে পরস্পরবিরোধী)
+  const handleOpenMiqatOverview = () => {
+    setShowUmrahGuide(false);
+    setShowMiqatOverview(true);
+    useUmrahGuideStore.getState().setMode("miqat-overview");
+  };
+  const handleMiqatOverviewChange = (open: boolean) => {
+    setShowMiqatOverview(open);
+    if (!open) setShowUmrahGuide(true); // গাইডে ফেরা
+    useUmrahGuideStore.getState().setMode(open ? "miqat-overview" : "guide");
+  };
 
   const handleGateClick = (gateId: string) => {
     const gate = HARAM_GATES.find((g) => g.id === gateId);
@@ -200,6 +227,21 @@ export default function MapPage() {
           <div className="flex items-center gap-2 sm:gap-3">
             <UserLocation />
             <Button
+              variant={showUmrahGuide ? "default" : "outline"}
+              size={showUmrahGuide ? "sm" : "icon"}
+              onClick={handleToggleUmrah}
+              className={
+                showUmrahGuide || showUmrahOnboarding
+                  ? "bg-teal-600 text-white border-0 shadow-lg"
+                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+              }
+            >
+              <Moon className="w-4 h-4" />
+              <span className="hidden sm:inline whitespace-nowrap">
+                {umrahOnboarded ? (showUmrahGuide ? "চলছে" : "ওমরাহ") : "ওমরাহ গাইড"}
+              </span>
+            </Button>
+            <Button
               variant={showHotels ? "default" : "outline"}
               size={showHotels ? "sm" : "icon"}
               onClick={handleToggleHotels}
@@ -273,9 +315,12 @@ export default function MapPage() {
           touristCity={selectedTouristCity}
           showUserLocation
           showTerrain={showTerrain}
+          showUmrah={umrahOnboarded && showUmrahGuide}
+          showMiqatOverview={umrahOnboarded && showMiqatOverview}
           onGateClick={handleGateClick}
           onHotelClick={handleHotelClick}
           onTouristPlaceClick={handleTouristPlaceClick}
+          onUmrahStepClick={(stepId) => useUmrahGuideStore.getState().goToStepId(stepId)}
         />
 
         {/* Map Controls */}
@@ -343,6 +388,32 @@ export default function MapPage() {
               <span className="sm:hidden">Historical</span>
             </Button>
           </div>
+        )}
+
+        {/* ওমরাহ গাইড - অনবোর্ডিং উইজার্ড */}
+        {showUmrahOnboarding && (
+          <UmrahOnboarding
+            onClose={() => {
+              setShowUmrahOnboarding(false);
+              if (useUmrahGuideStore.getState().onboarded) {
+                setShowUmrahGuide(true);
+              }
+            }}
+          />
+        )}
+
+        {/* ওমরাহ গাইড - ধাপ-তালিকা প্যানেল */}
+        {umrahOnboarded && (
+          <UmrahStepList
+            open={showUmrahGuide}
+            onOpenChange={setShowUmrahGuide}
+            onOpenMiqatOverview={handleOpenMiqatOverview}
+          />
+        )}
+
+        {/* ওমরাহ গাইড - মিকাত সারসংক্ষেপ প্যানেল */}
+        {umrahOnboarded && (
+          <MiqatOverviewPanel open={showMiqatOverview} onOpenChange={handleMiqatOverviewChange} />
         )}
       </div>
     </main>

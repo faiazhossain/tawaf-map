@@ -51,6 +51,22 @@ export const HARAM_GATES: Gate[] = [
     type: "umrah",
     facilities: ["escalator", "elevator", "restroom", "wheelchair", "vending"],
     nearestLandmarks: ["Ibrahim Al-Khalil Street", "Clock Tower"],
+    suitableFor: [
+      {
+        stepId: "enter-haram",
+        note: {
+          bn: "তওয়াফের জন্য সবচেয়ে উপযুক্ত - ঐতিহ্যগতভাবে ওমরাহকারীদের গেট, মাতাফের নিকটে।",
+          en: "Best for Tawaf - traditionally used by Umrah performers, close to the Mataf.",
+        },
+      },
+      {
+        stepId: "tawaf",
+        note: {
+          bn: "তওয়াফ শুরুর জন্য সুবিধাজনক - কালো পাথরের কাছাকাছি প্রবেশ।",
+          en: "Convenient to start Tawaf - entry close to the Black Stone.",
+        },
+      },
+    ],
   },
   {
     id: "umrah-fahd",
@@ -198,6 +214,15 @@ export const HARAM_GATES: Gate[] = [
     type: "salah",
     facilities: ["escalator", "elevator", "restroom"],
     nearestLandmarks: ["As-Safa Hill", "Mas'a Start"],
+    suitableFor: [
+      {
+        stepId: "sai",
+        note: {
+          bn: "সাঈ শুরুর জন্য উপযুক্ত - সাফা পাহাড়ের নিকটে প্রবেশ।",
+          en: "Suitable to begin Sa'i - entry near As-Safa Hill.",
+        },
+      },
+    ],
   },
   {
     id: "marwa",
