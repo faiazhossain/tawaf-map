@@ -4,3 +4,7 @@ export { MistakeAssistant } from "./MistakeAssistant";
 export { FlightIhramCard } from "./FlightIhramCard";
 export { MiqatOverviewPanel } from "./MiqatOverviewPanel";
 export { OfflineBadge } from "./OfflineBadge";
+export { DuaAudioPlayer } from "./DuaAudioPlayer";
+export { LostGroupHelper } from "./LostGroupHelper";
+export { WheelchairTips } from "./WheelchairTips";
+export { PragmaticReminders } from "./PragmaticReminders";

@@ -20,6 +20,10 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { MistakeAssistant } from "./MistakeAssistant";
 import { FlightIhramCard } from "./FlightIhramCard";
 import { OfflineBadge } from "./OfflineBadge";
+import { DuaAudioPlayer } from "./DuaAudioPlayer";
+import { LostGroupHelper } from "./LostGroupHelper";
+import { WheelchairTips } from "./WheelchairTips";
+import { PragmaticReminders } from "./PragmaticReminders";
 import { cn } from "@/lib/utils";
 import { useUmrahGuideStore } from "@/lib/store/umrahGuideStore";
 import { selectCurrentStep, selectCounter, selectIsComplete } from "@/lib/store/umrahGuideStore";
@@ -235,6 +239,9 @@ function StepDetail() {
       {/* বিমানে ইহরাম কার্ড (প্রস্তুতি ও মিকাতে ইহরাম ধাপে; নিজে ফিল্টার করে air পথে) */}
       {(step.id === "prep" || step.id === "ihram-miqat") && <FlightIhramCard />}
 
+      {/* হুইলচেয়ার-সচেতন পরামর্শ (নিজে ফিল্টার করে: শুধু wheelchair + প্রাসঙ্গিক ধাপে) */}
+      <WheelchairTips stepId={step.id} />
+
       {/* কাউন্টার নিয়ন্ত্রণ */}
       {step.counter && (
         <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
@@ -327,6 +334,7 @@ function StepDetail() {
                 <p className="text-[11px] text-teal-300/80 leading-relaxed">
                   {dua.whenToRecite.bn}
                 </p>
+                <DuaAudioPlayer dua={dua} />
               </div>
             ))}
           </div>
@@ -357,6 +365,12 @@ function StepDetail() {
           {isDone ? "সম্পন্ন হয়েছে (আবার খুলুন)" : "এই ধাপ সম্পন্ন করুন"}
         </Button>
       )}
+
+      {/* প্রস্থান-রিমাইন্ডার (শুধু সমাপ্ত ধাপে) */}
+      {step.id === "done" && <PragmaticReminders />}
+
+      {/* দলের সাথে যোগাযোগ (lost-group helper - সব সময় দৃশ্যমান) */}
+      <LostGroupHelper />
     </div>
   );
 }

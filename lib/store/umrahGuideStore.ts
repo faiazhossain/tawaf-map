@@ -39,6 +39,11 @@ interface UmrahGuideState {
   // মোড
   setMode: (mode: UmrahGuideMode) => void;
   openMistakeAssistant: () => void;
+
+  // দলের তথ্য (lost-group helper - প্রোফাইলে একত্রিত ও সংরক্ষিত)
+  setGroupLeaderPhone: (phone: string) => void;
+  setMeetingPoint: (label: string, coordinates: [number, number]) => void;
+  clearGroupInfo: () => void;
 }
 
 /** প্রোফাইল থেকে ধাপের id অনুক্রম সমাধান (ডিফল্ট প্রোফাইলের জন্য খালি) */
@@ -179,6 +184,38 @@ export const useUmrahGuideStore = create<UmrahGuideState>()(
       setMode: (mode) => set({ mode }),
 
       openMistakeAssistant: () => set({ mode: "mistake-assistant" }),
+
+      setGroupLeaderPhone: (phone) =>
+        set((state) =>
+          state.profile
+            ? { profile: { ...state.profile, groupLeaderPhone: phone.trim() || undefined } }
+            : {}
+        ),
+
+      setMeetingPoint: (label, coordinates) =>
+        set((state) =>
+          state.profile
+            ? {
+                profile: {
+                  ...state.profile,
+                  meetingPoint: label.trim() ? { label: label.trim(), coordinates } : undefined,
+                },
+              }
+            : {}
+        ),
+
+      clearGroupInfo: () =>
+        set((state) =>
+          state.profile
+            ? {
+                profile: {
+                  ...state.profile,
+                  groupLeaderPhone: undefined,
+                  meetingPoint: undefined,
+                },
+              }
+            : {}
+        ),
     }),
     {
       name: "umrah-guide-storage",

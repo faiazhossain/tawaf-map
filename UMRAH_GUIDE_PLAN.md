@@ -791,14 +791,19 @@ Concrete seams in the current code (line references from the Explore pass):
 - Inline source links.
 - Reassuring copy review.
 
-### Phase U6 - Dua audio + offline + polish — [~] PARTIAL
+### Phase U6 - Dua audio + offline + polish — [~] MOSTLY DONE (only audio assets remain)
 
-- [ ] Record/source Bengali + Arabic dua audio; "Listen" mode. (Deferred — needs audio assets.)
+- [x] "Listen" mode player UI — `components/umrah/DuaAudioPlayer.tsx`. Renders a শুনুন button only
+      when a `Dua.audio` asset path is set, so it is invisible until assets land.
+- [ ] Bengali + Arabic dua audio assets under `/public/audio/` + set `Dua.audio` paths. (Still
+      needs sourced recitations — the only remaining U6 item; cannot be auto-generated.)
 - [x] Offline bundling + graceful routing degradation. All guide content is bundled as static
       TS (works with no data); `useMapRouting` degrades to straight-line; `components/umrah/OfflineBadge.tsx`
       surfaces online/offline status. (Lightweight indicator — no service worker, per scope.)
-- [ ] Accessibility (wheelchair paths), "lost group" helper, Farewell Tawaf reminder. (Deferred
-      this pass — wheelchair is already captured in onboarding & gate recommendation.)
+- [x] Accessibility & practical helpers — `WheelchairTips` (ground-floor Tawaf, surface Sa'i,
+      free/paid wheelchair links, conditional on profile), `LostGroupHelper` (group leader phone + meeting point with GPS option, persisted via store `setGroupLeaderPhone`/`setMeetingPoint`/
+      `clearGroupInfo`), `PragmaticReminders` (Farewell Tawaf / Zamzam / 2 rak'ahs departure card
+      on the done step). Verified by `tests/e2e/umrah-helpers.spec.ts`.
 - [x] Reduced-motion, theming, final visual polish. (`umrah-pulse` + reduced-motion guard in
       `app/globals.css`; teal/cyan accent system.)
 

@@ -277,6 +277,55 @@ describe("useUmrahGuideStore - স্টোর অ্যাকশন", () => {
 });
 
 // ---------------------------------------------------------------------------
+// দলের তথ্য (group-info) - lost-group helper
+// ---------------------------------------------------------------------------
+
+describe("useUmrahGuideStore - দলের তথ্য (group-info)", () => {
+  beforeEach(() => {
+    useUmrahGuideStore.getState().reset();
+  });
+
+  it("profile ছাড়া setGroupLeaderPhone নিরাপদ (no-op)", () => {
+    useUmrahGuideStore.getState().setGroupLeaderPhone("+8801");
+    expect(useUmrahGuideStore.getState().profile).toBeNull();
+  });
+
+  it("setGroupLeaderPhone ও setMeetingPoint প্রোফাইলে একত্রিত হয়", () => {
+    useUmrahGuideStore.getState().setProfile(makeProfile());
+    useUmrahGuideStore.getState().setGroupLeaderPhone("+8801712345678");
+    useUmrahGuideStore.getState().setMeetingPoint("কিং আব্দুল আজিজ গেট", [39.8262, 21.4225]);
+    const p = useUmrahGuideStore.getState().profile;
+    expect(p?.groupLeaderPhone).toBe("+8801712345678");
+    expect(p?.meetingPoint?.label).toBe("কিং আব্দুল আজিজ গেট");
+    expect(p?.meetingPoint?.coordinates).toEqual([39.8262, 21.4225]);
+  });
+
+  it("ফাঁকা লেবেল দিলে meetingPoint মুছে যায়", () => {
+    useUmrahGuideStore.getState().setProfile(makeProfile());
+    useUmrahGuideStore.getState().setMeetingPoint("জায়গা", [39.8, 21.4]);
+    useUmrahGuideStore.getState().setMeetingPoint("   ", [39.8, 21.4]);
+    expect(useUmrahGuideStore.getState().profile?.meetingPoint).toBeUndefined();
+  });
+
+  it("clearGroupInfo উভয় মুছে ফেলে", () => {
+    useUmrahGuideStore.getState().setProfile(makeProfile());
+    useUmrahGuideStore.getState().setGroupLeaderPhone("+8801");
+    useUmrahGuideStore.getState().setMeetingPoint("জায়গা", [39.8, 21.4]);
+    useUmrahGuideStore.getState().clearGroupInfo();
+    const p = useUmrahGuideStore.getState().profile;
+    expect(p?.groupLeaderPhone).toBeUndefined();
+    expect(p?.meetingPoint).toBeUndefined();
+  });
+
+  it("group-info সেট করলে ধাপের অনুক্রম অপরিবর্তিত থাকে", () => {
+    useUmrahGuideStore.getState().setProfile(makeProfile());
+    const before = useUmrahGuideStore.getState().stepIds;
+    useUmrahGuideStore.getState().setGroupLeaderPhone("+8801");
+    expect(useUmrahGuideStore.getState().stepIds).toEqual(before);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // গেট সুপারিশ
 // ---------------------------------------------------------------------------
 
