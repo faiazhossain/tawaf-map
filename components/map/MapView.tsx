@@ -1,8 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useMemo } from "react";
 import maplibregl, { Map as MapLibreMap, LngLatBoundsLike, Marker } from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
+import { useTawafCamera } from "@/lib/hooks/useTawafCamera";
+import { useRitualDrawAnimation } from "@/lib/hooks/useRitualDrawAnimation";
+import { useDirectionArrows } from "@/lib/hooks/useDirectionArrows";
 import {
   useMapStore,
   useLocationStore,
@@ -26,8 +29,12 @@ import {
   UMRAH_RITUAL_LAYERS,
   SACRED_POINTS_LAYER,
   UMRAH_JOURNEY_LAYER,
+  TAWAF_DRAW_SOURCE,
+  SAI_DRAW_SOURCE,
   createRitualOverlayGeoJSON,
   createSacredPointsGeoJSON,
+  getTawafCircleCoords,
+  getSaiCorridorCoords,
   sacredPointsLayer,
   umrahJourneyLayer,
 } from "@/lib/map/umrah-overlay";
@@ -45,8 +52,11 @@ import {
   createUserLocationElement,
   createUmrahStepMarkerElement,
   createMiqatMarkerElement,
+  pilgrimIconForGender,
   type UmrahStepStatus,
 } from "@/lib/map/markers";
+import { RecenterButton } from "./RecenterButton";
+import { RitualRoundHud } from "./RitualRoundHud";
 
 interface MapViewProps {
   className?: string;
@@ -88,6 +98,12 @@ export function MapView({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  // map instance-এর জন্য reactive state যাতে useTawafCamera পুনরায় রান করে
+  const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
+
+  // গাইডেড ক্যামেরা নিয়ন্ত্রক - programmatic মুভ ও user-gesture শনাক্তকরণ
+  const { programmaticFlyTo, programmaticEaseTo, programmaticFitBounds } =
+    useTawafCamera(mapInstance);
 
   // Store references to markers for removal/update
   const gateMarkersRef = useRef<Map<string, Marker>>(new Map());
@@ -102,6 +118,7 @@ export function MapView({
   const zoom = useMapStore((state) => state.zoom);
   const bearing = useMapStore((state) => state.bearing);
   const pitch = useMapStore((state) => state.pitch);
+  const userTookControl = useMapStore((state) => state.userTookControl);
   const setCenter = useMapStore((state) => state.setCenter);
   const setZoom = useMapStore((state) => state.setZoom);
 
@@ -121,6 +138,47 @@ export function MapView({
   const umrahCompleted = useUmrahGuideStore((s) => s.completed);
   const umrahCounters = useUmrahGuideStore((s) => s.counters);
   const umrahProfile = useUmrahGuideStore((s) => s.profile);
+  // তওয়াফ/সাঈ কাউন্টার - বৃদ্ধি শনাক্ত করে অঙ্কন অ্যানিমেশন ট্রিগার করতে
+  const tawafCounter = useUmrahGuideStore((s) => s.counters["tawaf"] ?? 1);
+  const saiCounter = useUmrahGuideStore((s) => s.counters["sai"] ?? 1);
+  const prevTawafCounterRef = useRef<number | null>(null);
+  const prevSaiCounterRef = useRef<number | null>(null);
+
+  // হাজি মার্কারের আইকন - প্রোফাইলের লিঙ্গ অনুযায়ী (পুরুষ/নারী)
+  const pilgrimIconSrc = pilgrimIconForGender(umrahProfile?.gender);
+
+  // জীবন্ত অঙ্কন অ্যানিমেশন - প্রতি পূর্ণ চক্কর/পাক সম্পন্ন হলে হাজি পুরো পথ ধরে হাঁটে
+  const { play: playTawafDraw } = useRitualDrawAnimation(mapInstance, {
+    show: showUmrah && mapLoaded,
+    sourceId: TAWAF_DRAW_SOURCE,
+    iconSrc: pilgrimIconSrc,
+    getCoords: () => getTawafCircleCoords(),
+  });
+  const { play: playSaiDraw } = useRitualDrawAnimation(mapInstance, {
+    show: showUmrah && mapLoaded,
+    sourceId: SAI_DRAW_SOURCE,
+    iconSrc: pilgrimIconSrc,
+    getCoords: (round) => getSaiCorridorCoords(round % 2 === 1 ? "safa-to-marwa" : "marwa-to-safa"),
+  });
+
+  // ----- দিকনির্দেশক চেভরন - সক্রিয় তওয়াফ/সাঈ পথে হাঁটার দিক -----
+  // তওয়াফ: সম্পূর্ণ বৃত্ত, ঘড়ির বিপরীত দিকে। সাঈ: সম্পূর্ণ করিডোর, পাক অনুযায়ী দিক
+  // (বিজোড় পাক = সাফা→মারওয়া, জোড় পাক = মারওয়া→সাফা)। অন্য ধাপে কোনো তীর নেই।
+  const activeStageId = umrahStepIds[umrahCurrentIndex];
+  const activeStage = activeStageId ? getStepById(activeStageId)?.stage : undefined;
+  const saiArrowDirection = saiCounter % 2 === 1 ? "safa-to-marwa" : "marwa-to-safa";
+  const arrowCoords = useMemo(() => {
+    if (activeStage === "tawaf") return getTawafCircleCoords();
+    if (activeStage === "sai") return getSaiCorridorCoords(saiArrowDirection);
+    return null;
+  }, [activeStage, saiArrowDirection]);
+  useDirectionArrows(mapInstance, {
+    show: showUmrah && mapLoaded,
+    active: arrowCoords !== null,
+    coords: arrowCoords,
+    count: activeStage === "tawaf" ? 10 : activeStage === "sai" ? 7 : 0,
+    closed: activeStage === "tawaf",
+  });
 
   // Initialize map
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -176,10 +234,12 @@ export function MapView({
     });
 
     mapRef.current = map;
+    setMapInstance(map);
 
     return () => {
       map.remove();
       mapRef.current = null;
+      setMapInstance(null);
     };
     // Initialize map once with initial store values - these are only used for initial setup
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -228,11 +288,11 @@ export function MapView({
       map.setTerrain({ source: terrainSource, exaggeration: 1 });
       // Wait for terrain to load before changing pitch, with fallback
       const terrainTimeout = setTimeout(() => {
-        map.easeTo({ pitch: 60, duration: 1000 });
+        programmaticEaseTo({ pitch: 60, duration: 1000 });
       }, 500);
       map.once("terrainloaded", () => {
         clearTimeout(terrainTimeout);
-        map.easeTo({ pitch: 60, duration: 1000 });
+        programmaticEaseTo({ pitch: 60, duration: 1000 });
       });
     } else {
       if (map.getLayer(hillshadeLayerId)) {
@@ -240,9 +300,9 @@ export function MapView({
       }
       map.setTerrain(null);
       // Reset to flat view immediately
-      map.easeTo({ pitch: 0, duration: 1000 });
+      programmaticEaseTo({ pitch: 0, duration: 1000 });
     }
-  }, [mapLoaded, showTerrain]);
+  }, [mapLoaded, showTerrain, programmaticEaseTo]);
 
   // Add/update gate markers
   useEffect(() => {
@@ -277,14 +337,19 @@ export function MapView({
 
         markersMap.set(gate.id, marker);
       });
-
-      // Fit bounds to show all gates
-      map.fitBounds(getGatesBounds(HARAM_GATES), {
-        padding: { top: 50, bottom: 50, left: 50, right: 50 },
-        duration: 1000,
-      });
     }
   }, [mapLoaded, showGates, selectedGate?.id, onGateClick]);
+
+  // গেট বাউন্ডসে মানচিত্র সামঞ্জস্য - শুধু গেট টগল/লোডে, অন্য রি-রেন্ডারে নয়।
+  // এটি আলাদা করা হয়েছে যাতে ট্যাব পরিবর্তন বা লোকেশন আপডেটের মতো আকস্মিক রি-রেন্ডারে
+  // গাইডের ক্যামেরা জুম (যেমন তওয়াফে ১৮) গেট বাউন্ডসে (১৪.৮৫) পাল্টে না যায়।
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showGates) return;
+    programmaticFitBounds(getGatesBounds(HARAM_GATES), {
+      padding: { top: 50, bottom: 50, left: 50, right: 50 },
+      duration: 1000,
+    });
+  }, [mapLoaded, showGates, programmaticFitBounds]);
 
   // Add/update hotel markers
   useEffect(() => {
@@ -374,13 +439,20 @@ export function MapView({
             Math.max(...placesToShow.map((p) => p.location.coordinates[1])),
           ],
         ];
-        map.fitBounds(bounds, {
+        programmaticFitBounds(bounds, {
           padding: { top: 50, bottom: 50, left: 50, right: 50 },
           duration: 1000,
         });
       }
     }
-  }, [mapLoaded, showTouristPlaces, selectedTouristPlace?.id, onTouristPlaceClick, touristCity]);
+  }, [
+    mapLoaded,
+    showTouristPlaces,
+    selectedTouristPlace?.id,
+    onTouristPlaceClick,
+    touristCity,
+    programmaticFitBounds,
+  ]);
 
   // Add/update user location marker
   useEffect(() => {
@@ -430,37 +502,34 @@ export function MapView({
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !selectedGate) return;
 
-    const map = mapRef.current;
-    map.flyTo({
+    programmaticFlyTo({
       center: selectedGate.location.coordinates as [number, number],
       zoom: 17,
       duration: 1000,
     });
-  }, [selectedGate, mapLoaded]);
+  }, [selectedGate, mapLoaded, programmaticFlyTo]);
 
   // Fly to selected hotel
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !selectedHotel) return;
 
-    const map = mapRef.current;
-    map.flyTo({
+    programmaticFlyTo({
       center: selectedHotel.location.coordinates as [number, number],
       zoom: 17,
       duration: 1000,
     });
-  }, [selectedHotel, mapLoaded]);
+  }, [selectedHotel, mapLoaded, programmaticFlyTo]);
 
   // Fly to selected tourist place
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !selectedTouristPlace) return;
 
-    const map = mapRef.current;
-    map.flyTo({
+    programmaticFlyTo({
       center: selectedTouristPlace.location.coordinates as [number, number],
       zoom: 16,
       duration: 1000,
     });
-  }, [selectedTouristPlace, mapLoaded]);
+  }, [selectedTouristPlace, mapLoaded, programmaticFlyTo]);
 
   // Update route
   useEffect(() => {
@@ -503,7 +572,7 @@ export function MapView({
           [Math.min(...coords.map((c) => c[0])), Math.min(...coords.map((c) => c[1]))],
           [Math.max(...coords.map((c) => c[0])), Math.max(...coords.map((c) => c[1]))],
         ];
-        map.fitBounds(bounds, {
+        programmaticFitBounds(bounds, {
           padding: { top: 100, bottom: 100, left: 100, right: 100 },
           duration: 1000,
         });
@@ -516,7 +585,7 @@ export function MapView({
         map.removeLayer(ROUTE_CASING_LAYER_ID);
       }
     }
-  }, [activeRoute, mapLoaded]);
+  }, [activeRoute, mapLoaded, programmaticFitBounds]);
 
   // ----- ওমরাহ: আনুষ্ঠানিক ওভারলে ও পবিত্র বিন্দু -----
   useEffect(() => {
@@ -572,6 +641,25 @@ export function MapView({
       removeUmrah();
     };
   }, [showUmrah, mapLoaded]);
+
+  // ----- ওমরাহ: জীবন্ত অঙ্কন - কাউন্টার বাড়লে এক পূর্ণ চক্কর/পাক অ্যানিমেশন -----
+  // তওয়াফ: হাজি পুরো বৃত্ত ধরে ঘড়ির বিপরীত দিকে হাঁটে। সাঈ: পুরো করিডোর (দিক পালায়)।
+  // আনুষ্ঠানিক পথ (একক রিং/করিডোর) UMRAH_RITUAL_LAYERS থেকে সবসময় দৃশ্যমান।
+  useEffect(() => {
+    const prev = prevTawafCounterRef.current;
+    prevTawafCounterRef.current = tawafCounter;
+    if (prev != null && tawafCounter > prev) {
+      playTawafDraw(prev); // prev = সদ্য-সম্পন্ন চক্কর নম্বর
+    }
+  }, [tawafCounter, playTawafDraw]);
+
+  useEffect(() => {
+    const prev = prevSaiCounterRef.current;
+    prevSaiCounterRef.current = saiCounter;
+    if (prev != null && saiCounter > prev) {
+      playSaiDraw(prev); // prev = সদ্য-সম্পন্ন পাক নম্বর (দিক নির্ধারণ করে)
+    }
+  }, [saiCounter, playSaiDraw]);
 
   // ----- ওমরাহ: ধাপ মার্কার ও যাত্রা রেখা -----
   useEffect(() => {
@@ -651,9 +739,10 @@ export function MapView({
   ]);
 
   // ----- ওমরাহ: সক্রিয় ধাপের অ্যাংকরে ফ্লাই-টু (মিকাত সারসংক্ষেপ চলাকালীন বন্ধ) -----
+  // শুধুমাত্র ধাপ পরিবর্তনে ক্যামেরা সরে - কাউন্টার (চক্কর/পাক) বাড়লে নয়।
+  // ব্যবহারকারী ম্যানুয়ালি মানচিত্র সরালে userTookControl সত্য থাকে; তখন Recenter দিয়ে ফেরা যায়।
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !showUmrah || showMiqatOverview) return;
-    const map = mapRef.current;
     const activeId = umrahStepIds[umrahCurrentIndex];
     if (!activeId) return;
     const step = getStepById(activeId);
@@ -663,12 +752,12 @@ export function MapView({
 
     // তওয়াফ/সাঈ-এর সময় কাছে জুম করা; অন্যথা মাঝারি
     const targetZoom = step.stage === "tawaf" || step.stage === "sai" ? 18 : 16;
-    map.flyTo({
+    programmaticFlyTo({
       center: anchor.location.coordinates,
       zoom: targetZoom,
       duration: 1200,
     });
-  }, [showUmrah, showMiqatOverview, mapLoaded, umrahCurrentIndex, umrahStepIds]);
+  }, [showUmrah, showMiqatOverview, mapLoaded, umrahCurrentIndex, umrahStepIds, programmaticFlyTo]);
 
   // ----- ওমরাহ: মিকাত সারসংক্ষেপ মানচিত্র (৫ পয়েন্টের রিং) -----
   useEffect(() => {
@@ -703,17 +792,66 @@ export function MapView({
     });
 
     // সমস্ত মিকাত ঘিরে মানচিত্র সামঞ্জস্য করা
-    map.fitBounds(miqatRingBounds(), {
+    programmaticFitBounds(miqatRingBounds(), {
       padding: { top: 60, bottom: 60, left: 60, right: 60 },
       duration: 1000,
     });
-  }, [showMiqatOverview, mapLoaded, umrahProfile, onMiqatClick]);
+  }, [showMiqatOverview, mapLoaded, umrahProfile, onMiqatClick, programmaticFitBounds]);
+
+  // ----- তওয়াফ/সাঈ রাউন্ড ট্র্যাকার (HUD) -----
+  // সক্রিয় ধাপ তওয়াফ/সাঈ হলে বর্তমান চক্কর/পাক মানচিত্রের ওপর দেখানো হয়, যাতে হাজি
+  // ট্র্যাক করতে পারেন তিনি কোন চক্করে আছেন। মিকাত সারসংক্ষেপ বা অ-কাউন্টার ধাপে null।
+  const ritualHud = (() => {
+    if (!showUmrah || showMiqatOverview) return null;
+    const id = umrahStepIds[umrahCurrentIndex];
+    const step = id ? getStepById(id) : null;
+    if (!step?.counter) return null;
+    if (step.stage !== "tawaf" && step.stage !== "sai") return null;
+    return {
+      stageLabel: step.stage === "tawaf" ? "তওয়াফ" : "সাঈ",
+      roundLabel: step.counter.label.bn,
+      value: umrahCounters[step.id] ?? step.counter.min,
+      max: step.counter.max,
+    };
+  })();
+
+  // Recenter টার্গেট - বর্তমান গাইড ধাপের অ্যাংকর (মিকাত সারসংক্ষেপ বা অ্যাংকরহীন ধাপে null)
+  const recenterTarget = (() => {
+    if (!showUmrah || showMiqatOverview) return null;
+    const activeId = umrahStepIds[umrahCurrentIndex];
+    const step = activeId ? getStepById(activeId) : null;
+    const anchor = step?.anchors?.length ? getAnchorById(step.anchors[0]) : null;
+    if (!step || !anchor) return null;
+    return { coords: anchor.location.coordinates, stage: step.stage };
+  })();
+
+  const handleRecenter = () => {
+    if (!recenterTarget) return;
+    const targetZoom = recenterTarget.stage === "tawaf" || recenterTarget.stage === "sai" ? 18 : 16;
+    programmaticFlyTo({ center: recenterTarget.coords, zoom: targetZoom, duration: 1000 });
+  };
+
+  // ব্যবহারকারী ম্যানুয়ালি মানচিত্র সরিয়েছে এবং একটি গাইড ধাপ সক্রিয় - Recenter দেখাও
+  const showRecenter = userTookControl && recenterTarget !== null;
 
   return (
-    <div
-      ref={mapContainerRef}
-      className={`w-full h-full ${className}`}
-      style={{ position: "relative" }}
-    />
+    <div className={`relative w-full h-full ${className}`}>
+      <div ref={mapContainerRef} className="w-full h-full" style={{ position: "relative" }} />
+      {ritualHud && (
+        <RitualRoundHud
+          stageLabel={ritualHud.stageLabel}
+          roundLabel={ritualHud.roundLabel}
+          value={ritualHud.value}
+          max={ritualHud.max}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
+        />
+      )}
+      {showRecenter && (
+        <RecenterButton
+          onClick={handleRecenter}
+          className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
+        />
+      )}
+    </div>
   );
 }

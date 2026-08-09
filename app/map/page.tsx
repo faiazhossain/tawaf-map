@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   MapView,
   MapControls,
@@ -103,44 +103,59 @@ export default function MapPage() {
     useUmrahGuideStore.getState().setMode(open ? "miqat-overview" : "guide");
   };
 
-  const handleGateClick = (gateId: string) => {
-    const gate = HARAM_GATES.find((g) => g.id === gateId);
-    const proximity = nearbyGates.find((g) => g.gate.id === gateId);
+  // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
+  // এতে লোকেশন আপডেটে পেইজ রি-রেন্ডার হলেও MapView-এর effect পুনরায় না চলে —
+  // ফলে ট্যাব পরিবর্তনের পর গাইড ক্যামেরা জুম (যেমন তওয়াফে ১৮) অপরিবর্তিত থাকে।
+  const nearbyGatesRef = useRef(nearbyGates);
+  nearbyGatesRef.current = nearbyGates;
 
-    if (gate) {
-      setGate(gate);
-      if (proximity) {
-        setGateDistance(proximity.distance, proximity.walkingTime);
+  const handleGateClick = useCallback(
+    (gateId: string) => {
+      const gate = HARAM_GATES.find((g) => g.id === gateId);
+      const proximity = nearbyGatesRef.current.find((g) => g.gate.id === gateId);
+
+      if (gate) {
+        setGate(gate);
+        if (proximity) {
+          setGateDistance(proximity.distance, proximity.walkingTime);
+        }
       }
-    }
 
-    clearSelectedHotel();
-    setActivePanel("gate");
-  };
+      clearSelectedHotel();
+      setActivePanel("gate");
+    },
+    [setGate, setGateDistance, clearSelectedHotel, setActivePanel]
+  );
 
-  const handleHotelClick = (hotelId: string) => {
-    const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
-    if (hotel) {
-      setSelectedHotel(hotel);
-    }
+  const handleHotelClick = useCallback(
+    (hotelId: string) => {
+      const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
+      if (hotel) {
+        setSelectedHotel(hotel);
+      }
 
-    clearGate();
-    clearTouristPlace();
-    setActivePanel("hotel");
-    setShowTouristList(false);
-  };
+      clearGate();
+      clearTouristPlace();
+      setActivePanel("hotel");
+      setShowTouristList(false);
+    },
+    [setSelectedHotel, clearGate, clearTouristPlace, setActivePanel]
+  );
 
-  const handleTouristPlaceClick = (placeId: string) => {
-    const place = TOURIST_PLACES.find((p) => p.id === placeId);
-    if (place) {
-      setTouristPlace(place);
-    }
+  const handleTouristPlaceClick = useCallback(
+    (placeId: string) => {
+      const place = TOURIST_PLACES.find((p) => p.id === placeId);
+      if (place) {
+        setTouristPlace(place);
+      }
 
-    clearGate();
-    clearSelectedHotel();
-    setActivePanel("tourist-place");
-    setShowTouristList(false);
-  };
+      clearGate();
+      clearSelectedHotel();
+      setActivePanel("tourist-place");
+      setShowTouristList(false);
+    },
+    [setTouristPlace, clearGate, clearSelectedHotel, setActivePanel]
+  );
 
   const handleToggleGates = () => {
     setShowGates((prev) => !prev);

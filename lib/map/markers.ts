@@ -340,6 +340,46 @@ function checkSvg(size: number, color = "#ffffff"): string {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="${color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>`;
 }
 
+/** হাজির লিঙ্গ অনুযায়ী মিনিয়েচার আইকন (ইহরাম-পরিহিত পুরুষ/নারী রূপ)। */
+export const PILGRIM_ICON = {
+  male: "/icons/pilgrim_male.svg",
+  female: "/icons/pilgrim_female.svg",
+} as const;
+
+/**
+ * লিঙ্গ অনুযায়ী হাজি আইকনের সোর্স ফেরত দেয়। অজানা/শূন্য লিঙ্গে পুরুষ আইকন (নিরাপদ ডিফল্ট)।
+ * বিশুদ্ধ ফাংশন - সহজে পরীক্ষাযোগ্য।
+ */
+export function pilgrimIconForGender(gender: "male" | "female" | null | undefined): string {
+  return gender === "female" ? PILGRIM_ICON.female : PILGRIM_ICON.male;
+}
+
+/**
+ * তওয়াফরত হাজির মিনিয়েচার মার্কার - অঙ্কন অ্যানিমেশনে চাপ ধরে হাঁটে।
+ * লিঙ্গ অনুযায়ী আইকন (iconSrc) ব্যবহার করে; হালকা bob সহ। opacity প্রারম্ভে 0 (হুক ফেড-ইন করে)।
+ * আইকন <img> হিসেবে লোড করা হয় যাতে SVG-এর ভেতরের id/style হোস্ট ডকুমেন্টে সংঘর্ষ না করে।
+ */
+export function createPilgrimMarkerElement(iconSrc: string): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "map-marker map-marker-pilgrim";
+  Object.assign(el.style, {
+    width: "30px",
+    height: "76px",
+    cursor: "default",
+    opacity: "0",
+    transition: "opacity 0.3s ease",
+    filter: "drop-shadow(0 3px 4px rgba(0,0,0,0.45))",
+    pointerEvents: "none",
+  });
+
+  el.innerHTML = `
+    <div class="pilgrim-bob" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;">
+      <img src="${iconSrc}" alt="" draggable="false" aria-hidden="true"
+        style="width:100%;height:100%;object-fit:contain;display:block;pointer-events:none;" />
+    </div>`;
+  return el;
+}
+
 /** অবস্থান পিন SVG (মিকাত মার্কারের জন্য) */
 function pinSvg(size: number, color: string): string {
   return `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="${color}" stroke="#ffffff" stroke-width="1.5" stroke-linejoin="round"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5" fill="#ffffff" stroke="none"/></svg>`;

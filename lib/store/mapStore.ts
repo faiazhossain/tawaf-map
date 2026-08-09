@@ -13,6 +13,7 @@ export const useMapStore = create<MapStore>()(
       bearing: 0,
       pitch: 0,
       style: "streets",
+      userTookControl: false,
 
       // Actions
       setCenter: (center) => set({ center }),
@@ -20,6 +21,7 @@ export const useMapStore = create<MapStore>()(
       setBearing: (bearing) => set({ bearing }),
       setPitch: (pitch) => set({ pitch }),
       setStyle: (style) => set({ style }),
+      markUserControl: (value) => set({ userTookControl: value }),
 
       flyTo: (center, zoom = 15) =>
         set((state) => ({
