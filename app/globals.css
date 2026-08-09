@@ -144,11 +144,49 @@
   animation: umrah-pulse 2s infinite;
 }
 
+/* একটি চক্কর/পাক সম্পন্ন হলে সদ্য-সম্পন্ন পয়েন্টে সংক্ষিপ্ত scale-up + settle (~৫০০ms) */
+@keyframes round-complete {
+  0% {
+    transform: scale(1);
+  }
+  35% {
+    transform: scale(1.4);
+  }
+  60% {
+    transform: scale(0.9);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.round-complete {
+  animation: round-complete 0.5s ease-out;
+}
+
+/* নির্দেশনা টেক্সট বদলানোর সময় হালকা opacity + Y-slide ক্রসফেড (~৩০০ms) */
+@keyframes instruction-crossfade {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.instruction-crossfade {
+  animation: instruction-crossfade 0.3s ease-out;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .map-marker-umrah-step,
   .map-marker-recommended-gate,
   .map-marker-pilgrim .pilgrim-bob,
-  .ritual-hud-dot-active {
+  .ritual-hud-dot-active,
+  .round-complete,
+  .instruction-crossfade {
     animation: none !important;
   }
 }

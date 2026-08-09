@@ -29,6 +29,8 @@ import {
   UMRAH_RITUAL_LAYERS,
   SACRED_POINTS_LAYER,
   UMRAH_JOURNEY_LAYER,
+  TAWAF_RING_LAYER,
+  SAI_CORRIDOR_LAYER,
   TAWAF_DRAW_SOURCE,
   SAI_DRAW_SOURCE,
   createRitualOverlayGeoJSON,
@@ -78,6 +80,38 @@ interface MapViewProps {
 // Barikoi Map Style URL
 const BARIKOI_MAP_STYLE =
   "https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=MjY0NDpHRUswODE3R1VV";
+
+/**
+ * একটি আনুষ্ঠানিক রিং লেয়ারে সংক্ষিপ্ত ঝলক (flashColor → originalColor)। MapLibre-এর
+ * ডিফল্ট paint-transition (~৩০০ms) রং পরিবর্তন মসৃণ করে, তাই এটি একটি শান্ত "round-complete"
+ * ঝলক তৈরি করে। prefers-reduced-motion হলে কিছু করে না।
+ */
+function flashRitualRing(
+  map: MapLibreMap,
+  layerId: string,
+  flashColor: string,
+  originalColor: string
+) {
+  if (
+    typeof window !== "undefined" &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  ) {
+    return;
+  }
+  if (!map.getLayer(layerId)) return;
+  try {
+    map.setPaintProperty(layerId, "line-color", flashColor);
+    window.setTimeout(() => {
+      try {
+        if (map.getLayer(layerId)) map.setPaintProperty(layerId, "line-color", originalColor);
+      } catch {
+        // লেয়ার সরানো হলে উপেক্ষা।
+      }
+    }, 500);
+  } catch {
+    // লেয়ার/স্টাইল প্রস্তুত না হলে উপেক্ষা।
+  }
+}
 
 export function MapView({
   className = "",
@@ -660,6 +694,28 @@ export function MapView({
       playSaiDraw(prev); // prev = সদ্য-সম্পন্ন পাক নম্বর (দিক নির্ধারণ করে)
     }
   }, [saiCounter, playSaiDraw]);
+
+  // ----- ওমরাহ: চক্কর/পাক সম্পন্ন হলে আনুষ্ঠানিক রিং-এ সংক্ষিপ্ত ঝলক -----
+  // অঙ্কন অ্যানিমেশনের পাশাপাশি রিংও ঝলক দেয়, যাতে মানচিত্র "+1" ট্যাপে সংযুক্তভাবে
+  // প্রতিক্রিয়া দেখায়। prefers-reduced-motion হলে flashRitualRing নিজে ঝলক বাদ দেয়।
+  const prevTawafFlashRef = useRef<number | null>(null);
+  const prevSaiFlashRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!showUmrah || !mapLoaded || !mapRef.current) return;
+    const prev = prevTawafFlashRef.current;
+    prevTawafFlashRef.current = tawafCounter;
+    if (prev == null || tawafCounter <= prev) return;
+    flashRitualRing(mapRef.current, TAWAF_RING_LAYER, "#10b981", "#14b8a6"); // emerald -> teal
+  }, [tawafCounter, showUmrah, mapLoaded]);
+
+  useEffect(() => {
+    if (!showUmrah || !mapLoaded || !mapRef.current) return;
+    const prev = prevSaiFlashRef.current;
+    prevSaiFlashRef.current = saiCounter;
+    if (prev == null || saiCounter <= prev) return;
+    flashRitualRing(mapRef.current, SAI_CORRIDOR_LAYER, "#10b981", "#06b6d4"); // emerald -> cyan
+  }, [saiCounter, showUmrah, mapLoaded]);
 
   // ----- ওমরাহ: ধাপ মার্কার ও যাত্রা রেখা -----
   useEffect(() => {

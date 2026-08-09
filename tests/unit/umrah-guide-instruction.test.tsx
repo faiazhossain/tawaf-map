@@ -106,4 +106,21 @@ describe("RoundDots - পয়েন্ট ইন্ডিকেটর", () => 
     expect(container.querySelectorAll(".bg-emerald-500")).toHaveLength(7);
     expect(container.querySelectorAll(".ritual-hud-dot-active")).toHaveLength(0);
   });
+
+  it("চক্কর বাড়ালে সদ্য-সম্পন্ন পয়েন্টে round-complete অ্যানিমেশন চলে", () => {
+    const { container, rerender } = render(<RoundDots value={1} max={7} />);
+    expect(container.querySelectorAll(".round-complete")).toHaveLength(0);
+    rerender(<RoundDots value={2} max={7} />);
+    const dots = container.querySelectorAll('[aria-hidden="true"] > span');
+    // সদ্য-সম্পন্ন পয়েন্ট (index 0) সবুজ + round-complete ক্লাস
+    expect(dots[0].classList.contains("bg-emerald-500")).toBe(true);
+    expect(dots[0].classList.contains("round-complete")).toBe(true);
+    expect(container.querySelectorAll(".round-complete")).toHaveLength(1);
+  });
+
+  it("চক্কর কমালে (value কমে) round-complete চলে না", () => {
+    const { container, rerender } = render(<RoundDots value={3} max={7} />);
+    rerender(<RoundDots value={2} max={7} />);
+    expect(container.querySelectorAll(".round-complete")).toHaveLength(0);
+  });
 });

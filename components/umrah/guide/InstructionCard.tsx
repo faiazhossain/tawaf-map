@@ -49,10 +49,7 @@ export function InstructionCard({
       </div>
 
       {/* নির্দেশনা - key পরিবর্তনে হালকা fade+slide ক্রসফেড */}
-      <div
-        key={`${step.id}-${counterValue}`}
-        className="mt-2 animate-in fade-in slide-in-from-bottom-1 duration-300"
-      >
+      <div key={`${step.id}-${counterValue}`} className="mt-2 instruction-crossfade">
         <p className="text-base font-semibold leading-snug text-white">{instruction}</p>
         {direction && (
           <p className="mt-1.5 flex items-center gap-1.5 text-xs text-teal-300">

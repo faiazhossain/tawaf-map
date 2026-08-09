@@ -409,7 +409,22 @@ in one giant file):
 
 ---
 
-### Phase T6 - Synchronized completion animations
+### Phase T6 - Synchronized completion animations — DONE
+
+> Added `round-complete` (scale-up + settle, ~500ms) and `instruction-crossfade`
+> (opacity + Y-slide, ~300ms) keyframes to `globals.css`, both guarded by the
+> existing `prefers-reduced-motion` block. `InstructionCard` now replays
+> `instruction-crossfade` on any step/counter change (keyed remount). `RoundDots`
+> plays `round-complete` on the newly-completed dot when `value` increments
+> (prev-value tracking; no animation on decrement). The map reacts in sync via a
+> brief ritual-ring flash (teal/cyan -> emerald -> back, ~500ms via MapLibre
+> paint-transition) on each tawaf/sai counter increment, gated on reduced-motion,
+> alongside the existing pilgrim draw animation. Note: the literal "flash the newly
+> completed arc" was reinterpreted for the revised single-ring model (T2) — the
+> whole ring flashes briefly, which reads as "one round acknowledged". Files:
+> `app/globals.css`, `components/umrah/guide/InstructionCard.tsx`,
+> `components/umrah/guide/RoundDots.tsx`, `components/map/MapView.tsx`,
+> `tests/unit/umrah-guide-instruction.test.tsx`.
 
 **Goal**: finishing a circuit and finishing a step both feel like one event.
 
