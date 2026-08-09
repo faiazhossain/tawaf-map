@@ -42,20 +42,20 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
     <div className="space-y-4">
       {/* সক্রিয় মিকাত কলআউট */}
       {mapping && (
-        <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 overflow-hidden">
-          <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-teal-600/15 to-cyan-600/10 border-b border-teal-500/20">
-            <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0">
-              <Navigation className="w-4 h-4 text-white" />
+        <div className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
+          <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-primary/15 to-primary/5 border-b border-primary/20">
+            <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+              <Navigation className="w-4 h-4 text-foreground" />
             </div>
             <div className="min-w-0">
-              <p className="text-[11px] text-teal-300">আপনার যাত্রাপথ অনুযায়ী</p>
-              <p className="text-sm font-bold text-white leading-tight">
+              <p className="text-[11px] text-primary">আপনার যাত্রাপথ অনুযায়ী</p>
+              <p className="text-sm font-bold text-foreground leading-tight">
                 {activeMiqat ? activeMiqat.name.bn : "নির্দিষ্ট মিকাত নেই"}
               </p>
             </div>
           </div>
           <div className="px-3 py-3 space-y-2">
-            <p className="text-xs text-slate-300 leading-relaxed">{mapping.explanation.bn}</p>
+            <p className="text-xs text-foreground leading-relaxed">{mapping.explanation.bn}</p>
             {mapping.warning && (
               <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
                 <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
@@ -69,8 +69,8 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
       {/* সমস্ত মিকাত পয়েন্ট */}
       <div>
         <div className="flex items-center gap-2 mb-2">
-          <Compass className="w-4 h-4 text-teal-400" />
-          <p className="text-xs font-medium text-slate-300">
+          <Compass className="w-4 h-4 text-primary" />
+          <p className="text-xs font-medium text-foreground">
             মক্কার চারপাশের মিকাতসমূহ ({MIQAT_POINTS.length})
           </p>
         </div>
@@ -83,8 +83,8 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
                 className={cn(
                   "p-2.5 rounded-xl border transition-colors",
                   isActive
-                    ? "bg-teal-500/15 border-teal-500/60 ring-1 ring-teal-500/30"
-                    : "bg-slate-800/40 border-slate-700/40"
+                    ? "bg-primary/15 border-primary/60 ring-1 ring-primary/30"
+                    : "bg-muted/40 border-border/40"
                 )}
               >
                 <div className="flex items-start justify-between gap-2">
@@ -93,36 +93,36 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
                       <MapPin
                         className={cn(
                           "w-3.5 h-3.5 flex-shrink-0",
-                          isActive ? "text-teal-400" : "text-slate-500"
+                          isActive ? "text-primary" : "text-muted-foreground"
                         )}
                       />
                       <p
                         className={cn(
                           "text-sm font-semibold",
-                          isActive ? "text-white" : "text-slate-200"
+                          isActive ? "text-foreground" : "text-foreground"
                         )}
                       >
                         {miqat.name.bn}
                       </p>
                       {isActive && (
-                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-teal-500 text-white">
+                        <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-primary text-primary-foreground">
                           আপনার মিকাত
                         </span>
                       )}
                     </div>
                     {miqat.nameAr && (
-                      <p className="text-xs text-slate-400 mt-0.5 ml-5" dir="rtl">
+                      <p className="text-xs text-muted-foreground mt-0.5 ml-5" dir="rtl">
                         {miqat.nameAr}
                       </p>
                     )}
                   </div>
-                  <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-slate-700/60 text-slate-300 whitespace-nowrap">
+                  <span className="flex-shrink-0 text-[10px] px-1.5 py-0.5 rounded bg-muted text-foreground whitespace-nowrap">
                     {DIRECTION_LABEL[miqat.direction]}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 mt-1.5 ml-5 text-[11px] text-slate-400">
+                <div className="flex items-center gap-3 mt-1.5 ml-5 text-[11px] text-muted-foreground">
                   <span>{miqat.distanceKm}</span>
-                  <span className="text-slate-600">|</span>
+                  <span className="text-muted-foreground">|</span>
                   <span className="truncate">{miqat.serves.bn}</span>
                 </div>
               </div>
@@ -131,7 +131,7 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
         </div>
       </div>
 
-      <p className="text-[10px] text-slate-500 leading-relaxed">
+      <p className="text-[10px] text-muted-foreground leading-relaxed">
         মিকাত পয়েন্টের স্থানাঙ্ক আনুমানিক, শুধুমাত্র সারসংক্ষেপের জন্য। বিমানে আসলে মিকাত পার
         হওয়ার আগেই ইহরাম বাঁধা নিরাপদ।
       </p>
@@ -139,7 +139,7 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
       {/* গাইডে ফেরা */}
       <Button
         onClick={() => onOpenChange(false)}
-        className="w-full bg-teal-600 hover:bg-teal-500 text-white border-0 gap-2"
+        className="w-full bg-primary hover:bg-primary-hover text-primary-foreground border-0 gap-2"
       >
         <ArrowLeft className="w-4 h-4" /> গাইডে ফিরুন
       </Button>
@@ -170,15 +170,15 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
       className="absolute top-4 right-4 z-[100] w-96 max-h-[calc(100vh-7rem)]"
       data-testid="umrah-miqat-overview-desktop"
     >
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-7rem)]">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-gradient-to-r from-teal-600/20 to-cyan-600/10">
+      <div className="bg-surface/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-7rem)]">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/20 to-primary/5">
           <div>
-            <h3 className="text-base font-bold text-white">মিকাত সারসংক্ষেপ</h3>
-            <p className="text-[11px] text-teal-300">ইহরাম বাঁধার সীমানা</p>
+            <h3 className="text-base font-bold text-foreground">মিকাত সারসংক্ষেপ</h3>
+            <p className="text-[11px] text-primary">ইহরাম বাঁধার সীমানা</p>
           </div>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-slate-800 transition-colors"
+            className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded-md hover:bg-muted transition-colors"
           >
             বন্ধ
           </button>

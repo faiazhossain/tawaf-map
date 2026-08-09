@@ -20,13 +20,13 @@ export function CircuitControl({ step }: { step: UmrahStep }) {
   if (!counter) return null;
 
   return (
-    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
+    <div className="flex items-center justify-between gap-3 p-3 rounded-xl bg-muted/50 border border-border/50">
       <Button
         variant="outline"
         size="icon"
         onClick={() => decrement(step.id)}
         disabled={value <= counter.min}
-        className="h-11 w-11 rounded-full border-slate-600 bg-slate-800 hover:bg-slate-700 text-white"
+        className="h-11 w-11 rounded-full border-border bg-muted hover:bg-muted text-foreground"
         aria-label="কমান"
       >
         <Minus className="w-5 h-5" />
@@ -34,14 +34,14 @@ export function CircuitControl({ step }: { step: UmrahStep }) {
 
       <div className="flex flex-col items-center">
         <ProgressRing value={value} max={counter.max} />
-        <p className="text-[11px] text-slate-400 mt-1">{counter.label.bn}</p>
+        <p className="text-[11px] text-muted-foreground mt-1">{counter.label.bn}</p>
       </div>
 
       <Button
         size="icon"
         onClick={() => increment(step.id)}
         disabled={value >= counter.max}
-        className="h-11 w-11 rounded-full bg-teal-600 hover:bg-teal-500 text-white border-0"
+        className="h-11 w-11 rounded-full bg-primary hover:bg-primary-hover text-primary-foreground border-0"
         aria-label="বাড়ান"
       >
         <Plus className="w-5 h-5" />

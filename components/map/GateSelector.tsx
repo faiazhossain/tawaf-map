@@ -32,7 +32,7 @@ export function GateSelector() {
 
   const typeConfig = {
     king_fahd: { color: "bg-blue-500", label: "কিং ফাহ্দ" },
-    umrah: { color: "bg-emerald-500", label: "ওমরাহ" },
+    umrah: { color: "bg-primary", label: "ওমরাহ" },
     salah: { color: "bg-amber-500", label: "নামাজ" },
   };
 
@@ -43,16 +43,16 @@ export function GateSelector() {
         variant="outline"
         className={cn(
           "gap-2 transition-all duration-200",
-          "border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white",
-          isOpen && "border-emerald-500 bg-slate-800 text-white"
+          "border-border bg-surface/50 hover:bg-muted text-foreground hover:text-foreground",
+          isOpen && "border-primary bg-muted text-foreground"
         )}
       >
-        <MapPin className={cn("w-4 h-4 transition-colors", isOpen && "text-emerald-500")} />
+        <MapPin className={cn("w-4 h-4 transition-colors", isOpen && "text-primary")} />
         <span className="hidden sm:inline max-w-[120px] truncate">
           {selectedGate.gate ? selectedGate.gate.name : "গেট খুঁজুন"}
         </span>
         {selectedGate.distance && (
-          <span className="hidden md:inline-flex items-center px-2 py-0.5 bg-emerald-500/20 text-emerald-400 text-xs rounded-full">
+          <span className="hidden md:inline-flex items-center px-2 py-0.5 bg-primary/20 text-primary text-xs rounded-full">
             {Math.round(selectedGate.distance)}m
           </span>
         )}
@@ -67,23 +67,23 @@ export function GateSelector() {
           />
 
           {/* Dropdown */}
-          <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl z-50 overflow-hidden">
+          <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl z-50 overflow-hidden">
             {/* Search Header */}
-            <div className="flex items-center gap-3 p-4 border-b border-slate-700/50">
-              <Search className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            <div className="flex items-center gap-3 p-4 border-b border-border/50">
+              <Search className="w-4 h-4 text-muted-foreground flex-shrink-0" />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="গেট খুঁজুন..."
-                className="flex-1 h-9 border-slate-700 bg-slate-800/50 text-white placeholder:text-slate-500 focus-visible:ring-emerald-500"
+                className="flex-1 h-9 border-border bg-muted/50 text-foreground placeholder:text-muted-foreground focus-visible:ring-primary"
                 autoFocus
               />
               {searchQuery && (
                 <button
                   onClick={() => setSearchQuery("")}
-                  className="p-1 hover:bg-slate-800 rounded-md transition-colors"
+                  className="p-1 hover:bg-muted rounded-md transition-colors"
                 >
-                  <X className="w-4 h-4 text-slate-500" />
+                  <X className="w-4 h-4 text-muted-foreground" />
                 </button>
               )}
             </div>
@@ -92,8 +92,8 @@ export function GateSelector() {
             <div className="max-h-72 overflow-y-auto scrollbar-thin">
               {filteredGates.length === 0 ? (
                 <div className="p-8 text-center">
-                  <Search className="w-10 h-10 text-slate-700 mx-auto mb-3" />
-                  <p className="text-sm text-slate-500">কোনো গেট পাওয়া যায়নি</p>
+                  <Search className="w-10 h-10 text-muted-foreground mx-auto mb-3" />
+                  <p className="text-sm text-muted-foreground">কোনো গেট পাওয়া যায়নি</p>
                 </div>
               ) : (
                 <div className="p-2 space-y-1">
@@ -103,20 +103,20 @@ export function GateSelector() {
                       <button
                         key={gate.id}
                         onClick={() => handleSelectGate(gate.id)}
-                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-slate-800/80 transition-all duration-150 group text-left"
+                        className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-all duration-150 group text-left"
                       >
                         <div className={`w-3 h-3 rounded-full ${config.color} flex-shrink-0`} />
                         <div className="flex-1 min-w-0">
-                          <div className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
+                          <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                             {gate.name}
                           </div>
-                          <div className="text-xs text-slate-500 truncate" dir="rtl">
+                          <div className="text-xs text-muted-foreground truncate" dir="rtl">
                             {gate.nameAr}
                           </div>
                         </div>
                         {gate.facilities.includes("wheelchair") && (
                           <span
-                            className="text-xs text-slate-600 bg-slate-800/50 px-2 py-0.5 rounded-full"
+                            className="text-xs text-muted-foreground bg-muted/50 px-2 py-0.5 rounded-full"
                             title="Wheelchair accessible"
                           >
                             ♿
@@ -130,12 +130,12 @@ export function GateSelector() {
             </div>
 
             {/* Legend Footer */}
-            <div className="p-3 border-t border-slate-700/50 bg-slate-900/50">
+            <div className="p-3 border-t border-border/50 bg-surface/50">
               <div className="flex items-center justify-center gap-4 text-xs">
                 {Object.entries(typeConfig).map(([key, config]) => (
                   <div key={key} className="flex items-center gap-1.5">
                     <div className={`w-2.5 h-2.5 rounded-full ${config.color}`} />
-                    <span className="text-slate-500">{config.label}</span>
+                    <span className="text-muted-foreground">{config.label}</span>
                   </div>
                 ))}
               </div>

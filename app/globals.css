@@ -4,48 +4,120 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    /*
+     * Design tokens — Umrah redesign (see docs/UMRAH_UI_UX_AUDIT.md).
+     * Light is the primary theme. Semantic rule: emerald = action/guidance/progress,
+     * gold = pilgrim/milestone ONLY (never a CTA), blue = information, red = error.
+     */
+    /* Surfaces — warm ivory light theme */
+    --background: 45 44% 96%; /* #FAF8F2 warm ivory — app background */
+    --foreground: 168 18% 11%; /* #17211F near black — primary text */
+
+    --surface: 0 0% 100%; /* #FFFFFF cards, panels, sheets */
+    --surface-muted: 45 32% 93%; /* #F2EFE6 subtle rows / highlights */
+
+    --card: 0 0% 100%; /* alias of --surface for shadcn <Card> */
+    --card-foreground: 168 18% 11%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 168 18% 11%;
+
+    /* Brand — emerald. Action / guidance / progress. */
+    --primary: 168 72% 21%; /* #0F5C4D deep emerald */
+    --primary-foreground: 0 0% 100%;
+    --primary-hover: 168 70% 29%; /* #167C68 secondary emerald (hover, progress) */
+    --primary-soft: 160 35% 93%; /* #E8F4F0 selected card / active step bg */
+    --primary-soft-foreground: 168 72% 21%;
+
+    --secondary: 45 32% 93%; /* neutral muted surface */
+    --secondary-foreground: 168 18% 11%;
+    --muted: 45 32% 93%;
+    --muted-foreground: 153 6% 37%; /* #58635E secondary text (AA on bg + muted) */
+    --accent: 160 35% 93%; /* alias of --primary-soft */
+    --accent-foreground: 168 72% 21%;
+
+    /* Semantic */
+    --destructive: 0 47% 49%; /* #B84343 error/destructive */
+    --destructive-foreground: 0 0% 100%;
+    --error: 0 47% 49%;
+    --error-foreground: 0 0% 100%;
+    --success: 168 72% 21%; /* emerald = success */
+    --success-foreground: 0 0% 100%;
+    --info: 200 51% 34%; /* #2A6582 informational / nav only */
+    --info-foreground: 0 0% 100%;
+
+    /* Reserved accents — use sparingly. Gold = pilgrim marker ONLY. */
+    --gold: 46 68% 47%; /* #C9A227 — pilgrim / milestone. Never a CTA. */
+    --gold-foreground: 168 18% 11%; /* dark icon/edge on gold (white-on-gold fails AA) */
+    --sand: 40 51% 82%; /* #E8D8B8 — decorative / secondary map accents */
+
+    --text-secondary: 153 6% 37%; /* same value as --muted-foreground */
+
+    --border: 42 23% 86%; /* #E3DED2 hairline */
+    --input: 42 23% 86%;
+    --ring: 168 72% 21%; /* focus ring = primary */
+
+    --radius: 0.75rem; /* 12px base; sm/md derive from this */
+
+    /*
+     * Map overlay palette (theme-independent — base map stays the light Barikoi style
+     * in both light and dark app modes). Owned by us; the remote base style is not.
+     */
+    --map-route: 168 72% 21%; /* #0F5C4D active route + ritual active line */
+    --map-route-completed: 163 29% 69%; /* #9AC7BA completed segment (recedes) */
+    --map-route-upcoming: 132 4% 73%; /* #B8BDB9 upcoming / inactive */
+    --map-pilgrim: 46 68% 47%; /* #C9A227 current pilgrim marker */
+    --map-landmark: 133 5% 38%; /* #5D665F neutral landmark pins */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 224.3 76.3% 48%;
+    /*
+     * Dark theme (secondary mode). Map overlay tokens are NOT overridden here —
+     * the base map stays light Barikoi in both modes, so overlays keep one palette.
+     * Panel boundaries in dark mode are reinforced via elevation shadows (Phase 2),
+     * since dark borders alone stay below the WCAG 3:1 non-text threshold.
+     */
+    --background: 167 24% 7%; /* #0E1715 */
+    --foreground: 140 9% 93%; /* #ECEFED */
+
+    --surface: 163 23% 12%; /* #182622 cards, panels, sheets */
+    --surface-muted: 165 18% 13%; /* #1B2724 */
+
+    --card: 163 23% 12%;
+    --card-foreground: 140 9% 93%;
+    --popover: 163 23% 12%;
+    --popover-foreground: 140 9% 93%;
+
+    --primary: 167 57% 42%; /* #2EA78C */
+    --primary-foreground: 167 24% 7%;
+    --primary-hover: 167 55% 47%; /* #36B89C */
+    --primary-soft: 167 39% 14%; /* #15302A */
+    --primary-soft-foreground: 167 55% 47%;
+
+    --secondary: 165 18% 13%;
+    --secondary-foreground: 140 9% 93%;
+    --muted: 165 18% 13%;
+    --muted-foreground: 159 7% 63%; /* #9AA8A3 */
+    --accent: 167 39% 14%;
+    --accent-foreground: 167 55% 47%;
+
+    --destructive: 0 60% 63%; /* #D96868 */
+    --destructive-foreground: 167 24% 7%;
+    --error: 0 60% 63%;
+    --error-foreground: 167 24% 7%;
+    --success: 167 57% 42%;
+    --success-foreground: 167 24% 7%;
+    --info: 196 43% 55%; /* #5BA3BE */
+    --info-foreground: 167 24% 7%;
+
+    --gold: 46 67% 54%; /* #D9B53C */
+    --gold-foreground: 167 24% 7%;
+    --sand: 40 51% 82%;
+
+    --text-secondary: 159 7% 63%;
+
+    --border: 166 10% 34%; /* #4D5E5A */
+    --input: 166 10% 34%;
+    --ring: 167 57% 42%;
   }
 }
 
@@ -55,12 +127,26 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Inter for Latin; Bengali glyphs fall through to Hind Siliguri. */
+    font-family: var(--font-inter), var(--font-hind-siliguri), system-ui, -apple-system,
+      sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Custom scrollbar for bottom sheets */
+  /* Arabic text (duas / Quranic). Pair with dir="rtl" on the element. */
+  .font-arabic {
+    font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", serif;
+    direction: rtl;
+    font-feature-settings: "calt" 1, "liga" 1;
+    line-height: 2;
+  }
+
+  /* Custom scrollbar for bottom sheets — token-driven, theme-aware */
   .scrollbar-thin {
     scrollbar-width: thin;
-    scrollbar-color: rgb(51 65 85) transparent;
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) transparent;
   }
 
   .scrollbar-thin::-webkit-scrollbar {
@@ -72,18 +158,18 @@
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background-color: rgb(51 65 85);
+    background-color: hsl(var(--muted-foreground) / 0.4);
     border-radius: 3px;
   }
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(71 85 105);
+    background-color: hsl(var(--muted-foreground) / 0.7);
   }
 
-  /* Custom scrollbar for tourist places panel - matches dark theme */
+  /* Custom scrollbar for the tourist places panel — token-driven, theme-aware */
   .scrollbar-tourist {
     scrollbar-width: thin;
-    scrollbar-color: rgb(71 85 105) rgb(15 23 42);
+    scrollbar-color: hsl(var(--muted-foreground) / 0.4) hsl(var(--surface-muted));
   }
 
   .scrollbar-tourist::-webkit-scrollbar {
@@ -91,18 +177,18 @@
   }
 
   .scrollbar-tourist::-webkit-scrollbar-track {
-    background: rgb(15 23 42);
+    background: hsl(var(--surface-muted));
     border-radius: 3px;
   }
 
   .scrollbar-tourist::-webkit-scrollbar-thumb {
-    background-color: rgb(71 85 105);
+    background-color: hsl(var(--muted-foreground) / 0.4);
     border-radius: 3px;
     transition: background-color 0.2s;
   }
 
   .scrollbar-tourist::-webkit-scrollbar-thumb:hover {
-    background-color: rgb(100 116 139);
+    background-color: hsl(var(--muted-foreground) / 0.65);
   }
 
   /* Prevent pull-to-refresh on mobile when using bottom sheets */
@@ -114,13 +200,13 @@
 /* ওমরাহ মার্কারের স্পন্দন অ্যানিমেশন (সক্রিয় ধাপ ও সুপারিশকৃত গেট) */
 @keyframes umrah-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0.6);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0.6);
   }
   70% {
-    box-shadow: 0 0 0 12px rgba(20, 184, 166, 0);
+    box-shadow: 0 0 0 12px hsl(var(--primary) / 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(20, 184, 166, 0);
+    box-shadow: 0 0 0 0 hsl(var(--primary) / 0);
   }
 }
 

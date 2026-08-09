@@ -122,17 +122,17 @@ export function TouristPlacesList({
 
   return (
     <div
-      className={`bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden ${className}`}
+      className={`bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden ${className}`}
     >
       {/* Header */}
-      <div className="p-4 border-b border-slate-700/50">
+      <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-3">
-          <h2 className="text-lg font-bold text-white">Tourist Places</h2>
+          <h2 className="text-lg font-bold text-foreground">Tourist Places</h2>
           <Button
             onClick={toggleShowOnMap}
             size="sm"
             variant={showPlacesOnMap ? "default" : "outline"}
-            className={showPlacesOnMap ? "bg-emerald-600 hover:bg-emerald-700" : "border-slate-600"}
+            className={showPlacesOnMap ? "bg-primary hover:bg-primary-hover" : "border-border"}
           >
             <MapPin className="w-4 h-4 mr-1" />
             {showPlacesOnMap ? "On Map" : "Show on Map"}
@@ -141,13 +141,13 @@ export function TouristPlacesList({
 
         {/* Search */}
         <div className="relative mb-3">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <input
             type="text"
             placeholder="Search places..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 bg-slate-800 border border-slate-700 rounded-lg text-sm text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+            className="w-full pl-10 pr-4 py-2 bg-muted border border-border rounded-lg text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
 
@@ -156,7 +156,7 @@ export function TouristPlacesList({
           onClick={() => setShowFilters(!showFilters)}
           variant="outline"
           size="sm"
-          className="w-full border-slate-700 text-slate-300"
+          className="w-full border-border text-foreground"
         >
           <Filter className="w-4 h-4 mr-2" />
           Filters
@@ -168,16 +168,16 @@ export function TouristPlacesList({
 
       {/* Filters */}
       {showFilters && (
-        <div className="p-4 border-b border-slate-700/50 space-y-3">
+        <div className="p-4 border-b border-border/50 space-y-3">
           {/* City Filter */}
           <div>
-            <p className="text-xs text-slate-500 mb-2">City</p>
+            <p className="text-xs text-muted-foreground mb-2">City</p>
             <div className="flex gap-2">
               <Button
                 onClick={() => handleCityChange("makkah")}
                 size="sm"
                 variant={selectedCity === "makkah" ? "default" : "outline"}
-                className={selectedCity === "makkah" ? "bg-purple-600" : "border-slate-700"}
+                className={selectedCity === "makkah" ? "bg-purple-600" : "border-border"}
               >
                 Makkah
               </Button>
@@ -185,7 +185,7 @@ export function TouristPlacesList({
                 onClick={() => handleCityChange("madinah")}
                 size="sm"
                 variant={selectedCity === "madinah" ? "default" : "outline"}
-                className={selectedCity === "madinah" ? "bg-purple-600" : "border-slate-700"}
+                className={selectedCity === "madinah" ? "bg-purple-600" : "border-border"}
               >
                 Madinah
               </Button>
@@ -194,13 +194,13 @@ export function TouristPlacesList({
 
           {/* Category Filter */}
           <div>
-            <p className="text-xs text-slate-500 mb-2">Category</p>
+            <p className="text-xs text-muted-foreground mb-2">Category</p>
             <div className="flex flex-wrap gap-2">
               <Button
                 onClick={() => setSelectedCategory(null)}
                 size="sm"
                 variant={selectedCategory === null ? "default" : "outline"}
-                className={selectedCategory === null ? "bg-purple-600" : "border-slate-700"}
+                className={selectedCategory === null ? "bg-purple-600" : "border-border"}
               >
                 All
               </Button>
@@ -212,7 +212,7 @@ export function TouristPlacesList({
                     onClick={() => setSelectedCategory(key as TouristPlaceCategory)}
                     size="sm"
                     variant={selectedCategory === key ? "default" : "outline"}
-                    className={selectedCategory === key ? "bg-purple-600" : "border-slate-700"}
+                    className={selectedCategory === key ? "bg-purple-600" : "border-border"}
                   >
                     <Icon className="w-3 h-3 mr-1" />
                     {label}
@@ -225,8 +225,8 @@ export function TouristPlacesList({
       )}
 
       {/* Results Count */}
-      <div className="px-4 py-2 border-b border-slate-700/50 flex justify-between items-center">
-        <p className="text-xs text-slate-400">
+      <div className="px-4 py-2 border-b border-border/50 flex justify-between items-center">
+        <p className="text-xs text-muted-foreground">
           {filteredPlaces.length} place{filteredPlaces.length !== 1 ? "s" : ""} found
         </p>
         {(selectedCity || selectedCategory || searchQuery) && (
@@ -238,7 +238,7 @@ export function TouristPlacesList({
             }}
             size="sm"
             variant="ghost"
-            className="text-slate-400 hover:text-white"
+            className="text-muted-foreground hover:text-foreground"
           >
             Clear filters
           </Button>
@@ -250,9 +250,9 @@ export function TouristPlacesList({
         {Object.entries(groupedPlaces).map(
           ([city, places]) =>
             places.length > 0 && (
-              <div key={city} className="border-b border-slate-700/50 last:border-b-0">
-                <div className="px-4 py-2 bg-slate-800/50 sticky top-0">
-                  <p className="text-sm font-semibold text-white capitalize">
+              <div key={city} className="border-b border-border/50 last:border-b-0">
+                <div className="px-4 py-2 bg-muted/50 sticky top-0">
+                  <p className="text-sm font-semibold text-foreground capitalize">
                     {city === "makkah" ? "Makkah" : "Madinah"}
                   </p>
                 </div>
@@ -262,30 +262,30 @@ export function TouristPlacesList({
                     <button
                       key={place.id}
                       onClick={() => handlePlaceClick(place.id)}
-                      className="w-full px-4 py-3 flex items-start gap-3 hover:bg-slate-800/50 transition-colors border-b border-slate-700/30 last:border-b-0"
+                      className="w-full px-4 py-3 flex items-start gap-3 hover:bg-muted transition-colors border-b border-border/30 last:border-b-0"
                     >
                       <div className="flex-shrink-0 mt-0.5">
                         <div className={`p-2 rounded-lg ${getCategoryBgColor(place.category)}`}>
-                          <IconComponent className="w-4 h-4 text-white" />
+                          <IconComponent className="w-4 h-4 text-foreground" />
                         </div>
                       </div>
                       <div className="flex-1 text-left min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="text-sm font-medium text-white truncate">
+                          <p className="text-sm font-medium text-foreground truncate">
                             {place.nameBn || place.name}
                           </p>
                           {place.popular && (
                             <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 flex-shrink-0" />
                           )}
                         </div>
-                        <p className="text-xs text-slate-400 truncate" dir="rtl">
+                        <p className="text-xs text-muted-foreground truncate" dir="rtl">
                           {place.nameAr}
                         </p>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-1">
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
                           {place.description.short}
                         </p>
                         {place.distanceFromHaram && (
-                          <p className="text-xs text-slate-500 mt-1">
+                          <p className="text-xs text-muted-foreground mt-1">
                             {formatDistance(place.distanceFromHaram)} from Haram
                           </p>
                         )}
@@ -299,9 +299,9 @@ export function TouristPlacesList({
 
         {filteredPlaces.length === 0 && (
           <div className="px-4 py-8 text-center">
-            <MapPin className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-            <p className="text-sm text-slate-400">No places found</p>
-            <p className="text-xs text-slate-500 mt-1">Try adjusting your filters</p>
+            <MapPin className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+            <p className="text-sm text-muted-foreground">No places found</p>
+            <p className="text-xs text-muted-foreground mt-1">Try adjusting your filters</p>
           </div>
         )}
       </div>
@@ -312,7 +312,7 @@ export function TouristPlacesList({
 function getCategoryBgColor(category: string): string {
   const colors: Record<string, string> = {
     historical_site: "bg-amber-500",
-    mosque: "bg-emerald-500",
+    mosque: "bg-primary",
     museum: "bg-purple-500",
     park: "bg-green-500",
     mountain: "bg-stone-500",
@@ -320,7 +320,7 @@ function getCategoryBgColor(category: string): string {
     cultural_center: "bg-indigo-500",
     landmark: "bg-blue-500",
     agriculture: "bg-lime-500",
-    religious_site: "bg-teal-500",
+    religious_site: "bg-primary",
     cemetery: "bg-gray-500",
   };
   return colors[category] || "bg-slate-500";

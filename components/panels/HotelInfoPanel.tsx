@@ -46,7 +46,7 @@ function HotelInfoContent({
   const getPriceColor = () => {
     switch (hotel.priceLevel) {
       case 1:
-        return "text-emerald-400";
+        return "text-primary";
       case 2:
         return "text-blue-400";
       case 3:
@@ -63,10 +63,12 @@ function HotelInfoContent({
   return (
     <>
       {/* Header */}
-      <div className="relative h-32 sm:h-28 bg-emerald-600 -mx-4 -mt-2 sm:mx-0 sm:mt-0">
+      <div className="relative h-32 sm:h-28 bg-primary -mx-4 -mt-2 sm:mx-0 sm:mt-0">
         <div className="absolute bottom-4 left-4 right-4 sm:bottom-3 sm:left-4 sm:right-4">
-          <h3 className="text-xl sm:text-lg font-bold text-white drop-shadow-md">{hotel.name}</h3>
-          <p className="text-sm text-white/90 drop-shadow-md" dir="rtl">
+          <h3 className="text-xl sm:text-lg font-bold text-foreground drop-shadow-md">
+            {hotel.name}
+          </h3>
+          <p className="text-sm text-foreground/90 drop-shadow-md" dir="rtl">
             {hotel.nameAr}
           </p>
         </div>
@@ -82,40 +84,40 @@ function HotelInfoContent({
                 <Star key={i} className="w-4 h-4 fill-amber-400 text-amber-400" />
               ))}
             </div>
-            <span className="text-sm text-slate-400">{hotel.starRating} স্টার</span>
+            <span className="text-sm text-muted-foreground">{hotel.starRating} স্টার</span>
           </div>
-          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 rounded-lg">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-muted rounded-lg">
             <span className={`font-bold ${getPriceColor()}`}>{getPriceLabel()}</span>
           </div>
         </div>
 
         {/* Distance Info Card */}
-        <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-          <div className="flex items-center gap-2 text-emerald-400 mb-3">
+        <div className="p-4 bg-primary-soft border border-primary/20 rounded-xl">
+          <div className="flex items-center gap-2 text-primary mb-3">
             <MapPin className="w-4 h-4" />
             <span className="text-sm font-medium">হারাম থেকে দূরত্ব</span>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {formatDistance(hotel.distanceToHaram)}
               </p>
-              <p className="text-xs text-slate-500">হাঁটার দূরত্ব</p>
+              <p className="text-xs text-muted-foreground">হাঁটার দূরত্ব</p>
             </div>
             <div>
-              <p className="text-2xl font-bold text-white">
+              <p className="text-2xl font-bold text-foreground">
                 {formatWalkingTime(hotel.walkingTime)}
               </p>
-              <p className="text-xs text-slate-500">হাঁটার সময়</p>
+              <p className="text-xs text-muted-foreground">হাঁটার সময়</p>
             </div>
           </div>
         </div>
 
         {/* Address */}
         <div>
-          <p className="text-xs text-slate-500 mb-1">ঠিকানা</p>
-          <p className="text-sm text-slate-300">{hotel.location.address}</p>
-          <p className="text-sm text-slate-500" dir="rtl">
+          <p className="text-xs text-muted-foreground mb-1">ঠিকানা</p>
+          <p className="text-sm text-foreground">{hotel.location.address}</p>
+          <p className="text-sm text-muted-foreground" dir="rtl">
             {hotel.location.addressAr}
           </p>
         </div>
@@ -123,12 +125,12 @@ function HotelInfoContent({
         {/* Amenities */}
         {hotel.amenities.length > 0 && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">সুবিধা সমূহ</p>
+            <p className="text-xs text-muted-foreground mb-2">সুবিধা সমূহ</p>
             <div className="flex flex-wrap gap-2">
               {hotel.amenities.map((amenity) => (
                 <span
                   key={amenity}
-                  className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                  className="px-2.5 py-1 bg-muted border border-border rounded-lg text-xs text-foreground"
                   title={amenity.replace(/_/g, " ")}
                 >
                   {AMENITY_ICONS[amenity] || amenity}
@@ -141,12 +143,12 @@ function HotelInfoContent({
         {/* Contact */}
         {hotel.contact && (hotel.contact.phone || hotel.contact.website) && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">যোগাযোগ</p>
+            <p className="text-xs text-muted-foreground mb-2">যোগাযোগ</p>
             <div className="space-y-2">
               {hotel.contact.phone && (
                 <a
                   href={`tel:${hotel.contact.phone}`}
-                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   {hotel.contact.phone}
@@ -157,7 +159,7 @@ function HotelInfoContent({
                   href={`https://${hotel.contact.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span className="truncate">{hotel.contact.website}</span>
@@ -173,7 +175,7 @@ function HotelInfoContent({
         <Button
           onClick={onGetDirections}
           disabled={isCalculating || isRouting}
-          className="w-full gap-2 bg-emerald-600 hover:bg-emerald-700 text-white border-0 shadow-lg"
+          className="w-full gap-2 bg-primary hover:bg-primary-hover text-primary-foreground border-0 shadow-lg"
         >
           {isCalculating || isRouting ? (
             <>
@@ -191,7 +193,7 @@ function HotelInfoContent({
           <Button
             onClick={onShowOnMap}
             variant="outline"
-            className="w-full border-slate-700 bg-slate-900/50 hover:bg-slate-800 text-slate-300 hover:text-white"
+            className="w-full border-border bg-surface/50 hover:bg-muted text-foreground hover:text-foreground"
           >
             ম্যাপে দেখুন
           </Button>
@@ -248,13 +250,13 @@ export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: Ho
   // Desktop floating panel
   const desktopContent = (
     <div className="absolute top-4 right-4 z-[100] w-80 max-h-[calc(100vh-2rem)]">
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 z-10 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors"
           aria-label="Close"
         >
-          <X className="w-4 h-4 text-white" />
+          <X className="w-4 h-4 text-foreground" />
         </button>
 
         <div className="p-4 space-y-4 max-h-[50vh] overflow-y-auto">

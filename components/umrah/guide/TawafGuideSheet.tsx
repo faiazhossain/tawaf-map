@@ -59,16 +59,19 @@ function SheetBody({
   const counterValue = useUmrahGuideStore((s) => (step ? selectCounter(s, step.id) : 0));
   const stepIds = useUmrahGuideStore((s) => s.stepIds);
   const currentIndex = useUmrahGuideStore((s) => s.currentIndex);
-  const nextStep = useUmrahGuideStore((s) => s.nextStep);
+  const nextStepAction = useUmrahGuideStore((s) => s.nextStep);
   const prevStep = useUmrahGuideStore((s) => s.prevStep);
   const steps = useMemo(
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
+  const nextStepTitle = steps[currentIndex + 1]?.title.bn;
 
   if (!step) {
     return (
-      <div className="px-4 py-8 text-center text-sm text-slate-400">একটি ধাপ নির্বাচন করুন</div>
+      <div className="px-4 py-8 text-center text-sm text-muted-foreground">
+        একটি ধাপ নির্বাচন করুন
+      </div>
     );
   }
 
@@ -90,7 +93,7 @@ function SheetBody({
         onOpenMistake={onOpenMistake}
       />
 
-      <InstructionCard step={step} counterValue={counterValue} />
+      <InstructionCard step={step} counterValue={counterValue} nextStepTitle={nextStepTitle} />
 
       {counter && <CircuitControl step={step} />}
 
@@ -99,13 +102,13 @@ function SheetBody({
           {counter && (
             <div className="flex items-center justify-between">
               <RoundDots value={counterValue} max={counter.max} />
-              <span className="text-[11px] text-slate-400">
+              <span className="text-[11px] text-muted-foreground">
                 {counter.label.bn} {toBengaliNumber(counterValue)}/{toBengaliNumber(counter.max)}
               </span>
             </div>
           )}
           <GuideStepList steps={steps} />
-          <div className="pt-1 border-t border-slate-700/40">
+          <div className="pt-1 border-t border-border/40">
             <GuideExpanded />
           </div>
           <div className="flex items-center gap-2 pt-1">
@@ -114,7 +117,7 @@ function SheetBody({
               size="sm"
               onClick={prevStep}
               disabled={currentIndex === 0}
-              className="border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-slate-700"
+              className="border-border bg-muted/60 text-foreground hover:bg-muted"
             >
               <ChevronLeft className="w-4 h-4" /> পেছনে
             </Button>
@@ -122,7 +125,7 @@ function SheetBody({
               size="sm"
               onClick={() => snapToIndex(1)}
               variant="outline"
-              className="ml-auto border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-slate-700 gap-1"
+              className="ml-auto border-border bg-muted/60 text-foreground hover:bg-muted gap-1"
             >
               <ChevronsUp className="w-4 h-4" /> সংক্ষেপে
             </Button>
@@ -133,18 +136,18 @@ function SheetBody({
           <Button
             onClick={() => snapToIndex(2)}
             variant="outline"
-            className="w-full justify-center gap-1 border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-slate-700"
+            className="w-full justify-center gap-1 border-border bg-muted/60 text-foreground hover:bg-muted"
           >
             <ChevronsUp className="w-4 h-4" /> বিস্তারিত ও ধাপের তালিকা
           </Button>
           <Button
-            onClick={nextStep}
+            onClick={nextStepAction}
             disabled={isLast}
-            className="w-full justify-center gap-1 bg-teal-600 hover:bg-teal-500 text-white border-0"
+            className="w-full justify-center gap-1 bg-primary hover:bg-primary-hover text-primary-foreground border-0"
           >
             পরবর্তী ধাপ <ChevronRight className="w-4 h-4" />
           </Button>
-          <p className="text-center text-[11px] text-slate-500">
+          <p className="text-center text-[11px] text-muted-foreground">
             {stageLabel(step.stage)}
             {counter ? ` · ${toBengaliNumber(counterValue)}/${toBengaliNumber(counter.max)}` : ""}
           </p>

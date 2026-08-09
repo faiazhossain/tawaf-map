@@ -29,15 +29,17 @@ export function FlightIhramCard() {
   const toggle = (i: number) => setChecked((prev) => prev.map((v, idx) => (idx === i ? !v : v)));
 
   return (
-    <div className="rounded-xl border border-teal-500/30 bg-teal-500/5 overflow-hidden">
+    <div className="rounded-xl border border-primary/30 bg-primary/5 overflow-hidden">
       {/* শিরোনাম */}
-      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-teal-600/15 to-cyan-600/10 border-b border-teal-500/20">
-        <div className="w-8 h-8 rounded-lg bg-teal-500 flex items-center justify-center flex-shrink-0">
-          <PlaneTakeoff className="w-4.5 h-4.5 text-white" />
+      <div className="flex items-center gap-2.5 px-3 py-2.5 bg-gradient-to-r from-primary/15 to-primary/5 border-b border-primary/20">
+        <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center flex-shrink-0">
+          <PlaneTakeoff className="w-4.5 h-4.5 text-primary-foreground" />
         </div>
         <div className="min-w-0">
-          <p className="text-sm font-bold text-white leading-tight">বিমানে ইহরাম — ঢাকা → জেদ্দা</p>
-          <p className="text-[11px] text-teal-300">
+          <p className="text-sm font-bold text-foreground leading-tight">
+            বিমানে ইহরাম — ঢাকা → জেদ্দা
+          </p>
+          <p className="text-[11px] text-primary">
             উড্ডয়নের আগেই প্রস্তুতি নিন ({doneCount}/{checked.length})
           </p>
         </div>
@@ -46,7 +48,7 @@ export function FlightIhramCard() {
       <div className="px-3 py-3 space-y-3">
         {/* উড্ডয়ন-পূর্ব চেকলিস্ট */}
         <div className="space-y-1.5">
-          <p className="text-xs font-medium text-slate-300">বোর্ডিংয়ের আগে যা করবেন</p>
+          <p className="text-xs font-medium text-foreground">বোর্ডিংয়ের আগে যা করবেন</p>
           {AIR_IHRAM_CHECKLIST.map((item, i) => (
             <button
               key={i}
@@ -56,13 +58,13 @@ export function FlightIhramCard() {
                 "w-full flex items-start gap-2.5 p-2 rounded-lg border text-left transition-all",
                 checked[i]
                   ? "bg-emerald-500/10 border-emerald-500/30"
-                  : "bg-slate-800/40 border-slate-700/40 hover:bg-slate-800/70"
+                  : "bg-muted/40 border-border/40 hover:bg-muted/70"
               )}
             >
               <span
                 className={cn(
                   "mt-0.5 flex-shrink-0 w-4 h-4 rounded border flex items-center justify-center transition-colors",
-                  checked[i] ? "bg-emerald-500 border-emerald-500" : "border-slate-600 bg-slate-900"
+                  checked[i] ? "bg-emerald-500 border-emerald-500" : "border-border bg-surface"
                 )}
               >
                 {checked[i] && <Check className="w-3 h-3 text-white" />}
@@ -70,7 +72,7 @@ export function FlightIhramCard() {
               <span
                 className={cn(
                   "text-xs leading-relaxed",
-                  checked[i] ? "text-slate-400 line-through" : "text-slate-200"
+                  checked[i] ? "text-muted-foreground line-through" : "text-foreground"
                 )}
               >
                 {item.bn}
@@ -80,9 +82,9 @@ export function FlightIhramCard() {
         </div>
 
         {/* ম্যানুয়াল কাউন্টডাউন নির্দেশনা */}
-        <div className="p-2.5 rounded-lg bg-slate-800/50 border border-slate-700/50">
-          <p className="text-xs text-slate-300 leading-relaxed">
-            <span className="font-semibold text-teal-300">মিকাত পার হওয়ার আগেই ইহরাম বাঁধুন।</span>{" "}
+        <div className="p-2.5 rounded-lg bg-muted/50 border border-border/50">
+          <p className="text-xs text-foreground leading-relaxed">
+            <span className="font-semibold text-primary">মিকাত পার হওয়ার আগেই ইহরাম বাঁধুন।</span>{" "}
             বিমান সংস্থাগুলো অবতরণের আনুমানিক ৩০–৪৫ মিনিট আগে ঘোষণা দেয় — সেই সংকেতে নিয়ত স্থির
             করে ইহরাম বাঁধুন এবং তালবিয়াহ পড়তে শুরু করুন।
           </p>
@@ -90,11 +92,11 @@ export function FlightIhramCard() {
 
         {/* তালবিয়াহ (বিস্তারিত) */}
         {talbiyah && (
-          <div className="rounded-lg border border-slate-700/50 overflow-hidden">
+          <div className="rounded-lg border border-border/50 overflow-hidden">
             <button
               type="button"
               onClick={() => setShowTalbiyah((v) => !v)}
-              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 bg-slate-800/50 hover:bg-slate-800 transition-colors"
+              className="w-full flex items-center justify-between gap-2 px-2.5 py-2 bg-muted/50 hover:bg-muted transition-colors"
             >
               <span className="flex items-center gap-2 text-xs font-medium text-cyan-300">
                 <BookOpen className="w-3.5 h-3.5" />
@@ -102,21 +104,23 @@ export function FlightIhramCard() {
               </span>
               <ChevronDown
                 className={cn(
-                  "w-4 h-4 text-slate-400 transition-transform",
+                  "w-4 h-4 text-muted-foreground transition-transform",
                   showTalbiyah && "rotate-180"
                 )}
               />
             </button>
             {showTalbiyah && (
-              <div className="px-2.5 py-2.5 space-y-1.5 bg-slate-900/40">
-                <p className="text-base leading-loose text-right text-white" dir="rtl">
+              <div className="px-2.5 py-2.5 space-y-1.5 bg-surface/40">
+                <p className="text-base leading-loose text-right text-foreground" dir="rtl">
                   {talbiyah.arabic}
                 </p>
                 {talbiyah.transliteration && (
-                  <p className="text-[11px] italic text-slate-400">{talbiyah.transliteration}</p>
+                  <p className="text-[11px] italic text-muted-foreground">
+                    {talbiyah.transliteration}
+                  </p>
                 )}
-                <p className="text-xs text-slate-300 leading-relaxed">
-                  <span className="text-slate-500">অর্থ: </span>
+                <p className="text-xs text-foreground leading-relaxed">
+                  <span className="text-muted-foreground">অর্থ: </span>
                   {talbiyah.translationBn}
                 </p>
               </div>

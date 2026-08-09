@@ -44,27 +44,27 @@ function OptionCard({ selected, onClick, icon, title, description }: OptionCardP
       className={cn(
         "w-full flex items-center gap-3 p-3 rounded-xl border text-left transition-all",
         selected
-          ? "bg-teal-500/15 border-teal-500 ring-1 ring-teal-500/40"
-          : "bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 hover:border-slate-600"
+          ? "bg-primary/15 border-primary ring-1 ring-primary/40"
+          : "bg-muted/50 border-border/60 hover:bg-muted hover:border-border"
       )}
     >
       <div
         className={cn(
           "flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center",
-          selected ? "bg-teal-500 text-white" : "bg-slate-700/70 text-slate-300"
+          selected ? "bg-primary text-primary-foreground" : "bg-muted text-foreground"
         )}
       >
         {icon}
       </div>
       <div className="flex-1 min-w-0">
-        <p className={cn("text-sm font-medium", selected ? "text-white" : "text-slate-200")}>
+        <p className={cn("text-sm font-medium", selected ? "text-foreground" : "text-foreground")}>
           {title}
         </p>
         {description && (
-          <p className="text-xs text-slate-400 mt-0.5 leading-relaxed">{description}</p>
+          <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
         )}
       </div>
-      {selected && <Check className="w-5 h-5 text-teal-400 flex-shrink-0" />}
+      {selected && <Check className="w-5 h-5 text-primary flex-shrink-0" />}
     </button>
   );
 }
@@ -158,22 +158,22 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[88vh] flex flex-col bg-slate-900 sm:rounded-2xl rounded-t-3xl border border-slate-700/60 shadow-2xl overflow-hidden">
+      <div className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[88vh] flex flex-col bg-surface sm:rounded-2xl rounded-t-3xl border border-border/60 shadow-2xl overflow-hidden">
         {/* হেডার */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-gradient-to-r from-teal-600/20 to-cyan-600/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-primary/20 to-primary/5">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-teal-500 flex items-center justify-center">
-              <Moon className="w-5 h-5 text-white" />
+            <div className="w-9 h-9 rounded-xl bg-primary flex items-center justify-center">
+              <Moon className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">ওমরাহ গাইড</h2>
-              <p className="text-[11px] text-teal-300">আপনার জন্য ব্যক্তিগতকৃত পথ</p>
+              <h2 className="text-base font-bold text-foreground">ওমরাহ গাইড</h2>
+              <p className="text-[11px] text-primary">আপনার জন্য ব্যক্তিগতকৃত পথ</p>
             </div>
           </div>
           {onClose && (
             <button
               onClick={onClose}
-              className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-slate-800 transition-colors"
+              className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded-md hover:bg-muted transition-colors"
             >
               বন্ধ
             </button>
@@ -188,12 +188,12 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                 key={i}
                 className={cn(
                   "h-1 flex-1 rounded-full transition-colors",
-                  i < step ? "bg-teal-500" : i === step ? "bg-teal-400" : "bg-slate-700"
+                  i < step ? "bg-primary" : i === step ? "bg-primary" : "bg-muted"
                 )}
               />
             ))}
           </div>
-          <p className="text-[11px] text-slate-500 mt-1.5">
+          <p className="text-[11px] text-muted-foreground mt-1.5">
             ধাপ {step + 1} / {totalSteps}
           </p>
         </div>
@@ -203,8 +203,8 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ১: লিঙ্গ */}
           {step === 0 && (
             <div className="space-y-2.5">
-              <p className="text-sm font-medium text-slate-200 mb-1">আপনি কোন লিঙ্গের?</p>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-sm font-medium text-foreground mb-1">আপনি কোন লিঙ্গের?</p>
+              <p className="text-xs text-muted-foreground mb-3">
                 এটি প্রস্তুতি, তওয়াফ ও চুল কাটার নিয়ম ঢালাই করবে।
               </p>
               <OptionCard
@@ -225,8 +225,8 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ২: যাত্রাপথ */}
           {step === 1 && (
             <div className="space-y-2.5">
-              <p className="text-sm font-medium text-slate-200 mb-1">আপনি কীভাবে আসছেন?</p>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-sm font-medium text-foreground mb-1">আপনি কীভাবে আসছেন?</p>
+              <p className="text-xs text-muted-foreground mb-3">
                 এটি আপনার মিকাত (ইহরামের সীমানা) নির্ধারণ করবে।
               </p>
               {TRAVEL_OPTIONS.map((opt) => (
@@ -248,7 +248,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                 </div>
               )}
               {miqat && (
-                <p className="text-xs text-teal-300 mt-1">
+                <p className="text-xs text-primary mt-1">
                   আপনার মিকাত: <span className="font-semibold">{miqat.name.bn}</span>
                 </p>
               )}
@@ -258,7 +258,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ৩ (নারী): সঙ্গ ও মাহরাম */}
           {step === 2 && needsCompanionship && (
             <div className="space-y-2.5">
-              <p className="text-sm font-medium text-slate-200 mb-1">আপনি কার সাথে ভ্রমণ করছেন?</p>
+              <p className="text-sm font-medium text-foreground mb-1">আপনি কার সাথে ভ্রমণ করছেন?</p>
               <OptionCard
                 selected={travelGroup === "family"}
                 onClick={() => {
@@ -282,8 +282,8 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                 icon={<User className="w-5 h-5" />}
                 title="একা"
               />
-              <div className="mt-3 p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-                <p className="text-[11px] text-slate-400 leading-relaxed">
+              <div className="mt-3 p-3 rounded-xl bg-muted/50 border border-border/50">
+                <p className="text-[11px] text-muted-foreground leading-relaxed">
                   দ্রষ্টব্য: মাহরাম বিষয়ে আলেমদের মতভেদ আছে। অধিকাংশ (হানাফী, হাম্বলী) মতে মাহরাম
                   আবশ্যক; শাফেয়ী ও একটি মালেকী মতে নিরাপদ দলে ভ্রমণ জায়েজ। অ্যাপ উভয় মত দেখায়,
                   রায় দেয় না। বর্তমান সৌদি ভিসা নীতির জন্য Nusuk দেখুন।
@@ -296,43 +296,43 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {((step === 3 && needsCompanionship) || (step === 2 && !needsCompanionship)) && (
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 mb-1">
-                <Accessibility className="w-4 h-4 text-teal-400" />
-                <p className="text-sm font-medium text-slate-200">বিশেষ প্রয়োজন (ঐচ্ছিক)</p>
+                <Accessibility className="w-4 h-4 text-primary" />
+                <p className="text-sm font-medium text-foreground">বিশেষ প্রয়োজন (ঐচ্ছিক)</p>
               </div>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-muted-foreground mb-3">
                 এটি গেট ও পথ সুপারিশে সাহায্য করবে। প্রয়োজন না হলে এড়িয়ে যান।
               </p>
               <label
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all",
                   wheelchair
-                    ? "bg-teal-500/15 border-teal-500"
-                    : "bg-slate-800/50 border-slate-700/60 hover:bg-slate-800"
+                    ? "bg-primary/15 border-primary"
+                    : "bg-muted/50 border-border/60 hover:bg-muted"
                 )}
               >
                 <input
                   type="checkbox"
                   checked={wheelchair}
                   onChange={(e) => setWheelchair(e.target.checked)}
-                  className="w-4 h-4 accent-teal-500"
+                  className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm text-slate-200">হুইলচেয়ার প্রয়োজন</span>
+                <span className="text-sm text-foreground">হুইলচেয়ার প্রয়োজন</span>
               </label>
               <label
                 className={cn(
                   "flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-all",
                   slowPace
-                    ? "bg-teal-500/15 border-teal-500"
-                    : "bg-slate-800/50 border-slate-700/60 hover:bg-slate-800"
+                    ? "bg-primary/15 border-primary"
+                    : "bg-muted/50 border-border/60 hover:bg-muted"
                 )}
               >
                 <input
                   type="checkbox"
                   checked={slowPace}
                   onChange={(e) => setSlowPace(e.target.checked)}
-                  className="w-4 h-4 accent-teal-500"
+                  className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm text-slate-200">ধীরগতিতে চলতে চাই (বয়স্ক/অসুস্থতা)</span>
+                <span className="text-sm text-foreground">ধীরগতিতে চলতে চাই (বয়স্ক/অসুস্থতা)</span>
               </label>
             </div>
           )}
@@ -341,10 +341,10 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {((step === 4 && needsCompanionship) || (step === 3 && !needsCompanionship)) && (
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 mb-1">
-                <BookOpen className="w-4 h-4 text-teal-400" />
-                <p className="text-sm font-medium text-slate-200">মাযহাব (ঐচ্ছিক)</p>
+                <BookOpen className="w-4 h-4 text-primary" />
+                <p className="text-sm font-medium text-foreground">মাযহাব (ঐচ্ছিক)</p>
               </div>
-              <p className="text-xs text-slate-500 mb-3">
+              <p className="text-xs text-muted-foreground mb-3">
                 ভুলের ক্ষেত্রে কাফফারার ব্যাখ্যা এ অনুযায়ী ঢালাই হবে। নিশ্চিত না হলে &ldquo;সব
                 মত&rdquo; রাখুন।
               </p>
@@ -362,9 +362,9 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
         </div>
 
         {/* ফুটার */}
-        <div className="flex items-center gap-2 px-5 py-4 border-t border-slate-800 bg-slate-900">
+        <div className="flex items-center gap-2 px-5 py-4 border-t border-border bg-surface">
           {step > 0 ? (
-            <Button variant="ghost" size="sm" onClick={back} className="text-slate-300">
+            <Button variant="ghost" size="sm" onClick={back} className="text-foreground">
               <ChevronLeft className="w-4 h-4" /> পেছনে
             </Button>
           ) : (
@@ -375,7 +375,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
               onClick={next}
               disabled={!canProceed()}
               size="sm"
-              className="ml-auto bg-teal-600 hover:bg-teal-500 text-white border-0"
+              className="ml-auto bg-primary hover:bg-primary-hover text-primary-foreground border-0"
             >
               পরবর্তী
             </Button>
@@ -383,7 +383,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
             <Button
               onClick={handleFinish}
               size="sm"
-              className="ml-auto bg-teal-600 hover:bg-teal-500 text-white border-0 gap-2"
+              className="ml-auto bg-primary hover:bg-primary-hover text-primary-foreground border-0 gap-2"
             >
               <Check className="w-4 h-4" /> গাইড শুরু করুন
             </Button>

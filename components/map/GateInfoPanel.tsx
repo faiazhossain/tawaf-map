@@ -38,10 +38,10 @@ const typeConfigs = {
   umrah: {
     color: "emerald",
     label: "ওমরাহ গেট",
-    bg: "bg-emerald-600",
-    bgLight: "bg-emerald-500/10",
-    borderLight: "border-emerald-500/20",
-    textLight: "text-emerald-400",
+    bg: "bg-primary",
+    bgLight: "bg-primary-soft",
+    borderLight: "border-primary/20",
+    textLight: "text-primary",
   },
   salah: {
     color: "amber",
@@ -87,11 +87,11 @@ function GateInfoContent({
       >
         <div className="flex items-center gap-3">
           <div className="p-2 bg-white/20 rounded-xl">
-            <MapPin className="w-5 h-5 text-white" />
+            <MapPin className="w-5 h-5 text-foreground" />
           </div>
           <div>
-            <h3 className="font-bold text-white">{gate.name}</h3>
-            <p className="text-xs text-white/80" dir="rtl">
+            <h3 className="font-bold text-foreground">{gate.name}</h3>
+            <p className="text-xs text-foreground/80" dir="rtl">
               {gate.nameAr}
             </p>
           </div>
@@ -104,13 +104,13 @@ function GateInfoContent({
           <div className={`p-4 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs text-slate-500 mb-1">দূরত্ব</p>
+                <p className="text-xs text-muted-foreground mb-1">দূরত্ব</p>
                 <p className={`text-xl font-bold ${config.textLight}`}>
                   {formatDistance(distance)}
                 </p>
               </div>
               <div className="text-right">
-                <p className="text-xs text-slate-500 mb-1">হেঁটে যাওয়ার সময়</p>
+                <p className="text-xs text-muted-foreground mb-1">হেঁটে যাওয়ার সময়</p>
                 <p className={`text-xl font-bold ${config.textLight}`}>
                   {walkingTime ? formatWalkingTime(walkingTime) : "--"}
                 </p>
@@ -130,12 +130,12 @@ function GateInfoContent({
         {/* Facilities */}
         {gate.facilities.length > 0 && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">সুবিধা সমূহ</p>
+            <p className="text-xs text-muted-foreground mb-2">সুবিধা সমূহ</p>
             <div className="flex flex-wrap gap-2">
               {gate.facilities.map((facility) => (
                 <span
                   key={facility}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted border border-border rounded-lg text-xs text-foreground"
                 >
                   {facilityIcons[facility as keyof typeof facilityIcons]}
                   <span>{facilityLabels[facility as keyof typeof facilityLabels] || facility}</span>
@@ -148,11 +148,14 @@ function GateInfoContent({
         {/* Nearby Landmarks */}
         {gate.nearestLandmarks.length > 0 && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">কাছাকাছি জায়গা</p>
+            <p className="text-xs text-muted-foreground mb-2">কাছাকাছি জায়গা</p>
             <div className="space-y-1.5">
               {gate.nearestLandmarks.map((landmark) => (
-                <div key={landmark} className="flex items-center gap-2 text-sm text-slate-400">
-                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                <div
+                  key={landmark}
+                  className="flex items-center gap-2 text-sm text-muted-foreground"
+                >
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                   {landmark}
                 </div>
               ))}
@@ -162,19 +165,19 @@ function GateInfoContent({
 
         {/* Coordinates */}
         <div className={`p-3 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-          <p className="text-[10px] text-slate-500 mb-1">কোঅর্ডিনেট</p>
-          <p className="text-xs font-mono text-slate-400">
+          <p className="text-[10px] text-muted-foreground mb-1">কোঅর্ডিনেট</p>
+          <p className="text-xs font-mono text-muted-foreground">
             {gate.location.coordinates[1].toFixed(6)}, {gate.location.coordinates[0].toFixed(6)}
           </p>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="p-4 border-t border-slate-700/50 -mx-4 mt-auto sm:mx-0">
+      <div className="p-4 border-t border-border/50 -mx-4 mt-auto sm:mx-0">
         <Button
           onClick={onGetDirections}
           disabled={!hasLocation || isCalculating || isRouting}
-          className={`w-full gap-2 ${config.bg} hover:opacity-90 text-white border-0 shadow-lg`}
+          className={`w-full gap-2 ${config.bg} hover:opacity-90 text-foreground border-0 shadow-lg`}
         >
           {isCalculating || isRouting ? (
             <>
@@ -189,7 +192,7 @@ function GateInfoContent({
           )}
         </Button>
         {!hasLocation && (
-          <p className="text-xs text-slate-600 text-center mt-2">
+          <p className="text-xs text-muted-foreground text-center mt-2">
             লোকেশন চালু করুন দিক নির্দেশনা পেতে
           </p>
         )}
@@ -261,17 +264,17 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
   // Desktop floating panel
   const desktopContent = (
     <div className="absolute top-4 right-4 z-[100] w-80 max-h-[calc(100vh-2rem)] overflow-hidden">
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
         {/* Header */}
         <div className={`${config.bg} px-4 py-3`}>
           <div className="flex items-start justify-between">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-white/20 rounded-xl">
-                <MapPin className="w-5 h-5 text-white" />
+                <MapPin className="w-5 h-5 text-foreground" />
               </div>
               <div>
-                <h3 className="font-bold text-white">{gate.name}</h3>
-                <p className="text-xs text-white/80" dir="rtl">
+                <h3 className="font-bold text-foreground">{gate.name}</h3>
+                <p className="text-xs text-foreground/80" dir="rtl">
                   {gate.nameAr}
                 </p>
               </div>
@@ -280,7 +283,7 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
               onClick={handleClose}
               className="p-1.5 hover:bg-white/20 rounded-lg transition-colors"
             >
-              <X className="w-4 h-4 text-white" />
+              <X className="w-4 h-4 text-foreground" />
             </button>
           </div>
         </div>
@@ -291,13 +294,13 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
             <div className={`p-4 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-slate-500 mb-1">দূরত্ব</p>
+                  <p className="text-xs text-muted-foreground mb-1">দূরত্ব</p>
                   <p className={`text-xl font-bold ${config.textLight}`}>
                     {formatDistance(distance)}
                   </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-xs text-slate-500 mb-1">হেঁটে যাওয়ার সময়</p>
+                  <p className="text-xs text-muted-foreground mb-1">হেঁটে যাওয়ার সময়</p>
                   <p className={`text-xl font-bold ${config.textLight}`}>
                     {walkingTime ? formatWalkingTime(walkingTime) : "--"}
                   </p>
@@ -317,12 +320,12 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
           {/* Facilities */}
           {gate.facilities.length > 0 && (
             <div>
-              <p className="text-xs text-slate-500 mb-2">সুবিধা সমূহ</p>
+              <p className="text-xs text-muted-foreground mb-2">সুবিধা সমূহ</p>
               <div className="flex flex-wrap gap-2">
                 {gate.facilities.map((facility) => (
                   <span
                     key={facility}
-                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-muted border border-border rounded-lg text-xs text-foreground"
                   >
                     {facilityIcons[facility as keyof typeof facilityIcons]}
                     <span>
@@ -337,11 +340,14 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
           {/* Nearby Landmarks */}
           {gate.nearestLandmarks.length > 0 && (
             <div>
-              <p className="text-xs text-slate-500 mb-2">কাছাকাছি জায়গা</p>
+              <p className="text-xs text-muted-foreground mb-2">কাছাকাছি জায়গা</p>
               <div className="space-y-1.5">
                 {gate.nearestLandmarks.map((landmark) => (
-                  <div key={landmark} className="flex items-center gap-2 text-sm text-slate-400">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <div
+                    key={landmark}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                     {landmark}
                   </div>
                 ))}
@@ -351,19 +357,19 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
 
           {/* Coordinates */}
           <div className={`p-3 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-            <p className="text-[10px] text-slate-500 mb-1">কোঅর্ডিনেট</p>
-            <p className="text-xs font-mono text-slate-400">
+            <p className="text-[10px] text-muted-foreground mb-1">কোঅর্ডিনেট</p>
+            <p className="text-xs font-mono text-muted-foreground">
               {gate.location.coordinates[1].toFixed(6)}, {gate.location.coordinates[0].toFixed(6)}
             </p>
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-700/50">
+        <div className="p-4 border-t border-border/50">
           <Button
             onClick={handleGetDirections}
             disabled={!hasLocation || isCalculating || isRouting}
-            className={`w-full gap-2 ${config.bg} hover:opacity-90 text-white border-0 shadow-lg`}
+            className={`w-full gap-2 ${config.bg} hover:opacity-90 text-foreground border-0 shadow-lg`}
           >
             {isCalculating || isRouting ? (
               <>
@@ -378,7 +384,7 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
             )}
           </Button>
           {!hasLocation && (
-            <p className="text-xs text-slate-600 text-center mt-2">
+            <p className="text-xs text-muted-foreground text-center mt-2">
               লোকেশন চালু করুন দিক নির্দেশনা পেতে
             </p>
           )}

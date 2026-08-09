@@ -46,12 +46,12 @@ function TestLocationContent({
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs">
             <div>
-              <span className="text-slate-500">ল্যাট: </span>
-              <span className="font-mono text-white">{latitude.toFixed(6)}</span>
+              <span className="text-muted-foreground">ল্যাট: </span>
+              <span className="font-mono text-foreground">{latitude.toFixed(6)}</span>
             </div>
             <div>
-              <span className="text-slate-500">লং: </span>
-              <span className="font-mono text-white">{longitude.toFixed(6)}</span>
+              <span className="text-muted-foreground">লং: </span>
+              <span className="font-mono text-foreground">{longitude.toFixed(6)}</span>
             </div>
           </div>
         </div>
@@ -59,23 +59,23 @@ function TestLocationContent({
 
       {/* Preset locations */}
       <div>
-        <p className="text-xs font-medium text-slate-500 mb-2">দ্রুত সেট (মক্কা)</p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">দ্রুত সেট (মক্কা)</p>
         <div className="space-y-1.5">
           {TEST_LOCATIONS.map((loc) => (
             <button
               key={loc.name}
               onClick={() => onSetLocation(loc.lat, loc.lng)}
-              className="w-full text-left px-3 py-2.5 rounded-xl bg-slate-800/50 hover:bg-emerald-500/10 border border-slate-700/50 hover:border-emerald-500/30 transition-all group flex items-center justify-between"
+              className="w-full text-left px-3 py-2.5 rounded-xl bg-muted/50 hover:bg-emerald-500/10 border border-border/50 hover:border-emerald-500/30 transition-all group flex items-center justify-between"
             >
               <div className="flex items-center gap-2.5">
-                <div className="p-1.5 bg-slate-900 rounded-lg">
-                  <MapPin className="w-3 h-3 text-slate-500 group-hover:text-emerald-400 transition-colors" />
+                <div className="p-1.5 bg-surface rounded-lg">
+                  <MapPin className="w-3 h-3 text-muted-foreground group-hover:text-primary transition-colors" />
                 </div>
                 <div>
-                  <span className="text-sm font-medium text-white block group-hover:text-emerald-400 transition-colors">
+                  <span className="text-sm font-medium text-foreground block group-hover:text-primary transition-colors">
                     {loc.name}
                   </span>
-                  <span className="text-[10px] text-slate-600 block" dir="rtl">
+                  <span className="text-[10px] text-muted-foreground block" dir="rtl">
                     {loc.nameAr}
                   </span>
                 </div>
@@ -87,7 +87,7 @@ function TestLocationContent({
 
       {/* Custom coordinates */}
       <div>
-        <p className="text-xs font-medium text-slate-500 mb-2">কাস্টম কোঅর্ডিনেট</p>
+        <p className="text-xs font-medium text-muted-foreground mb-2">কাস্টম কোঅর্ডিনেট</p>
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <input
@@ -98,7 +98,7 @@ function TestLocationContent({
               placeholder="ল্যাটিটিউড"
               value={customLat}
               onChange={(e) => setCustomLat(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-700 bg-slate-900 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-mono"
+              className="w-full px-3 py-2 text-sm border border-border bg-surface rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
             />
             <input
               type="number"
@@ -108,13 +108,13 @@ function TestLocationContent({
               placeholder="লংগিটিউড"
               value={customLng}
               onChange={(e) => setCustomLng(e.target.value)}
-              className="w-full px-3 py-2 text-sm border border-slate-700 bg-slate-900 rounded-xl text-white placeholder:text-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-mono"
+              className="w-full px-3 py-2 text-sm border border-border bg-surface rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 font-mono"
             />
           </div>
           <Button
             onClick={onSetCustomLocation}
             size="sm"
-            className="w-full gap-1.5 bg-slate-800 hover:bg-slate-700 text-white border-0"
+            className="w-full gap-1.5 bg-muted hover:bg-muted text-foreground border-0"
           >
             <Crosshair className="w-3.5 h-3.5" />
             কাস্টম লোকেশন সেট করুন
@@ -178,8 +178,8 @@ export function DebugLocationPanel() {
                 <MapPin className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="text-left">
-                <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
-                <span className="text-xs text-slate-500 block">
+                <span className="text-sm font-semibold text-foreground block">টেস্ট লোকেশন</span>
+                <span className="text-xs text-muted-foreground block">
                   {latitude !== null && longitude !== null
                     ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
                     : "সেট করা নেই"}
@@ -209,43 +209,43 @@ export function DebugLocationPanel() {
           className="absolute bottom-4 right-4 z-[50] p-3 bg-emerald-600 hover:bg-emerald-700 rounded-xl shadow-lg transition-colors"
           aria-label="Open test location"
         >
-          <MapPin className="w-5 h-5 text-white" />
+          <MapPin className="w-5 h-5 text-foreground" />
         </button>
       </div>
 
       {/* Desktop floating panel */}
       <div className="hidden sm:block absolute bottom-4 right-4 z-[50] w-72">
-        <div className="bg-slate-900 border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+        <div className="bg-surface border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
           {/* Header - always visible */}
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-800/50 transition-colors"
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-muted/50 transition-colors"
           >
             <div className="flex items-center gap-3">
               <div className="p-2 bg-emerald-500/20 rounded-xl">
                 <MapPin className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="text-left">
-                <span className="text-sm font-semibold text-white block">টেস্ট লোকেশন</span>
-                <span className="text-xs text-slate-500 block">
+                <span className="text-sm font-semibold text-foreground block">টেস্ট লোকেশন</span>
+                <span className="text-xs text-muted-foreground block">
                   {latitude !== null && longitude !== null
                     ? `${latitude.toFixed(4)}, ${longitude.toFixed(4)}`
                     : "সেট করা নেই"}
                 </span>
               </div>
             </div>
-            <div className="p-1.5 rounded-lg bg-slate-800">
+            <div className="p-1.5 rounded-lg bg-muted">
               {isExpanded ? (
-                <ChevronDown className="w-4 h-4 text-slate-400" />
+                <ChevronDown className="w-4 h-4 text-muted-foreground" />
               ) : (
-                <ChevronUp className="w-4 h-4 text-slate-400" />
+                <ChevronUp className="w-4 h-4 text-muted-foreground" />
               )}
             </div>
           </button>
 
           {/* Expanded content */}
           {isExpanded && (
-            <div className="border-t border-slate-700/50 p-4">
+            <div className="border-t border-border/50 p-4">
               <TestLocationContent
                 latitude={latitude}
                 longitude={longitude}

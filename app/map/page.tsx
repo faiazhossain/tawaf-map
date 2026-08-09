@@ -23,6 +23,7 @@ import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { Hotel, MapPin, Mountain, Building2, X, DoorOpen, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -225,21 +226,22 @@ export default function MapPage() {
   }
 
   return (
-    <main className="flex flex-col h-dvh bg-slate-950">
+    <main className="flex flex-col h-dvh bg-background">
       {/* Header */}
-      <header className="relative px-4 py-3 bg-slate-900 border-b border-slate-800/50 z-10">
+      <header className="relative px-4 py-3 bg-surface border-b border-border z-10">
         <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
           <Link href="/" className="flex items-center gap-3 group">
             <div className="p-1.5 rounded-xl shadow-lg">
               <Image src="/icons/Tawafmap.webp" alt="TawafMap Logo" width={42} height={42} />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-white">TawafMap</h1>
-              <p className="text-xs text-emerald-500">মক্কা-মদিনায় হারাবেন না</p>
+              <h1 className="text-lg font-bold text-foreground">TawafMap</h1>
+              <p className="text-xs text-primary">মক্কা-মদিনায় হারাবেন না</p>
             </div>
           </Link>
 
           <div className="flex items-center gap-2 sm:gap-3">
+            <ThemeToggle />
             <UserLocation />
             <Button
               variant={showUmrahGuide ? "default" : "outline"}
@@ -247,8 +249,8 @@ export default function MapPage() {
               onClick={handleToggleUmrah}
               className={
                 showUmrahGuide || showUmrahOnboarding
-                  ? "bg-teal-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
               }
             >
               <Moon className="w-4 h-4" />
@@ -262,8 +264,8 @@ export default function MapPage() {
               onClick={handleToggleHotels}
               className={
                 showHotels
-                  ? "bg-emerald-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
               }
             >
               <Hotel className="w-4 h-4" />
@@ -277,8 +279,8 @@ export default function MapPage() {
               onClick={handleToggleTouristPlaces}
               className={
                 showTouristPlaces
-                  ? "bg-purple-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
               }
             >
               <Building2 className="w-4 h-4" />
@@ -292,8 +294,8 @@ export default function MapPage() {
               onClick={() => setShowTerrain((prev) => !prev)}
               className={
                 showTerrain
-                  ? "bg-blue-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
               }
             >
               <Mountain className="w-4 h-4" />
@@ -307,8 +309,8 @@ export default function MapPage() {
               onClick={handleToggleGates}
               className={
                 showGates
-                  ? "bg-orange-600 text-white border-0 shadow-lg"
-                  : "border-slate-700 bg-slate-900/80 hover:bg-slate-800 hover:text-white text-slate-300 min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
               }
             >
               <DoorOpen className="w-4 h-4" />
@@ -349,9 +351,9 @@ export default function MapPage() {
             <div className="relative">
               <button
                 onClick={() => setShowTouristList(false)}
-                className="absolute -top-2 -right-2 p-1 bg-slate-800 hover:bg-slate-700 rounded-full z-10"
+                className="absolute -top-2 -right-2 p-1 bg-muted hover:bg-muted-foreground/20 rounded-full z-10"
               >
-                <X className="w-4 h-4 text-white" />
+                <X className="w-4 h-4 text-foreground" />
               </button>
               <TouristPlacesList
                 initialCity={selectedTouristCity ?? undefined}
@@ -396,7 +398,7 @@ export default function MapPage() {
                 setShowTouristList(true);
               }}
               size="sm"
-              className="bg-purple-600 hover:bg-purple-700 text-white border-0 shadow-lg flex items-center gap-2"
+              className="bg-primary hover:bg-primary-hover text-primary-foreground border-0 shadow-lg flex items-center gap-2"
             >
               <Building2 className="w-4 h-4" />
               <span className="hidden sm:inline">Browse Historical</span>

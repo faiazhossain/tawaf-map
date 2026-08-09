@@ -12,8 +12,8 @@ interface RoutePanelProps {
 function RouteLoadingContent() {
   return (
     <div className="flex items-center gap-3 py-8">
-      <div className="w-5 h-5 border-2 border-emerald-500 border-t-transparent rounded-full animate-spin" />
-      <p className="text-sm text-slate-300">রুট বের করা হচ্ছে...</p>
+      <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm text-foreground">রুট বের করা হচ্ছে...</p>
     </div>
   );
 }
@@ -53,17 +53,17 @@ function RouteStepContent({
   index: number;
 }) {
   return (
-    <div className="px-4 py-3 hover:bg-slate-800/50 transition-colors -mx-4">
+    <div className="px-4 py-3 hover:bg-muted transition-colors -mx-4">
       <div className="flex items-start gap-3">
-        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-emerald-600 flex items-center justify-center text-xs font-bold text-white">
+        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
           {index + 1}
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-white">{instruction}</p>
+          <p className="text-sm font-medium text-foreground">{instruction}</p>
           <div className="flex items-center gap-3 mt-1">
-            <span className="text-xs text-slate-500">{formatDistance(distance)}</span>
-            <span className="text-xs text-slate-600">•</span>
-            <span className="text-xs text-slate-500">{formatWalkingTime(duration)}</span>
+            <span className="text-xs text-muted-foreground">{formatDistance(distance)}</span>
+            <span className="text-xs text-muted-foreground">•</span>
+            <span className="text-xs text-muted-foreground">{formatWalkingTime(duration)}</span>
           </div>
         </div>
       </div>
@@ -85,14 +85,14 @@ function RoutePanelContent({
   return (
     <>
       {/* Header */}
-      <div className="bg-emerald-600 px-4 py-4 flex items-center justify-between -mx-4 sm:mx-0 rounded-t-3xl">
+      <div className="bg-primary px-4 py-4 flex items-center justify-between -mx-4 sm:mx-0 rounded-t-3xl">
         <div className="flex items-center gap-2">
-          <Route className="w-5 h-5 text-white" />
-          <h3 className="font-semibold text-white">হাঁটার রুট</h3>
+          <Route className="w-5 h-5 text-foreground" />
+          <h3 className="font-semibold text-foreground">হাঁটার রুট</h3>
         </div>
         <button
           onClick={onClose}
-          className="text-white/80 hover:text-white transition-colors"
+          className="text-foreground/80 hover:text-foreground transition-colors"
           aria-label="Close route"
         >
           <X className="w-5 h-5" />
@@ -100,24 +100,24 @@ function RoutePanelContent({
       </div>
 
       {/* Route Summary */}
-      <div className="p-4 border-b border-slate-700/50">
+      <div className="p-4 border-b border-border/50">
         <div className="grid grid-cols-2 gap-4">
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
-              <Footprints className="w-4 h-4 text-emerald-400" />
+            <div className="p-2 bg-primary-soft rounded-lg">
+              <Footprints className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-slate-500">দূরত্ব</p>
-              <p className="font-semibold text-white">{formatDistance(route.distance)}</p>
+              <p className="text-xs text-muted-foreground">দূরত্ব</p>
+              <p className="font-semibold text-foreground">{formatDistance(route.distance)}</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <div className="p-2 bg-emerald-500/20 rounded-lg">
-              <Clock className="w-4 h-4 text-emerald-400" />
+            <div className="p-2 bg-primary-soft rounded-lg">
+              <Clock className="w-4 h-4 text-primary" />
             </div>
             <div>
-              <p className="text-xs text-slate-500">সময়</p>
-              <p className="font-semibold text-white">{formatWalkingTime(route.duration)}</p>
+              <p className="text-xs text-muted-foreground">সময়</p>
+              <p className="font-semibold text-foreground">{formatWalkingTime(route.duration)}</p>
             </div>
           </div>
         </div>
@@ -125,12 +125,12 @@ function RoutePanelContent({
 
       {/* Turn-by-turn Instructions */}
       <div>
-        <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700/50 sticky top-0 -mx-4">
-          <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+        <div className="px-4 py-2 bg-muted/50 border-b border-border/50 sticky top-0 -mx-4">
+          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             দিক নির্দেশনা
           </p>
         </div>
-        <div className="divide-y divide-slate-700/50">
+        <div className="divide-y divide-border/50">
           {route.steps.map((step, index) => (
             <RouteStepContent
               key={index}
@@ -144,8 +144,8 @@ function RoutePanelContent({
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 bg-slate-800/30 border-t border-slate-700/50 -mx-4 mt-auto">
-        <p className="text-xs text-slate-600 text-center">
+      <div className="px-4 py-3 bg-muted/30 border-t border-border/50 -mx-4 mt-auto">
+        <p className="text-xs text-muted-foreground text-center">
           গড় হাঁটার গতি ৫ কিমি/ঘণ্টা ধরে হিসাব করা হয়েছে
         </p>
       </div>
@@ -188,7 +188,7 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
   // Desktop floating panel
   const desktopContent = (
     <div className="absolute bottom-4 left-4 right-4 md:left-auto md:right-4 md:w-80 z-[90]">
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden">
+      <div className="bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden">
         {isRouting && (
           <div className="p-4">
             <RouteLoadingContent />
@@ -202,14 +202,14 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
         {!isRouting && !routeError && activeRoute && (
           <>
             {/* Header */}
-            <div className="bg-emerald-600 px-4 py-3 flex items-center justify-between">
+            <div className="bg-primary px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Route className="w-5 h-5 text-white" />
-                <h3 className="font-semibold text-white">হাঁটার রুট</h3>
+                <Route className="w-5 h-5 text-foreground" />
+                <h3 className="font-semibold text-foreground">হাঁটার রুট</h3>
               </div>
               <button
                 onClick={handleClose}
-                className="text-white/80 hover:text-white transition-colors"
+                className="text-foreground/80 hover:text-foreground transition-colors"
                 aria-label="Close route"
               >
                 <X className="w-4 h-4" />
@@ -217,26 +217,26 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
             </div>
 
             {/* Route Summary */}
-            <div className="p-4 border-b border-slate-700/50">
+            <div className="p-4 border-b border-border/50">
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-500/20 rounded-lg">
-                    <Footprints className="w-4 h-4 text-emerald-400" />
+                  <div className="p-2 bg-primary-soft rounded-lg">
+                    <Footprints className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">দূরত্ব</p>
-                    <p className="font-semibold text-white">
+                    <p className="text-xs text-muted-foreground">দূরত্ব</p>
+                    <p className="font-semibold text-foreground">
                       {formatDistance(activeRoute.distance)}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="p-2 bg-emerald-500/20 rounded-lg">
-                    <Clock className="w-4 h-4 text-emerald-400" />
+                  <div className="p-2 bg-primary-soft rounded-lg">
+                    <Clock className="w-4 h-4 text-primary" />
                   </div>
                   <div>
-                    <p className="text-xs text-slate-500">সময়</p>
-                    <p className="font-semibold text-white">
+                    <p className="text-xs text-muted-foreground">সময়</p>
+                    <p className="font-semibold text-foreground">
                       {formatWalkingTime(activeRoute.duration)}
                     </p>
                   </div>
@@ -246,12 +246,12 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
 
             {/* Turn-by-turn Instructions */}
             <div className="max-h-64 overflow-y-auto">
-              <div className="px-4 py-2 bg-slate-800/50 border-b border-slate-700/50 sticky top-0">
-                <p className="text-xs font-medium text-slate-400 uppercase tracking-wide">
+              <div className="px-4 py-2 bg-muted/50 border-b border-border/50 sticky top-0">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   দিক নির্দেশনা
                 </p>
               </div>
-              <div className="divide-y divide-slate-700/50">
+              <div className="divide-y divide-border/50">
                 {activeRoute.steps.map((step, index) => (
                   <RouteStepContent
                     key={index}
@@ -265,8 +265,8 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
             </div>
 
             {/* Footer */}
-            <div className="px-4 py-3 bg-slate-800/30 border-t border-slate-700/50">
-              <p className="text-xs text-slate-600 text-center">
+            <div className="px-4 py-3 bg-muted/30 border-t border-border/50">
+              <p className="text-xs text-muted-foreground text-center">
                 গড় হাঁটার গতি ৫ কিমি/ঘণ্টা ধরে হিসাব করা হয়েছে
               </p>
             </div>

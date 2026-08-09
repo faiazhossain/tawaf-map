@@ -1,8 +1,8 @@
-import { expect, afterEach } from "vitest";
+import { afterEach } from "vitest";
 import { cleanup } from "@testing-library/react";
-import * as matchers from "@testing-library/jest-dom/matchers";
-
-expect.extend(matchers);
+// jest-dom ম্যাচার রানটাইমে যোগ করে এবং vitest-এর Assertion টাইপ সম্প্রসারণ করে
+// (toBeVisible, toHaveAttribute ইত্যাদি)।
+import "@testing-library/jest-dom/vitest";
 
 afterEach(() => {
   cleanup();

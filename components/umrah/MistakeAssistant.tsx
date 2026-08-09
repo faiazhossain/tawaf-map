@@ -87,27 +87,27 @@ function OutcomeView({ mistake, onRestart }: { mistake: Mistake; onRestart: () =
 
       <ValidityBadge valid={outcome.valid} />
 
-      <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-        <p className="text-xs text-slate-400 mb-1">কী করবেন</p>
-        <p className="text-sm text-slate-200 leading-relaxed">{outcome.action.bn}</p>
+      <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+        <p className="text-xs text-muted-foreground mb-1">কী করবেন</p>
+        <p className="text-sm text-foreground leading-relaxed">{outcome.action.bn}</p>
       </div>
 
       {exp && (
-        <div className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50">
-          <p className="text-xs text-slate-400 mb-1">কাফফারা / প্রায়শ্চিত্ত</p>
+        <div className="p-3 rounded-xl bg-muted/50 border border-border/50">
+          <p className="text-xs text-muted-foreground mb-1">কাফফারা / প্রায়শ্চিত্ত</p>
           <p className={cn("text-sm leading-relaxed", exp.tone)}>{exp.bn}</p>
         </div>
       )}
 
       {outcome.expiation === "takhyir" && (
-        <p className="text-[11px] text-slate-500 leading-relaxed">
+        <p className="text-[11px] text-muted-foreground leading-relaxed">
           দ্রষ্টব্য: কাফফারার ধরন আপনার মাযহাবের উপর নির্ভর করে। হানাফী মতে তারতিব (ক্রম), অন্যদের
           মতে তাকয়ীর (পছন্দ)। অ্যাপ রায় দেয় না — নিশ্চিত হতে আলেমের সাথে যাচাই করুন।
         </p>
       )}
 
       <div>
-        <p className="text-xs text-slate-400 mb-1.5">উৎস</p>
+        <p className="text-xs text-muted-foreground mb-1.5">উৎস</p>
         <div className="space-y-1">
           {mistake.sourceRefs.map((ref) => (
             <a
@@ -128,7 +128,7 @@ function OutcomeView({ mistake, onRestart }: { mistake: Mistake; onRestart: () =
         onClick={onRestart}
         variant="outline"
         size="sm"
-        className="w-full border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-slate-700 gap-2"
+        className="w-full border-border bg-muted/60 text-foreground hover:bg-muted gap-2"
       >
         <RotateCcw className="w-4 h-4" /> আবার একটি ভুল দেখুন
       </Button>
@@ -158,23 +158,23 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col bg-slate-900 sm:rounded-2xl rounded-t-3xl border border-slate-700/60 shadow-2xl overflow-hidden">
+      <div className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col bg-surface sm:rounded-2xl rounded-t-3xl border border-border/60 shadow-2xl overflow-hidden">
         {/* হেডার */}
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-800 bg-gradient-to-r from-amber-600/15 to-rose-600/10">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-amber-600/15 to-rose-600/10">
           <div className="flex items-center gap-2.5">
             <div className="w-9 h-9 rounded-xl bg-amber-500 flex items-center justify-center">
-              <LifeBuoy className="w-5 h-5 text-white" />
+              <LifeBuoy className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-white">আমি একটি ভুল করেছি</h2>
-              <p className="text-[11px] text-amber-300">শান্ত হোন — একসাথে সমাধান করি</p>
+              <h2 className="text-base font-bold text-foreground">আমি একটি ভুল করেছি</h2>
+              <p className="text-[11px] text-amber-600">শান্ত হোন — একসাথে সমাধান করি</p>
             </div>
           </div>
           <div className="flex items-center gap-1">
             {(category || path.length > 0) && (
               <button
                 onClick={goBack}
-                className="text-slate-400 hover:text-white p-1.5 rounded-md hover:bg-slate-800 transition-colors"
+                className="text-muted-foreground hover:text-foreground p-1.5 rounded-md hover:bg-muted transition-colors"
                 aria-label="পেছনে"
               >
                 <ChevronLeft className="w-5 h-5" />
@@ -183,7 +183,7 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
             {onClose && (
               <button
                 onClick={onClose}
-                className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-slate-800 transition-colors"
+                className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded-md hover:bg-muted transition-colors"
               >
                 বন্ধ
               </button>
@@ -196,7 +196,7 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ১: শ্রেণি নির্বাচন */}
           {!category && (
             <div className="space-y-3">
-              <p className="text-sm text-slate-300">
+              <p className="text-sm text-foreground">
                 কোন ধরনের ভুল হয়েছে তা নির্বাচন করুন। কয়েকটি প্রশ্নের উত্তর দিলেই স্পষ্ট সমাধান
                 পাবেন।
               </p>
@@ -212,14 +212,14 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
                       className={cn(
                         "flex flex-col items-start gap-2 p-3 rounded-xl border text-left transition-all",
                         count === 0
-                          ? "bg-slate-800/30 border-slate-700/30 opacity-40 cursor-not-allowed"
-                          : "bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40"
+                          ? "bg-muted/30 border-border/30 opacity-40 cursor-not-allowed"
+                          : "bg-muted/50 border-border/60 hover:bg-muted hover:border-amber-500/40"
                       )}
                     >
                       <Icon className="w-5 h-5 text-amber-400" />
                       <div>
-                        <p className="text-sm font-medium text-slate-100">{cat.label}</p>
-                        <p className="text-[10px] text-slate-500">{count} টি বিষয়</p>
+                        <p className="text-sm font-medium text-foreground">{cat.label}</p>
+                        <p className="text-[10px] text-muted-foreground">{count} টি বিষয়</p>
                       </div>
                     </button>
                   );
@@ -231,15 +231,15 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ২: শ্রেণির ভুল তালিকা */}
           {category && !current && (
             <div className="space-y-2.5">
-              <p className="text-sm text-slate-300 mb-1">নিচের যেটি ঘটেছে তা নির্বাচন করুন:</p>
+              <p className="text-sm text-foreground mb-1">নিচের যেটি ঘটেছে তা নির্বাচন করুন:</p>
               {getMistakesByCategory(category).map((m) => (
                 <button
                   key={m.id}
                   onClick={() => setPath([m.id])}
-                  className="w-full flex items-center gap-3 p-3 rounded-xl border bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 text-left transition-all"
+                  className="w-full flex items-center gap-3 p-3 rounded-xl border bg-muted/50 border-border/60 hover:bg-muted hover:border-amber-500/40 text-left transition-all"
                 >
-                  <p className="flex-1 text-sm text-slate-100">{m.question.bn}</p>
-                  <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                  <p className="flex-1 text-sm text-foreground">{m.question.bn}</p>
+                  <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                 </button>
               ))}
             </div>
@@ -252,7 +252,7 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
                 <OutcomeView mistake={current} onRestart={restart} />
               ) : (
                 <div className="space-y-3">
-                  <p className="text-base font-medium text-white leading-relaxed">
+                  <p className="text-base font-medium text-foreground leading-relaxed">
                     {current.question.bn}
                   </p>
                   <div className="space-y-2">
@@ -260,10 +260,10 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
                       <button
                         key={i}
                         onClick={() => setPath([...path, branch.nextId])}
-                        className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border bg-slate-800/50 border-slate-700/60 hover:bg-slate-800 hover:border-amber-500/40 text-left transition-all"
+                        className="w-full flex items-center justify-between gap-3 p-3 rounded-xl border bg-muted/50 border-border/60 hover:bg-muted hover:border-amber-500/40 text-left transition-all"
                       >
-                        <span className="text-sm text-slate-100">{branch.condition.bn}</span>
-                        <ChevronRight className="w-4 h-4 text-slate-500 flex-shrink-0" />
+                        <span className="text-sm text-foreground">{branch.condition.bn}</span>
+                        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                       </button>
                     ))}
                   </div>
@@ -274,8 +274,8 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
         </div>
 
         {/* ফুটার দাবি */}
-        <div className="px-5 py-2.5 border-t border-slate-800 bg-slate-900">
-          <p className="text-[10px] text-slate-500 leading-relaxed text-center">
+        <div className="px-5 py-2.5 border-t border-border bg-surface">
+          <p className="text-[10px] text-muted-foreground leading-relaxed text-center">
             এটি শুধুমাত্র তথ্য ও শিক্ষামূলক। নির্দিষ্ট পরিস্থিতির জন্য একজন যোগ্য আলেমের পরামর্শ
             নিন।
           </p>

@@ -35,19 +35,19 @@ function GateRecommendationCard({ stepId }: { stepId: string }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-1.5">
-        <DoorOpen className="w-4 h-4 text-teal-400" />
-        <p className="text-xs font-medium text-slate-300">সুপারিশকৃত গেট</p>
+        <DoorOpen className="w-4 h-4 text-primary" />
+        <p className="text-xs font-medium text-foreground">সুপারিশকৃত গেট</p>
       </div>
-      <div className="p-3 rounded-xl bg-teal-500/5 border border-teal-500/20 space-y-1.5">
-        <p className="text-sm font-semibold text-white">{primary.name}</p>
-        {note && <p className="text-xs text-slate-300 leading-relaxed">{note.bn}</p>}
+      <div className="p-3 rounded-xl bg-primary/5 border border-primary/20 space-y-1.5">
+        <p className="text-sm font-semibold text-foreground">{primary.name}</p>
+        {note && <p className="text-xs text-foreground leading-relaxed">{note.bn}</p>}
         {userLocation && (
-          <p className="text-[11px] text-teal-300">
+          <p className="text-[11px] text-primary">
             আনুমানিক দূরত্ব: {formatDistance(distanceToGate(userLocation, primary))}
           </p>
         )}
         {gates[1] && (
-          <p className="text-[11px] text-slate-500 pt-1 border-t border-slate-700/40">
+          <p className="text-[11px] text-muted-foreground pt-1 border-t border-border/40">
             বিকল্প: {gates[1].name}
           </p>
         )}
@@ -72,8 +72,8 @@ export function GuideExpanded({ className }: { className?: string }) {
   if (!step) {
     return (
       <div className="flex flex-col items-center justify-center py-10 text-center">
-        <ListChecks className="w-8 h-8 text-slate-600 mb-2" />
-        <p className="text-sm text-slate-400">একটি ধাপ নির্বাচন করুন</p>
+        <ListChecks className="w-8 h-8 text-muted-foreground mb-2" />
+        <p className="text-sm text-muted-foreground">একটি ধাপ নির্বাচন করুন</p>
       </div>
     );
   }
@@ -91,11 +91,11 @@ export function GuideExpanded({ className }: { className?: string }) {
       {/* কী করবেন */}
       <div>
         <div className="flex items-center gap-2 mb-1.5">
-          <ListChecks className="w-4 h-4 text-teal-400" />
-          <p className="text-xs font-medium text-slate-300">কী করবেন</p>
+          <ListChecks className="w-4 h-4 text-primary" />
+          <p className="text-xs font-medium text-foreground">কী করবেন</p>
         </div>
-        <div className="p-3 rounded-xl bg-slate-800/40 border border-slate-700/40">
-          <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+        <div className="p-3 rounded-xl bg-muted/40 border border-border/40">
+          <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
             {step.whatToDo.bn}
           </p>
         </div>
@@ -109,10 +109,10 @@ export function GuideExpanded({ className }: { className?: string }) {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <AlertTriangle className="w-4 h-4 text-amber-400" />
-            <p className="text-xs font-medium text-slate-300">নিয়ম ও সতর্কতা</p>
+            <p className="text-xs font-medium text-foreground">নিয়ম ও সতর্কতা</p>
           </div>
           <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20">
-            <p className="text-sm text-slate-300 leading-relaxed whitespace-pre-line">
+            <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
               {step.rules.bn}
             </p>
           </div>
@@ -124,28 +124,25 @@ export function GuideExpanded({ className }: { className?: string }) {
         <div>
           <div className="flex items-center gap-2 mb-1.5">
             <BookOpen className="w-4 h-4 text-cyan-400" />
-            <p className="text-xs font-medium text-slate-300">দোয়া ও স্মরণবাক্য</p>
+            <p className="text-xs font-medium text-foreground">দোয়া ও স্মরণবাক্য</p>
           </div>
           <div className="space-y-2.5">
             {duas.map((dua) => (
-              <div
-                key={dua.id}
-                className="p-3 rounded-xl bg-slate-800/50 border border-slate-700/50"
-              >
+              <div key={dua.id} className="p-3 rounded-xl bg-muted/50 border border-border/50">
                 <p className="text-sm font-medium text-cyan-300 mb-1.5">{dua.title.bn}</p>
-                <p className="text-lg leading-loose text-right text-white mb-2" dir="rtl">
+                <p className="text-lg leading-loose text-right text-foreground mb-2" dir="rtl">
                   {dua.arabic}
                 </p>
                 {dua.transliteration && (
-                  <p className="text-xs italic text-slate-400 mb-1.5">{dua.transliteration}</p>
+                  <p className="text-xs italic text-muted-foreground mb-1.5">
+                    {dua.transliteration}
+                  </p>
                 )}
-                <p className="text-sm text-slate-300 leading-relaxed mb-1.5">
-                  <span className="text-slate-500">অর্থ: </span>
+                <p className="text-sm text-foreground leading-relaxed mb-1.5">
+                  <span className="text-muted-foreground">অর্থ: </span>
                   {dua.translationBn}
                 </p>
-                <p className="text-[11px] text-teal-300/80 leading-relaxed">
-                  {dua.whenToRecite.bn}
-                </p>
+                <p className="text-[11px] text-primary/80 leading-relaxed">{dua.whenToRecite.bn}</p>
                 <DuaAudioPlayer dua={dua} />
               </div>
             ))}
@@ -155,9 +152,9 @@ export function GuideExpanded({ className }: { className?: string }) {
 
       {/* টিপ */}
       {step.tip && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-teal-500/5 border border-teal-500/20">
-          <Lightbulb className="w-4 h-4 text-teal-400 mt-0.5 flex-shrink-0" />
-          <p className="text-xs text-slate-300 leading-relaxed">{step.tip.bn}</p>
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/5 border border-primary/20">
+          <Lightbulb className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-foreground leading-relaxed">{step.tip.bn}</p>
         </div>
       )}
 
@@ -169,8 +166,8 @@ export function GuideExpanded({ className }: { className?: string }) {
           className={cn(
             "w-full gap-2 border-0",
             isDone
-              ? "bg-slate-800 text-emerald-300 hover:bg-slate-700"
-              : "bg-emerald-600 hover:bg-emerald-500 text-white"
+              ? "bg-muted text-emerald-300 hover:bg-muted"
+              : "bg-primary hover:bg-primary-hover text-primary-foreground"
           )}
         >
           <Check className="w-4 h-4" />

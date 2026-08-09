@@ -35,7 +35,7 @@ export function GuideControls({
   return (
     <div className={className}>
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] text-teal-300">
+        <p className="text-[11px] text-primary">
           {toBengaliNumber(doneCount)} / {toBengaliNumber(steps.length)} ধাপ সম্পন্ন
         </p>
         <div className="flex items-center gap-1">
@@ -43,7 +43,7 @@ export function GuideControls({
           {onOpenMiqatOverview && (
             <button
               onClick={onOpenMiqatOverview}
-              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 transition-colors"
+              className="flex items-center gap-1 text-[11px] px-2 py-1 rounded-md bg-primary/15 text-primary hover:bg-primary/25 transition-colors"
               title="মিকাত সারসংক্ষেপ মানচিত্র"
             >
               <Compass className="w-3.5 h-3.5" />
@@ -62,7 +62,7 @@ export function GuideControls({
             onClick={() => {
               if (confirm("গাইড রিসেট করবেন? আপনার অগ্রগতি মুছে যাবে।")) reset();
             }}
-            className="text-slate-400 hover:text-rose-400 p-1.5 rounded-md hover:bg-slate-800 transition-colors"
+            className="text-muted-foreground hover:text-rose-400 p-1.5 rounded-md hover:bg-muted transition-colors"
             aria-label="রিসেট"
             title="রিসেট"
           >
@@ -70,9 +70,9 @@ export function GuideControls({
           </button>
         </div>
       </div>
-      <div className="mt-2 h-1.5 rounded-full bg-slate-800 overflow-hidden">
+      <div className="mt-2 h-1.5 rounded-full bg-muted overflow-hidden">
         <div
-          className="h-full bg-gradient-to-r from-teal-500 to-emerald-500 rounded-full transition-all duration-500"
+          className="h-full bg-primary rounded-full transition-all duration-500"
           style={{ width: `${progress}%` }}
         />
       </div>

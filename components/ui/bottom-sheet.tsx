@@ -10,7 +10,7 @@ import {
   type ReactNode,
   type TouchEvent,
 } from "react";
-import { X, GripVertical } from "lucide-react";
+import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface BottomSheetContextValue {
@@ -51,8 +51,12 @@ const SNAP_POINTS_DEFAULT = [0.15, 0.5, 0.92];
 const DEFAULT_SNAP_INDEX = 1;
 const DRAG_THRESHOLD = 10;
 const VELOCITY_THRESHOLD = 0.5;
-const SPRING_TENSION = 300;
-const SPRING_FRICTION = 25;
+const CLOSE_TRANSITION_MS = 300;
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false;
+}
 
 export function BottomSheet({
   open,
@@ -69,7 +73,6 @@ export function BottomSheet({
 }: BottomSheetProps) {
   const [currentSnapIndex, setCurrentSnapIndex] = useState(defaultSnap);
   const [currentHeight, setCurrentHeight] = useState(snapPoints[defaultSnap]);
-  const [isDragging, setIsDragging] = useState(false);
   const [isClosing, setIsClosing] = useState(false);
 
   const sheetRef = useRef<HTMLDivElement>(null);
@@ -82,49 +85,66 @@ export function BottomSheet({
   const lastY = useRef(0);
   const velocity = useRef(0);
   const rafId = useRef<number | null>(null);
+  const closeTimerRef = useRef<number | null>(null);
+  const isClosingRef = useRef(false);
   const isDraggingRef = useRef(false);
 
+  // Exit animation: slide the sheet down + fade the backdrop, then unmount.
+  // Previously close() toggled isClosing synchronously (batched) so the sheet
+  // popped out with no transition. Now it stays mounted for the transition.
   const close = useCallback(() => {
+    if (isClosingRef.current) return;
+    if (prefersReducedMotion()) {
+      onOpenChange(false);
+      return;
+    }
+    isClosingRef.current = true;
     setIsClosing(true);
-    onOpenChange(false);
-    setIsClosing(false);
+    if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = window.setTimeout(() => {
+      isClosingRef.current = false;
+      setIsClosing(false);
+      onOpenChange(false);
+    }, CLOSE_TRANSITION_MS);
   }, [onOpenChange]);
 
   const snapTo = useCallback(
     (targetHeight: number, animate = true) => {
       if (!sheetRef.current) return;
 
-      if (animate) {
-        const start = currentHeight;
-        const distance = targetHeight - start;
-        const startTime = performance.now();
-        const duration = Math.min(Math.abs(distance) * 0.3 + 150, 400);
-
-        const animateSpring = (currentTime: number) => {
-          const elapsed = currentTime - startTime;
-          const progress = Math.min(elapsed / duration, 1);
-
-          // Easing function (ease-out cubic)
-          const easeOut = 1 - Math.pow(1 - progress, 3);
-          const newHeight = start + distance * easeOut;
-
-          setCurrentHeight(newHeight);
-
-          if (progress < 1) {
-            rafId.current = requestAnimationFrame(animateSpring);
-          } else {
-            setCurrentSnapIndex(snapPoints.indexOf(targetHeight));
-          }
-        };
-
-        if (rafId.current) {
-          cancelAnimationFrame(rafId.current);
-        }
-        rafId.current = requestAnimationFrame(animateSpring);
-      } else {
+      // Reduced-motion: snap instantly, no rAF.
+      if (!animate || prefersReducedMotion()) {
         setCurrentHeight(targetHeight);
         setCurrentSnapIndex(snapPoints.indexOf(targetHeight));
+        return;
       }
+
+      const start = currentHeight;
+      const distance = targetHeight - start;
+      const startTime = performance.now();
+      const duration = Math.min(Math.abs(distance) * 0.3 + 150, 400);
+
+      const animateSpring = (currentTime: number) => {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+
+        // Easing function (ease-out cubic)
+        const easeOut = 1 - Math.pow(1 - progress, 3);
+        const newHeight = start + distance * easeOut;
+
+        setCurrentHeight(newHeight);
+
+        if (progress < 1) {
+          rafId.current = requestAnimationFrame(animateSpring);
+        } else {
+          setCurrentSnapIndex(snapPoints.indexOf(targetHeight));
+        }
+      };
+
+      if (rafId.current) {
+        cancelAnimationFrame(rafId.current);
+      }
+      rafId.current = requestAnimationFrame(animateSpring);
     },
     [currentHeight, snapPoints]
   );
@@ -246,6 +266,14 @@ export function BottomSheet({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
+  // Cancel any in-flight animation/timer on unmount.
+  useEffect(() => {
+    return () => {
+      if (rafId.current) cancelAnimationFrame(rafId.current);
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+    };
+  }, []);
+
   const contextValue: BottomSheetContextValue = {
     close,
     snapIndex: currentSnapIndex,
@@ -275,8 +303,8 @@ export function BottomSheet({
         ref={sheetRef}
         className={cn(
           "fixed bottom-0 left-0 right-0 z-[110] rounded-t-3xl",
-          "bg-slate-900",
-          "border-t border-slate-700/50",
+          "bg-surface",
+          "border-t border-border",
           "shadow-2xl",
           "will-change-transform",
           "flex flex-col max-h-[100dvh]",
@@ -284,7 +312,11 @@ export function BottomSheet({
         )}
         style={{
           height: `${currentHeight * 100}dvh`,
-          transform: `translateY(0)`,
+          // Slide down to dismiss on close (CSS transition, off main thread).
+          transform: isClosing ? "translateY(100%)" : "translateY(0)",
+          transition: isClosing
+            ? `transform ${CLOSE_TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
+            : undefined,
           paddingLeft: "env(safe-area-inset-left, 0px)",
           paddingRight: "env(safe-area-inset-right, 0px)",
         }}
@@ -298,11 +330,11 @@ export function BottomSheet({
         {showHandle && (
           <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
             <button
-              className="p-2 rounded-full hover:bg-slate-800/50 active:bg-slate-800/50 transition-colors cursor-grab active:cursor-grabbing"
-              aria-label="Drag to resize sheet"
+              className="p-2 rounded-full hover:bg-muted active:bg-muted transition-colors cursor-grab active:cursor-grabbing"
+              aria-label="শীট সরাতে টানুন"
               tabIndex={0}
             >
-              <div className="w-10 h-1.5 bg-slate-700 rounded-full" />
+              <div className="w-10 h-1.5 bg-muted-foreground/40 rounded-full" />
             </button>
           </div>
         )}
@@ -312,7 +344,7 @@ export function BottomSheet({
           ref={contentRef}
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden min-h-0",
-            "scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700",
+            "scrollbar-thin",
             contentClassName
           )}
           style={{
@@ -345,7 +377,7 @@ BottomSheet.Title = function BottomSheetTitle({
   children: ReactNode;
   className?: string;
 }) {
-  return <h2 className={cn("text-lg font-bold text-white", className)}>{children}</h2>;
+  return <h2 className={cn("text-lg font-bold text-foreground", className)}>{children}</h2>;
 };
 
 BottomSheet.Subtitle = function BottomSheetSubtitle({
@@ -355,7 +387,7 @@ BottomSheet.Subtitle = function BottomSheetSubtitle({
   children: ReactNode;
   className?: string;
 }) {
-  return <p className={cn("text-sm text-slate-400", className)}>{children}</p>;
+  return <p className={cn("text-sm text-muted-foreground", className)}>{children}</p>;
 };
 
 BottomSheet.CloseButton = function BottomSheetCloseButton({ className }: { className?: string }) {
@@ -364,12 +396,12 @@ BottomSheet.CloseButton = function BottomSheetCloseButton({ className }: { class
     <button
       onClick={close}
       className={cn(
-        "p-2 rounded-lg hover:bg-slate-800 active:bg-slate-700",
-        "text-slate-400 hover:text-white",
+        "p-2 rounded-lg hover:bg-muted active:bg-muted",
+        "text-muted-foreground hover:text-foreground",
         "transition-colors",
         className
       )}
-      aria-label="Close"
+      aria-label="বন্ধ করুন"
     >
       <X className="w-5 h-5" />
     </button>
@@ -395,10 +427,7 @@ BottomSheet.ScrollContent = function BottomSheetScrollContent({
 }) {
   return (
     <div
-      className={cn(
-        "overflow-y-auto scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700",
-        className
-      )}
+      className={cn("overflow-y-auto scrollbar-thin", className)}
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 1rem)",
       }}
@@ -417,7 +446,7 @@ BottomSheet.Footer = function BottomSheetFooter({
 }) {
   return (
     <div
-      className={cn("p-4 border-t border-slate-700/50", "sticky bottom-0 bg-slate-900", className)}
+      className={cn("p-4 border-t border-border", "sticky bottom-0 bg-surface", className)}
       style={{
         paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0.5rem))",
       }}

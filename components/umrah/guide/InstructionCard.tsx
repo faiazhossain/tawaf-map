@@ -17,10 +17,12 @@ import type { UmrahStep } from "@/types/umrah";
 export function InstructionCard({
   step,
   counterValue,
+  nextStepTitle,
   className,
 }: {
   step: UmrahStep;
   counterValue: number;
+  nextStepTitle?: string;
   className?: string;
 }) {
   const counter = step.counter;
@@ -36,27 +38,35 @@ export function InstructionCard({
 
   return (
     <section
-      className={cn("rounded-2xl border border-teal-500/30 bg-slate-800/50 p-4", className)}
+      className={cn("rounded-2xl border border-primary/30 bg-muted/50 p-4", className)}
       aria-live="polite"
     >
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-teal-300">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-primary">
           {stageLabel(step.stage)}
         </p>
-        <span className="text-[11px] font-medium text-slate-300 bg-slate-900/60 px-2 py-0.5 rounded-full">
+        <span className="text-[11px] font-medium text-foreground bg-surface/60 px-2 py-0.5 rounded-full">
           {chip}
         </span>
       </div>
 
       {/* নির্দেশনা - key পরিবর্তনে হালকা fade+slide ক্রসফেড */}
-      <div key={`${step.id}-${counterValue}`} className="mt-2 instruction-crossfade">
-        <p className="text-base font-semibold leading-snug text-white">{instruction}</p>
-        {direction && (
-          <p className="mt-1.5 flex items-center gap-1.5 text-xs text-teal-300">
-            <Navigation2 className="h-3.5 w-3.5" />
-            {direction}
-          </p>
-        )}
+      <div key={`${step.id}-${counterValue}`} className="mt-2 instruction-crossfade space-y-3">
+        <div>
+          <p className="text-base font-semibold leading-snug text-foreground">{instruction}</p>
+          {direction && (
+            <p className="mt-1.5 flex items-center gap-1.5 text-xs text-primary">
+              <Navigation2 className="h-3.5 w-3.5" />
+              {direction}
+            </p>
+          )}
+        </div>
+        {nextStepTitle ? (
+          <div className="rounded-2xl border border-border/60 bg-surface/70 p-3">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">পরবর্তী ধাপ</p>
+            <p className="mt-1 text-sm font-semibold text-foreground">{nextStepTitle}</p>
+          </div>
+        ) : null}
       </div>
     </section>
   );

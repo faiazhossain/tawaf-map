@@ -47,16 +47,16 @@ export function RitualRoundHud({
         "pointer-events-none select-none",
         "flex flex-col items-center gap-1.5",
         "px-3.5 py-2 rounded-2xl",
-        "bg-slate-900/90 backdrop-blur-xl border border-teal-500/30",
+        "bg-surface/90 backdrop-blur-xl border border-primary/30",
         "shadow-lg",
         className
       )}
     >
       <div className="flex items-baseline gap-2 whitespace-nowrap">
-        <span className="text-[11px] font-semibold uppercase tracking-wide text-teal-300">
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-primary">
           {stageLabel}
         </span>
-        <span className="text-sm font-bold text-white">
+        <span className="text-sm font-bold text-foreground">
           {roundLabel} {toBengaliNumber(value)} / {toBengaliNumber(max)}
         </span>
       </div>

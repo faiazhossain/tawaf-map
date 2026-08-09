@@ -38,6 +38,7 @@ export function TawafGuidePanel({
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
+  const nextStepTitle = steps[currentIndex + 1]?.title.bn;
 
   const isLast = currentIndex >= steps.length - 1;
   const counter = step?.counter;
@@ -47,18 +48,18 @@ export function TawafGuidePanel({
       className="absolute top-4 right-4 z-[100] w-96 h-[calc(100vh-7rem)]"
       data-testid="umrah-step-list-desktop"
     >
-      <div className="flex flex-col h-full overflow-hidden rounded-2xl border border-slate-700/60 bg-slate-900/95 backdrop-blur-xl shadow-2xl">
-        <div className="flex items-center justify-between px-4 py-3 border-b border-slate-800 bg-gradient-to-r from-teal-600/20 to-cyan-600/10">
-          <h3 className="text-base font-bold text-white">ওমরাহ গাইড</h3>
+      <div className="flex flex-col h-full overflow-hidden rounded-2xl border border-border/60 bg-surface/95 backdrop-blur-xl shadow-2xl">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/20 to-primary/5">
+          <h3 className="text-base font-bold text-foreground">ওমরাহ গাইড</h3>
           <button
             onClick={() => onOpenChange(false)}
-            className="text-slate-400 hover:text-white text-xs px-2 py-1 rounded-md hover:bg-slate-800 transition-colors"
+            className="text-muted-foreground hover:text-foreground text-xs px-2 py-1 rounded-md hover:bg-muted transition-colors"
           >
             বন্ধ
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-slate-900 scrollbar-thumb-slate-700">
+        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-surface scrollbar-thumb-border">
           <GuideControls
             steps={steps}
             onOpenMiqatOverview={onOpenMiqatOverview}
@@ -67,14 +68,18 @@ export function TawafGuidePanel({
 
           {step ? (
             <>
-              <InstructionCard step={step} counterValue={counterValue} />
+              <InstructionCard
+                step={step}
+                counterValue={counterValue}
+                nextStepTitle={nextStepTitle}
+              />
 
               {counter && (
                 <>
                   <CircuitControl step={step} />
                   <div className="flex items-center justify-between">
                     <RoundDots value={counterValue} max={counter.max} />
-                    <span className="text-[11px] text-slate-400">
+                    <span className="text-[11px] text-muted-foreground">
                       {counter.label.bn} {toBengaliNumber(counterValue)}/
                       {toBengaliNumber(counter.max)}
                     </span>
@@ -88,7 +93,7 @@ export function TawafGuidePanel({
                   size="sm"
                   onClick={prevStep}
                   disabled={currentIndex === 0}
-                  className="border-slate-700 bg-slate-800/60 text-slate-200 hover:bg-slate-700"
+                  className="border-border bg-muted/60 text-foreground hover:bg-muted"
                 >
                   <ChevronLeft className="w-4 h-4" /> পেছনে
                 </Button>
@@ -96,7 +101,7 @@ export function TawafGuidePanel({
                   size="sm"
                   onClick={nextStep}
                   disabled={isLast}
-                  className="ml-auto bg-teal-600 hover:bg-teal-500 text-white border-0 gap-1"
+                  className="ml-auto bg-primary hover:bg-primary-hover text-primary-foreground border-0 gap-1"
                 >
                   পরবর্তী ধাপ <ChevronRight className="w-4 h-4" />
                 </Button>
@@ -104,12 +109,12 @@ export function TawafGuidePanel({
 
               <GuideStepList steps={steps} />
 
-              <div className="pt-1 border-t border-slate-700/40">
+              <div className="pt-1 border-t border-border/40">
                 <GuideExpanded />
               </div>
             </>
           ) : (
-            <p className="text-center text-sm text-slate-400 py-8">একটি ধাপ নির্বাচন করুন</p>
+            <p className="text-center text-sm text-muted-foreground py-8">একটি ধাপ নির্বাচন করুন</p>
           )}
         </div>
       </div>

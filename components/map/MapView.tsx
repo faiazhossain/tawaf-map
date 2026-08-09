@@ -15,6 +15,9 @@ import {
   useTouristPlaceStore,
   useUmrahGuideStore,
 } from "@/lib/store";
+import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
+import type { LandmarkHintData } from "@/lib/map/landmark-utils";
+import { getContextualLandmarkHint, getClosestAnchorId } from "@/lib/map/landmark-utils";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
@@ -178,6 +181,29 @@ export function MapView({
   const prevTawafCounterRef = useRef<number | null>(null);
   const prevSaiCounterRef = useRef<number | null>(null);
 
+  const [hintDismissed, setHintDismissed] = useState(false);
+
+  const activeStageId = umrahStepIds[umrahCurrentIndex];
+  const activeStep = activeStageId ? getStepById(activeStageId) : null;
+
+  const closestAnchor = useMemo(() => {
+    if (!activeStep?.anchors?.length || latitude === null || longitude === null) return null;
+    return getClosestAnchorId(activeStep.anchors, latitude, longitude);
+  }, [activeStep?.anchors, latitude, longitude]);
+
+  const contextualLandmarkHint = useMemo(() => {
+    if (!showUmrah || showMiqatOverview || !activeStep) return null;
+    return getContextualLandmarkHint(
+      activeStep.stage,
+      closestAnchor?.id ?? null,
+      closestAnchor?.distance ?? null
+    );
+  }, [showUmrah, showMiqatOverview, activeStep, closestAnchor]);
+
+  useEffect(() => {
+    setHintDismissed(false);
+  }, [activeStageId, showUmrah, showMiqatOverview]);
+
   // হাজি মার্কারের আইকন - প্রোফাইলের লিঙ্গ অনুযায়ী (পুরুষ/নারী)
   const pilgrimIconSrc = pilgrimIconForGender(umrahProfile?.gender);
 
@@ -198,7 +224,6 @@ export function MapView({
   // ----- দিকনির্দেশক চেভরন - সক্রিয় তওয়াফ/সাঈ পথে হাঁটার দিক -----
   // তওয়াফ: সম্পূর্ণ বৃত্ত, ঘড়ির বিপরীত দিকে। সাঈ: সম্পূর্ণ করিডোর, পাক অনুযায়ী দিক
   // (বিজোড় পাক = সাফা→মারওয়া, জোড় পাক = মারওয়া→সাফা)। অন্য ধাপে কোনো তীর নেই।
-  const activeStageId = umrahStepIds[umrahCurrentIndex];
   const activeStage = activeStageId ? getStepById(activeStageId)?.stage : undefined;
   const saiArrowDirection = saiCounter % 2 === 1 ? "safa-to-marwa" : "marwa-to-safa";
   const arrowCoords = useMemo(() => {
@@ -900,6 +925,15 @@ export function MapView({
           value={ritualHud.value}
           max={ritualHud.max}
           className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
+        />
+      )}
+      {contextualLandmarkHint && !hintDismissed && (
+        <LandmarkHint
+          title={contextualLandmarkHint.title}
+          description={contextualLandmarkHint.description}
+          anchorName={contextualLandmarkHint.anchorName}
+          onDismiss={() => setHintDismissed(true)}
+          className="absolute bottom-28 left-4 z-[40] sm:bottom-8"
         />
       )}
       {showRecenter && (

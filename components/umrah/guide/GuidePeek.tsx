@@ -38,17 +38,17 @@ export function GuidePeek({
       aria-label={`${line} — বিস্তারিত দেখুন`}
     >
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold text-white">{line}</p>
+        <p className="truncate text-sm font-semibold text-foreground">{line}</p>
         {ratio !== null && (
-          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-slate-700">
+          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
             <div
-              className="h-full rounded-full bg-gradient-to-r from-teal-500 to-emerald-500 transition-all duration-500"
+              className="h-full rounded-full bg-primary transition-all duration-500"
               style={{ width: `${ratio * 100}%` }}
             />
           </div>
         )}
       </div>
-      <ChevronUp className="h-4 w-4 flex-shrink-0 text-slate-400" />
+      <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
     </button>
   );
 }

@@ -29,11 +29,11 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
         >
           <div className="px-4 pb-2">
             <div className="flex items-center gap-2 mb-3">
-              <div className="p-1.5 bg-emerald-500/20 rounded-lg">
-                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+              <div className="p-1.5 bg-primary/20 rounded-lg">
+                <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
               </div>
-              <h3 className="font-semibold text-white">কাছাকাছি গেট</h3>
-              <span className="text-xs text-slate-500">(আপনার লোকেশন থেকে)</span>
+              <h3 className="font-semibold text-foreground">কাছাকাছি গেট</h3>
+              <span className="text-xs text-muted-foreground">(আপনার লোকেশন থেকে)</span>
             </div>
 
             <div className="space-y-2">
@@ -41,7 +41,7 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
                 <button
                   key={item.gate.id}
                   onClick={() => onGateClick(item.gate.id)}
-                  className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200 group"
+                  className="w-full flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all duration-200 group"
                 >
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div
@@ -49,24 +49,24 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
                         item.gate.type === "king_fahd"
                           ? "bg-blue-500"
                           : item.gate.type === "umrah"
-                            ? "bg-emerald-500"
+                            ? "bg-primary"
                             : "bg-amber-500"
                       }`}
                     />
                     <div className="text-left min-w-0 flex-1">
-                      <div className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
+                      <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                         {item.gate.name}
                       </div>
-                      <div className="text-xs text-slate-500">
+                      <div className="text-xs text-muted-foreground">
                         {item.distanceFormatted} • {item.direction}
                       </div>
                     </div>
                   </div>
                   <div className="flex-shrink-0 text-right">
-                    <div className="text-sm font-semibold text-emerald-500">
+                    <div className="text-sm font-semibold text-primary">
                       {item.walkingTimeFormatted}
                     </div>
-                    <div className="text-[10px] text-slate-600">হেঁটে</div>
+                    <div className="text-[10px] text-muted-foreground">হেঁটে</div>
                   </div>
                 </button>
               ))}
@@ -76,13 +76,13 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
       </div>
 
       {/* Desktop floating panel */}
-      <div className="hidden md:block absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-slate-900 border border-slate-700/50 rounded-2xl p-4 shadow-2xl z-[60]">
+      <div className="hidden md:block absolute bottom-4 left-4 right-4 md:right-auto md:w-80 bg-surface border border-border/50 rounded-2xl p-4 shadow-2xl z-[60]">
         <div className="flex items-center gap-2 mb-3">
-          <div className="p-1.5 bg-emerald-500/20 rounded-lg">
-            <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
+          <div className="p-1.5 bg-primary/20 rounded-lg">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
           </div>
-          <h3 className="font-semibold text-white">কাছাকাছি গেট</h3>
-          <span className="text-xs text-slate-500">(আপনার লোকেশন থেকে)</span>
+          <h3 className="font-semibold text-foreground">কাছাকাছি গেট</h3>
+          <span className="text-xs text-muted-foreground">(আপনার লোকেশন থেকে)</span>
         </div>
 
         <div className="space-y-2">
@@ -90,7 +90,7 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
             <button
               key={item.gate.id}
               onClick={() => onGateClick(item.gate.id)}
-              className="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 hover:bg-slate-700/50 border border-slate-700/50 hover:border-emerald-500/30 transition-all duration-200 group"
+              className="w-full flex items-center justify-between p-3 rounded-xl bg-muted/50 hover:bg-muted border border-border/50 hover:border-primary/30 transition-all duration-200 group"
             >
               <div className="flex items-center gap-3 flex-1 min-w-0">
                 <div
@@ -98,24 +98,24 @@ export function NearbyGatesPanel({ onGateClick }: NearbyGatesPanelProps) {
                     item.gate.type === "king_fahd"
                       ? "bg-blue-500"
                       : item.gate.type === "umrah"
-                        ? "bg-emerald-500"
+                        ? "bg-primary"
                         : "bg-amber-500"
                   }`}
                 />
                 <div className="text-left min-w-0 flex-1">
-                  <div className="text-sm font-medium text-white truncate group-hover:text-emerald-400 transition-colors">
+                  <div className="text-sm font-medium text-foreground truncate group-hover:text-primary transition-colors">
                     {item.gate.name}
                   </div>
-                  <div className="text-xs text-slate-500">
+                  <div className="text-xs text-muted-foreground">
                     {item.distanceFormatted} • {item.direction}
                   </div>
                 </div>
               </div>
               <div className="flex-shrink-0 text-right">
-                <div className="text-sm font-semibold text-emerald-500">
+                <div className="text-sm font-semibold text-primary">
                   {item.walkingTimeFormatted}
                 </div>
-                <div className="text-[10px] text-slate-600">হেঁটে</div>
+                <div className="text-[10px] text-muted-foreground">হেঁটে</div>
               </div>
             </button>
           ))}

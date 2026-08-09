@@ -27,8 +27,8 @@ export function RecenterButton({
       className={cn(
         "flex items-center justify-center",
         "h-11 w-11 rounded-full",
-        "bg-slate-900/90 backdrop-blur-xl border border-teal-500/40",
-        "text-teal-400 hover:text-teal-300 hover:bg-slate-800",
+        "bg-surface/90 backdrop-blur-xl border border-primary/40",
+        "text-primary hover:text-primary hover:bg-muted",
         "shadow-lg active:scale-95 transition",
         className
       )}

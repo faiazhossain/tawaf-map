@@ -49,16 +49,16 @@ export function LostGroupHelper() {
   };
 
   return (
-    <div className="rounded-xl border border-slate-700/50 bg-slate-800/30 overflow-hidden">
+    <div className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
       {/* শিরোনাম */}
-      <div className="flex items-center gap-2 px-3 py-2 border-b border-slate-700/40">
+      <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
         <Users className="w-4 h-4 text-teal-400" />
-        <p className="text-xs font-medium text-slate-200">দলের সাথে যোগাযোগ</p>
+        <p className="text-xs font-medium text-foreground">দলের সাথে যোগাযোগ</p>
         {hasInfo && !editing && (
           <div className="ml-auto flex items-center gap-1">
             <button
               onClick={startEdit}
-              className="text-slate-400 hover:text-white p-1 rounded hover:bg-slate-700/60"
+              className="text-muted-foreground hover:text-foreground p-1 rounded hover:bg-muted/60"
               aria-label="সম্পাদনা"
             >
               <Pencil className="w-3.5 h-3.5" />
@@ -69,7 +69,7 @@ export function LostGroupHelper() {
                 setPhone("");
                 setMeeting("");
               }}
-              className="text-slate-400 hover:text-rose-400 p-1 rounded hover:bg-slate-700/60"
+              className="text-muted-foreground hover:text-rose-400 p-1 rounded hover:bg-muted/60"
               aria-label="মুছুন"
             >
               <X className="w-3.5 h-3.5" />
@@ -83,7 +83,7 @@ export function LostGroupHelper() {
         {editing ? (
           <div className="space-y-2">
             <div>
-              <label className="text-[11px] text-slate-400 flex items-center gap-1 mb-1">
+              <label className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1">
                 <Phone className="w-3 h-3" /> দলনেতার ফোন নম্বর
               </label>
               <input
@@ -91,11 +91,11 @@ export function LostGroupHelper() {
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 placeholder="যেমন: +8801XXXXXXXXX"
-                className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-teal-500"
+                className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-surface/70 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label className="text-[11px] text-slate-400 flex items-center gap-1 mb-1">
+              <label className="text-[11px] text-muted-foreground flex items-center gap-1 mb-1">
                 <MapPin className="w-3 h-3" /> মিলনস্থল (চেনা কোনো জায়গা)
               </label>
               <input
@@ -103,7 +103,7 @@ export function LostGroupHelper() {
                 value={meeting}
                 onChange={(e) => setMeeting(e.target.value)}
                 placeholder="যেমন: কিং আব্দুল আজিজ গেট, ঘড়ি টাওয়ারের নিচে"
-                className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-slate-900/70 border border-slate-700 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:border-teal-500"
+                className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-surface/70 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
               {latitude !== null && longitude !== null && (
                 <p className="text-[10px] text-teal-300/80 mt-1 flex items-center gap-1">
@@ -115,14 +115,14 @@ export function LostGroupHelper() {
             <div className="flex items-center gap-2 pt-1">
               <button
                 onClick={save}
-                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-teal-600 hover:bg-teal-500 text-white"
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground"
               >
                 <Check className="w-3.5 h-3.5" /> সংরক্ষণ
               </button>
               {hasInfo && (
                 <button
                   onClick={() => setEditing(false)}
-                  className="text-xs px-2 py-1.5 rounded-lg text-slate-400 hover:text-white"
+                  className="text-xs px-2 py-1.5 rounded-lg text-muted-foreground hover:text-foreground"
                 >
                   বাতিল
                 </button>
@@ -139,11 +139,11 @@ export function LostGroupHelper() {
               >
                 <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                 <span dir="ltr">{savedPhone}</span>
-                <span className="text-[10px] text-slate-500">(কল করতে ট্যাপ)</span>
+                <span className="text-[10px] text-muted-foreground">(কল করতে ট্যাপ)</span>
               </a>
             )}
             {savedMeeting && (
-              <p className="flex items-start gap-2 text-xs text-slate-300 leading-relaxed">
+              <p className="flex items-start gap-2 text-xs text-foreground leading-relaxed">
                 <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 {savedMeeting}
                 {usedGps && (
@@ -156,7 +156,7 @@ export function LostGroupHelper() {
           /* তথ্য নেই - যোগ করার প্রম্পট */
           <button
             onClick={startEdit}
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-slate-400 hover:text-teal-300 py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-teal-300 py-1"
           >
             <Plus className="w-3.5 h-3.5" /> দলনেতার ফোন ও মিলনস্থল সংরক্ষণ করুন
           </button>

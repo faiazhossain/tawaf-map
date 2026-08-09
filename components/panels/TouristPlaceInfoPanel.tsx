@@ -52,10 +52,10 @@ const categoryConfigs = {
   mosque: {
     color: "emerald",
     label: "Mosque",
-    bg: "bg-emerald-600",
-    bgLight: "bg-emerald-500/10",
-    borderLight: "border-emerald-500/20",
-    textLight: "text-emerald-400",
+    bg: "bg-primary",
+    bgLight: "bg-primary-soft",
+    borderLight: "border-primary/20",
+    textLight: "text-primary",
     icon: Building2, // Using Building2 as mosque icon
   },
   museum: {
@@ -187,24 +187,24 @@ function TouristPlaceInfoContent({
               </div>
               {place.rating && (
                 <div className="flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur rounded-full">
-                  <Star className="w-3 h-3 fill-white text-white" />
-                  <span className="text-[10px] font-semibold text-white">{place.rating}</span>
+                  <Star className="w-3 h-3 fill-white text-foreground" />
+                  <span className="text-[10px] font-semibold text-foreground">{place.rating}</span>
                 </div>
               )}
             </div>
           )}
-          <h3 className="text-xl sm:text-lg font-bold text-white drop-shadow-md">
+          <h3 className="text-xl sm:text-lg font-bold text-foreground drop-shadow-md">
             {place.nameBn || place.name}
           </h3>
-          <p className="text-sm text-white/90 drop-shadow-md" dir="rtl">
+          <p className="text-sm text-foreground/90 drop-shadow-md" dir="rtl">
             {place.nameAr}
           </p>
           <div className="flex items-center gap-2 mt-2">
             <div
               className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${config.bgLight} ${config.borderLight} border rounded-full`}
             >
-              <IconComponent className="w-3 h-3 text-white" />
-              <span className="text-[10px] font-medium text-white">{config.label}</span>
+              <IconComponent className="w-3 h-3 text-foreground" />
+              <span className="text-[10px] font-medium text-foreground">{config.label}</span>
             </div>
           </div>
         </div>
@@ -213,27 +213,27 @@ function TouristPlaceInfoContent({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-y-auto space-y-4 px-4 scrollbar-tourist">
         {/* Short Description */}
-        <div className="p-3 bg-slate-800/50 border border-slate-700/50 rounded-xl">
-          <p className="text-sm text-slate-300 leading-relaxed">{place.description.short}</p>
+        <div className="p-3 bg-muted/50 border border-border/50 rounded-xl">
+          <p className="text-sm text-foreground leading-relaxed">{place.description.short}</p>
         </div>
 
         {/* Distance Card */}
         {distance !== null && (
           <div className={`p-4 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-            <div className="flex items-center gap-2 ${config.textLight} mb-3">
+            <div className={`flex items-center gap-2 ${config.textLight} mb-3`}>
               <MapPin className="w-4 h-4" />
               <span className="text-sm font-medium">Your Distance</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-2xl font-bold text-white">{formatDistance(distance)}</p>
-                <p className="text-xs text-slate-500">Walking Distance</p>
+                <p className="text-2xl font-bold text-foreground">{formatDistance(distance)}</p>
+                <p className="text-xs text-muted-foreground">Walking Distance</p>
               </div>
               <div>
-                <p className="text-2xl font-bold text-white">
+                <p className="text-2xl font-bold text-foreground">
                   {walkingTime ? formatWalkingTime(walkingTime) : "--"}
                 </p>
-                <p className="text-xs text-slate-500">Walking Time</p>
+                <p className="text-xs text-muted-foreground">Walking Time</p>
               </div>
             </div>
           </div>
@@ -244,10 +244,10 @@ function TouristPlaceInfoContent({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="w-4 h-4 text-amber-400" />
-              <p className="text-xs text-slate-500 font-medium">Historical Significance</p>
+              <p className="text-xs text-muted-foreground font-medium">Historical Significance</p>
             </div>
             <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
-              <p className="text-sm text-slate-300 mb-2">{place.historicalInfo.significance}</p>
+              <p className="text-sm text-foreground mb-2">{place.historicalInfo.significance}</p>
               <div className="flex items-center gap-2 text-xs text-amber-400">
                 <Clock className="w-3 h-3" />
                 <span>{place.historicalInfo.period}</span>
@@ -259,39 +259,41 @@ function TouristPlaceInfoContent({
         {/* Full Description */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Info className="w-4 h-4 text-slate-500" />
-            <p className="text-xs text-slate-500 font-medium">About This Place</p>
+            <Info className="w-4 h-4 text-muted-foreground" />
+            <p className="text-xs text-muted-foreground font-medium">About This Place</p>
           </div>
-          <p className="text-sm text-slate-400 leading-relaxed">{place.description.full}</p>
+          <p className="text-sm text-muted-foreground leading-relaxed">{place.description.full}</p>
         </div>
 
         {/* Historical Context */}
         {place.description.historical && (
-          <div className="p-3 bg-slate-800/30 border border-slate-700/30 rounded-xl">
+          <div className="p-3 bg-muted/30 border border-border/30 rounded-xl">
             <p className="text-xs text-amber-400/80 mb-1 font-medium">Historical Note</p>
-            <p className="text-sm text-slate-400 leading-relaxed">{place.description.historical}</p>
+            <p className="text-sm text-muted-foreground leading-relaxed">
+              {place.description.historical}
+            </p>
           </div>
         )}
 
         {/* Visiting Information */}
         <div>
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <p className="text-xs text-slate-500 font-medium">Visiting Information</p>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <p className="text-xs text-muted-foreground font-medium">Visiting Information</p>
           </div>
           <div className="space-y-2">
-            <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-xl">
-              <TrendingUp className="w-4 h-4 text-emerald-400 mt-0.5" />
+            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
+              <TrendingUp className="w-4 h-4 text-primary mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs text-slate-500">Best Time to Visit</p>
-                <p className="text-sm text-slate-300">{place.visitingInfo.bestTimeToVisit}</p>
+                <p className="text-xs text-muted-foreground">Best Time to Visit</p>
+                <p className="text-sm text-foreground">{place.visitingInfo.bestTimeToVisit}</p>
               </div>
             </div>
-            <div className="flex items-start gap-3 p-3 bg-slate-800/50 rounded-xl">
+            <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
               <Clock className="w-4 h-4 text-blue-400 mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs text-slate-500">Duration</p>
-                <p className="text-sm text-slate-300">{place.visitingInfo.duration}</p>
+                <p className="text-xs text-muted-foreground">Duration</p>
+                <p className="text-sm text-foreground">{place.visitingInfo.duration}</p>
               </div>
             </div>
           </div>
@@ -299,25 +301,25 @@ function TouristPlaceInfoContent({
 
         {/* Dress Code & Accessibility */}
         <div className="grid grid-cols-2 gap-2">
-          <div className="p-3 bg-slate-800/50 rounded-xl">
-            <p className="text-xs text-slate-500 mb-1">Dress Code</p>
-            <p className="text-sm text-slate-300">{place.visitingInfo.dressCode}</p>
+          <div className="p-3 bg-muted/50 rounded-xl">
+            <p className="text-xs text-muted-foreground mb-1">Dress Code</p>
+            <p className="text-sm text-foreground">{place.visitingInfo.dressCode}</p>
           </div>
-          <div className="p-3 bg-slate-800/50 rounded-xl">
-            <p className="text-xs text-slate-500 mb-1">Accessibility</p>
-            <p className="text-sm text-slate-300">{place.visitingInfo.accessibility}</p>
+          <div className="p-3 bg-muted/50 rounded-xl">
+            <p className="text-xs text-muted-foreground mb-1">Accessibility</p>
+            <p className="text-sm text-foreground">{place.visitingInfo.accessibility}</p>
           </div>
         </div>
 
         {/* Facilities */}
         {place.visitingInfo.facilities.length > 0 && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Available Facilities</p>
+            <p className="text-xs text-muted-foreground mb-2">Available Facilities</p>
             <div className="flex flex-wrap gap-2">
               {place.visitingInfo.facilities.map((facility) => (
                 <span
                   key={facility}
-                  className="px-2.5 py-1 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-300"
+                  className="px-2.5 py-1 bg-muted border border-border rounded-lg text-xs text-foreground"
                 >
                   {facility}
                 </span>
@@ -331,12 +333,12 @@ function TouristPlaceInfoContent({
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Heart className="w-4 h-4 text-rose-400" />
-              <p className="text-xs text-slate-500 font-medium">Visitor Tips</p>
+              <p className="text-xs text-muted-foreground font-medium">Visitor Tips</p>
             </div>
             <div className="space-y-1.5">
               {place.visitingInfo.tips.map((tip, index) => (
-                <div key={index} className="flex items-start gap-2 text-sm text-slate-400">
-                  <div className="w-1 h-1 rounded-full bg-emerald-400 mt-2" />
+                <div key={index} className="flex items-start gap-2 text-sm text-muted-foreground">
+                  <div className="w-1 h-1 rounded-full bg-primary mt-2" />
                   <span>{tip}</span>
                 </div>
               ))}
@@ -349,9 +351,9 @@ function TouristPlaceInfoContent({
           <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
             <div className="flex items-center gap-2 mb-1">
               <Clock className="w-4 h-4 text-blue-400" />
-              <p className="text-xs text-slate-500 font-medium">Opening Hours</p>
+              <p className="text-xs text-muted-foreground font-medium">Opening Hours</p>
             </div>
-            <p className="text-sm text-slate-300">{place.openingHours}</p>
+            <p className="text-sm text-foreground">{place.openingHours}</p>
           </div>
         )}
 
@@ -360,19 +362,19 @@ function TouristPlaceInfoContent({
           <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
               <Ticket className="w-4 h-4 text-purple-400" />
-              <p className="text-xs text-slate-500 font-medium">Ticket Information</p>
+              <p className="text-xs text-muted-foreground font-medium">Ticket Information</p>
             </div>
             {place.ticketInfo.price && (
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs text-slate-500">Adult</p>
-                  <p className="text-lg font-bold text-white">
+                  <p className="text-xs text-muted-foreground">Adult</p>
+                  <p className="text-lg font-bold text-foreground">
                     {place.ticketInfo.price.adult} {place.ticketInfo.price.currency}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500">Child</p>
-                  <p className="text-lg font-bold text-white">
+                  <p className="text-xs text-muted-foreground">Child</p>
+                  <p className="text-lg font-bold text-foreground">
                     {place.ticketInfo.price.child} {place.ticketInfo.price.currency}
                   </p>
                 </div>
@@ -384,12 +386,12 @@ function TouristPlaceInfoContent({
         {/* Contact Information */}
         {place.contact && (place.contact.phone || place.contact.website) && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Contact</p>
+            <p className="text-xs text-muted-foreground mb-2">Contact</p>
             <div className="space-y-2">
               {place.contact.phone && (
                 <a
                   href={`tel:${place.contact.phone}`}
-                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Phone className="w-3.5 h-3.5" />
                   {place.contact.phone}
@@ -400,7 +402,7 @@ function TouristPlaceInfoContent({
                   href={`https://${place.contact.website}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-slate-300 hover:text-emerald-400 transition-colors"
+                  className="flex items-center gap-2 text-sm text-foreground hover:text-primary transition-colors"
                 >
                   <Globe className="w-3.5 h-3.5" />
                   <span className="truncate">{place.contact.website}</span>
@@ -412,22 +414,24 @@ function TouristPlaceInfoContent({
 
         {/* Address */}
         <div>
-          <p className="text-xs text-slate-500 mb-1">Address</p>
-          <p className="text-sm text-slate-300">{place.location.address}</p>
+          <p className="text-xs text-muted-foreground mb-1">Address</p>
+          <p className="text-sm text-foreground">{place.location.address}</p>
           {place.location.nearestLandmark && (
-            <p className="text-xs text-slate-500 mt-1">Near: {place.location.nearestLandmark}</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Near: {place.location.nearestLandmark}
+            </p>
           )}
         </div>
 
         {/* Tags */}
         {place.tags.length > 0 && (
           <div>
-            <p className="text-xs text-slate-500 mb-2">Tags</p>
+            <p className="text-xs text-muted-foreground mb-2">Tags</p>
             <div className="flex flex-wrap gap-1.5">
               {place.tags.map((tag) => (
                 <span
                   key={tag}
-                  className="px-2 py-0.5 bg-slate-800 rounded text-[10px] text-slate-400"
+                  className="px-2 py-0.5 bg-muted rounded text-[10px] text-muted-foreground"
                 >
                   #{tag}
                 </span>
@@ -438,19 +442,19 @@ function TouristPlaceInfoContent({
 
         {/* Coordinates */}
         <div className={`p-3 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-          <p className="text-[10px] text-slate-500 mb-1">Coordinates</p>
-          <p className="text-xs font-mono text-slate-400">
+          <p className="text-[10px] text-muted-foreground mb-1">Coordinates</p>
+          <p className="text-xs font-mono text-muted-foreground">
             {place.location.coordinates[1].toFixed(6)}, {place.location.coordinates[0].toFixed(6)}
           </p>
         </div>
       </div>
 
       {/* Footer Actions */}
-      <div className="p-4 border-t border-slate-700/50 shrink-0">
+      <div className="p-4 border-t border-border/50 shrink-0">
         <Button
           onClick={onGetDirections}
           disabled={isCalculating || isRouting}
-          className={`w-full gap-2 ${config.bg} hover:opacity-90 text-white border-0 shadow-lg`}
+          className={`w-full gap-2 ${config.bg} hover:opacity-90 text-foreground border-0 shadow-lg`}
         >
           {isCalculating || isRouting ? (
             <>
@@ -519,13 +523,13 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
   // Desktop floating panel
   const desktopContent = (
     <div className="absolute top-4 right-4 z-[100] w-96 h-[calc(100vh-7rem)]">
-      <div className="bg-slate-900/95 backdrop-blur-xl border border-slate-700/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
+      <div className="bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 z-10 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors"
           aria-label="Close"
         >
-          <X className="w-4 h-4 text-white" />
+          <X className="w-4 h-4 text-foreground" />
         </button>
 
         <div className="flex-1 overflow-hidden">
