@@ -15,11 +15,17 @@ import { cn } from "@/lib/utils";
 
 interface BottomSheetContextValue {
   close: () => void;
+  /** বর্তমান স্ন্যাপ অবস্থানের সূচক (snapPoints-এর ইনডেক্স)। */
+  snapIndex: number;
+  /** মোট স্ন্যাপ পয়েন্টের সংখ্যা। */
+  snapCount: number;
+  /** একটি নির্দিষ্ট স্ন্যাপ পয়েন্টে যাও (peek/normal/expanded নিয়ন্ত্রণের জন্য)। */
+  snapToIndex: (index: number) => void;
 }
 
 const BottomSheetContext = createContext<BottomSheetContextValue | null>(null);
 
-function useBottomSheet() {
+export function useBottomSheet() {
   const context = useContext(BottomSheetContext);
   if (!context) {
     throw new Error("useBottomSheet must be used within BottomSheet");
@@ -121,6 +127,14 @@ export function BottomSheet({
       }
     },
     [currentHeight, snapPoints]
+  );
+
+  const snapToIndex = useCallback(
+    (index: number) => {
+      const clamped = Math.max(0, Math.min(snapPoints.length - 1, index));
+      snapTo(snapPoints[clamped]);
+    },
+    [snapPoints, snapTo]
   );
 
   const handleTouchStart = useCallback(
@@ -232,7 +246,12 @@ export function BottomSheet({
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [handleKeyDown]);
 
-  const contextValue = { close };
+  const contextValue: BottomSheetContextValue = {
+    close,
+    snapIndex: currentSnapIndex,
+    snapCount: snapPoints.length,
+    snapToIndex,
+  };
 
   if (!open) return null;
 

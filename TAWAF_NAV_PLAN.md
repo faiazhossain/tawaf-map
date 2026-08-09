@@ -346,7 +346,26 @@ direction (counter-clockwise for Tawaf, Safa->Marwa for Sa'i).
 
 ---
 
-### Phase T5 - Guided instruction UI + bottom sheet states
+### Phase T5 - Guided instruction UI + bottom sheet states — DONE
+
+> Implemented by lightly extending `BottomSheet` to expose snap state
+> (`snapIndex`/`snapToIndex` via `useBottomSheet`), then splitting the old monolithic
+> `UmrahStepList` into focused `components/umrah/guide/*` pieces. Mobile sheet
+> (`TawafGuideSheet`): three snaps [0.12, 0.42, 0.92] = peek / normal / expanded,
+> no backdrop (map stays bright); peek = `GuidePeek` one-liner, normal =
+> `InstructionCard` hero + `CircuitControl` + Continue/Expand, expanded =
+> `GuideControls` + `RoundDots` + `GuideStepList` + `GuideExpanded` (full detail).
+> Desktop (`TawafGuidePanel`): slim right-hand scroll panel with hero + counter +
+> dots + step list + full detail. `InstructionCard` picks `perRoundTips[current-1]`
+> for counter steps else `summary`, with a `tailwindcss-animate` fade+slide crossfade
+> keyed on step/counter. `UmrahStepList` is now a thin composer (mobile sheet +
+> desktop panel + `MistakeAssistant`); `app/map/page.tsx` unchanged. Bengali-first
+> (toBengaliNumber everywhere), teal theme, all helper components preserved
+> (FlightIhram, Wheelchair, Pragmatic, LostGroup, DuaAudio, GateRec, Offline).
+> Files: `components/ui/bottom-sheet.tsx`, `components/umrah/guide/*` (stage-label,
+> ProgressRing, RoundDots, CircuitControl, InstructionCard, GuidePeek,
+> GuideStepList, GuideControls, GuideExpanded, TawafGuideSheet, TawafGuidePanel),
+> `components/umrah/UmrahStepList.tsx`, `tests/unit/umrah-guide-instruction.test.tsx`.
 
 **Goal**: answer "what do I do right now?" in under 2 seconds. This is the
 biggest UI change and the one most visible to users.
