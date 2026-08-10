@@ -3,7 +3,12 @@ import { persist } from "zustand/middleware";
 import type { UmrahProfile, UmrahStep, TravelPath } from "@/types/umrah";
 import { getStepById } from "@/lib/data/umrah/steps";
 import { resolveMiqatForTravelPath } from "@/lib/data/umrah/miqat";
-import { resolveSteps, isCounterComplete, isStepComplete } from "@/lib/data/umrah/sequence";
+import {
+  resolveSteps,
+  isCounterComplete,
+  isStepComplete,
+  findNextIncompleteIndex,
+} from "@/lib/data/umrah/sequence";
 
 /** গাইডের বর্তমান মোড */
 export type UmrahGuideMode = "guide" | "mistake-assistant" | "miqat-overview";
@@ -25,9 +30,14 @@ interface UmrahGuideState {
 
   // ধাপ নেভিগেশন
   nextStep: () => void;
+  /** বর্তমান ধাপ অসম্পন্ন হলেও জোর করে পরবর্তী ধাপে যাও (completion gate এড়ায়)। */
+  forceNextStep: () => void;
   prevStep: () => void;
   goToStep: (index: number) => void;
   goToStepId: (id: string) => void;
+  /** পরবর্তী অসম্পন্ন ধাপে ঝাঁপ দাও (findNextIncompleteIndex-এর সুবিধাজনক অ্যাকশন)।
+   *  সব সম্পন্ন হলে শেষ ধাপে থাকে। */
+  goToNextIncomplete: () => void;
 
   // সম্পন্নকরণ ও কাউন্টার
   markComplete: (stepId: string) => void;
@@ -101,9 +111,40 @@ export const useUmrahGuideStore = create<UmrahGuideState>()(
         }),
 
       nextStep: () =>
+        set((state) => {
+          if (state.stepIds.length === 0) return {};
+          const currentId = state.stepIds[state.currentIndex];
+          const currentStep = currentId ? getStepById(currentId) : undefined;
+          // Completion gate: বর্তমান ধাপ অসম্পন্ন হলে সামনে যাওয়া ব্লক করো।
+          // "প্রগ্রেস যেন মিথ্যা না বলে" — incomplete ধাপ পার হয়ে সামনে যাওয়া নিষিদ্ধ।
+          // জোর করে যেতে forceNextStep ব্যবহার করুন (পুষ্টিসূচক অ্যাকশন)।
+          if (currentStep) {
+            const counterValue = state.counters[currentId!] ?? currentStep.counter?.min ?? 0;
+            const isDone = isStepComplete(currentStep, counterValue, !!state.completed[currentId!]);
+            if (!isDone) return {};
+          }
+          return {
+            currentIndex: Math.min(state.currentIndex + 1, Math.max(state.stepIds.length - 1, 0)),
+          };
+        }),
+
+      forceNextStep: () =>
         set((state) => ({
           currentIndex: Math.min(state.currentIndex + 1, Math.max(state.stepIds.length - 1, 0)),
         })),
+
+      goToNextIncomplete: () =>
+        set((state) => {
+          const steps = state.stepIds
+            .map((id) => getStepById(id))
+            .filter((s): s is UmrahStep => s !== undefined);
+          const idx = findNextIncompleteIndex(steps, state.counters, state.completed);
+          if (idx === -1) {
+            // সব সম্পন্ন — শেষ ধাপে থাকো।
+            return { currentIndex: Math.max(state.stepIds.length - 1, 0) };
+          }
+          return { currentIndex: idx };
+        }),
 
       prevStep: () =>
         set((state) => ({

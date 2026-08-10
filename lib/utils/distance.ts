@@ -1,5 +1,7 @@
 const EARTH_RADIUS = 6371000; // Earth's radius in meters
 
+import { toBengaliNumber } from "@/lib/utils/bengali-number";
+
 /**
  * Calculate the Haversine distance between two coordinates
  * @param lat1 - First point latitude
@@ -58,30 +60,33 @@ export function estimateWalkingTime(distance: number, speed = 1.39): number {
 }
 
 /**
- * Format distance for display
+ * Format distance for display (Bengali-first: বাংলা সংখ্যা + বাংলা একক)।
+ * প্রোডাক্ট বাংলা-প্রথম, তাই আগের "1.2km" / "5 min" ল্যাটিন রূপ বাদ।
  * @param meters - Distance in meters
- * @returns Formatted distance string
+ * @returns Bengali formatted distance (যেমন "৪৫০ মি", "১.২ কিমি")
  */
 export function formatDistance(meters: number): string {
   if (meters < 1000) {
-    return `${Math.round(meters)}m`;
+    return `${toBengaliNumber(Math.round(meters))} মি`;
   }
-  return `${(meters / 1000).toFixed(1)}km`;
+  return `${toBengaliNumber(Number((meters / 1000).toFixed(1)))} কিমি`;
 }
 
 /**
- * Format walking time for display
+ * Format walking time for display (Bengali-first)।
  * @param seconds - Time in seconds
- * @returns Formatted time string
+ * @returns Bengali formatted time (যেমন "৫ মিনিট", "২ ঘ ৩০ মিনিট")
  */
 export function formatWalkingTime(seconds: number): string {
   const minutes = Math.ceil(seconds / 60);
   if (minutes < 60) {
-    return `${minutes} min`;
+    return `${toBengaliNumber(minutes)} মিনিট`;
   }
   const hours = Math.floor(minutes / 60);
   const remainingMinutes = minutes % 60;
-  return remainingMinutes > 0 ? `${hours}h ${remainingMinutes}m` : `${hours}h`;
+  return remainingMinutes > 0
+    ? `${toBengaliNumber(hours)} ঘ ${toBengaliNumber(remainingMinutes)} মিনিট`
+    : `${toBengaliNumber(hours)} ঘণ্টা`;
 }
 
 /**

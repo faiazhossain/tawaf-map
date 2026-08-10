@@ -24,8 +24,10 @@ export function UmrahStepList({ open, onOpenChange, onOpenMiqatOverview }: Umrah
 
   return (
     <>
-      {/* মোবাইল: গাইডেড বটম শীট */}
-      <div className="block sm:hidden">
+      {/* মোবাইল/ট্যাবলেট (৬৪০px পর্যন্ত): গাইডেড বটম শীট — md: থেকে ডেস্কটপ প্যানেল।
+          আগে sm: (৬৪০px) ছিল, যাতে ৬৪০-৭৬৮px টাচ-ট্যাবলেট ডেস্কটপ প্যানেল পেত। এখন md: (৭৬৮px)
+          ব্যবহার করে ট্যাবলেট ব্যান্ড শীট ধরে রাখে (অডিট: "Mobile Design Strategy")। */}
+      <div className="block md:hidden">
         <TawafGuideSheet
           open={open}
           onOpenChange={onOpenChange}
@@ -34,9 +36,9 @@ export function UmrahStepList({ open, onOpenChange, onOpenMiqatOverview }: Umrah
         />
       </div>
 
-      {/* ডেস্কটপ: ভাসমান গাইডেড প্যানেল */}
+      {/* ডেস্কটপ (≥৭৬৮px): ভাসমান গাইডেড প্যানেল */}
       {open && (
-        <div className="hidden sm:block">
+        <div className="hidden md:block">
           <TawafGuidePanel
             onOpenChange={onOpenChange}
             onOpenMiqatOverview={onOpenMiqatOverview}

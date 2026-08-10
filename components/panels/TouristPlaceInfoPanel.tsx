@@ -9,7 +9,6 @@ import {
   Star,
   Info,
   Mountain,
-  Camera,
   Phone,
   Globe,
   Ticket,
@@ -27,6 +26,7 @@ import {
   Star as ReligiousIcon,
 } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
+import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useMapRouting } from "@/lib/hooks";
@@ -38,108 +38,21 @@ interface TouristPlaceInfoPanelProps {
   onClose?: () => void;
 }
 
-// Category configurations
+// বিভাগ কনফিগারেশন — সব বিভাগ একই প্রাথমিক রঙ (emerald) ব্যবহার করে; আইকন পার্থক্য দেয়।
+// আগের ১১টি রঙের বিভাজন (amber/purple/green/rose/indigo/...) সরানো হয়েছে।
 const categoryConfigs = {
-  historical_site: {
-    color: "amber",
-    label: "Historical Site",
-    bg: "bg-amber-600",
-    bgLight: "bg-amber-500/10",
-    borderLight: "border-amber-500/20",
-    textLight: "text-amber-400",
-    icon: Landmark,
-  },
-  mosque: {
-    color: "emerald",
-    label: "Mosque",
-    bg: "bg-primary",
-    bgLight: "bg-primary-soft",
-    borderLight: "border-primary/20",
-    textLight: "text-primary",
-    icon: Building2, // Using Building2 as mosque icon
-  },
-  museum: {
-    color: "purple",
-    label: "Museum",
-    bg: "bg-purple-600",
-    bgLight: "bg-purple-500/10",
-    borderLight: "border-purple-500/20",
-    textLight: "text-purple-400",
-    icon: Building2,
-  },
-  park: {
-    color: "green",
-    label: "Park",
-    bg: "bg-green-600",
-    bgLight: "bg-green-500/10",
-    borderLight: "border-green-500/20",
-    textLight: "text-green-400",
-    icon: TreePine,
-  },
-  mountain: {
-    color: "stone",
-    label: "Mountain",
-    bg: "bg-stone-600",
-    bgLight: "bg-stone-500/10",
-    borderLight: "border-stone-500/20",
-    textLight: "text-stone-400",
-    icon: Mountain,
-  },
-  shopping: {
-    color: "rose",
-    label: "Shopping",
-    bg: "bg-rose-600",
-    bgLight: "bg-rose-500/10",
-    borderLight: "border-rose-500/20",
-    textLight: "text-rose-400",
-    icon: ShoppingBag,
-  },
-  cultural_center: {
-    color: "indigo",
-    label: "Cultural Center",
-    bg: "bg-indigo-600",
-    bgLight: "bg-indigo-500/10",
-    borderLight: "border-indigo-500/20",
-    textLight: "text-indigo-400",
-    icon: Library,
-  },
-  landmark: {
-    color: "blue",
-    label: "Landmark",
-    bg: "bg-blue-600",
-    bgLight: "bg-blue-500/10",
-    borderLight: "border-blue-500/20",
-    textLight: "text-blue-400",
-    icon: MapPin,
-  },
-  agriculture: {
-    color: "lime",
-    label: "Agriculture",
-    bg: "bg-lime-600",
-    bgLight: "bg-lime-500/10",
-    borderLight: "border-lime-500/20",
-    textLight: "text-lime-400",
-    icon: Leaf,
-  },
-  religious_site: {
-    color: "yellow",
-    label: "Religious Site",
-    bg: "bg-yellow-600",
-    bgLight: "bg-yellow-500/10",
-    borderLight: "border-yellow-500/20",
-    textLight: "text-yellow-400",
-    icon: ReligiousIcon,
-  },
-  cemetery: {
-    color: "gray",
-    label: "Cemetery",
-    bg: "bg-gray-600",
-    bgLight: "bg-gray-500/10",
-    borderLight: "border-gray-500/20",
-    textLight: "text-gray-400",
-    icon: Trees,
-  },
-};
+  historical_site: { label: "ঐতিহাসিক স্থান", icon: Landmark },
+  mosque: { label: "মসজিদ", icon: Building2 },
+  museum: { label: "জাদুঘর", icon: Building2 },
+  park: { label: "পার্ক", icon: TreePine },
+  mountain: { label: "পাহাড়", icon: Mountain },
+  shopping: { label: "কেনাকাটা", icon: ShoppingBag },
+  cultural_center: { label: "সাংস্কৃতিক কেন্দ্র", icon: Library },
+  landmark: { label: "ল্যান্ডমার্ক", icon: MapPin },
+  agriculture: { label: "কৃষি", icon: Leaf },
+  religious_site: { label: "ধর্মীয় স্থান", icon: ReligiousIcon },
+  cemetery: { label: "কবরস্থান", icon: Trees },
+} as const;
 
 function TouristPlaceInfoContent({
   place,
@@ -161,94 +74,97 @@ function TouristPlaceInfoContent({
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* Header with image and gradient based on category */}
-      <div className={`relative h-40 sm:h-36 ${config.bg} shrink-0`}>
-        {/* Background image if available */}
+      {/* হেডার: ছবি + প্রাথমিক রঙের ওভারলে */}
+      <div className="relative h-40 sm:h-36 bg-primary shrink-0">
         {place.images?.main && (
           <div className="absolute inset-0 overflow-hidden">
             <img
               src={place.images.main}
               alt={place.name}
+              loading="lazy"
+              decoding="async"
               className="w-full h-full object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
             />
-            <div className={`absolute inset-0 ${config.bg} opacity-70`} />
+            <div className="absolute inset-0 bg-primary opacity-70" />
           </div>
         )}
         <div className="absolute bottom-4 left-4 right-4 sm:bottom-3 sm:left-4 sm:right-4">
-          {/* Popular badge */}
+          {/* জনপ্রিয়তা ব্যাজ */}
           {place.popular && (
             <div className="flex items-center gap-1 mb-2">
-              <div className="flex items-center gap-1 px-2 py-0.5 bg-yellow-400/90 rounded-full">
-                <Star className="w-3 h-3 fill-yellow-800 text-yellow-800" />
-                <span className="text-[10px] font-semibold text-yellow-800">Popular</span>
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-gold rounded-full">
+                <Star className="w-3 h-3 fill-primary-foreground text-primary-foreground" />
+                <span className="text-[10px] font-semibold text-primary-foreground">জনপ্রিয়</span>
               </div>
               {place.rating && (
                 <div className="flex items-center gap-1 px-2 py-0.5 bg-white/20 backdrop-blur rounded-full">
-                  <Star className="w-3 h-3 fill-white text-foreground" />
-                  <span className="text-[10px] font-semibold text-foreground">{place.rating}</span>
+                  <Star className="w-3 h-3 fill-white text-primary-foreground" />
+                  <span className="text-[10px] font-semibold text-primary-foreground">
+                    {toBengaliNumber(place.rating)}
+                  </span>
                 </div>
               )}
             </div>
           )}
-          <h3 className="text-xl sm:text-lg font-bold text-foreground drop-shadow-md">
+          <h3 className="text-xl sm:text-lg font-bold text-primary-foreground drop-shadow-md">
             {place.nameBn || place.name}
           </h3>
-          <p className="text-sm text-foreground/90 drop-shadow-md" dir="rtl">
+          <p className="text-sm text-primary-foreground/90 drop-shadow-md" dir="rtl">
             {place.nameAr}
           </p>
           <div className="flex items-center gap-2 mt-2">
-            <div
-              className={`inline-flex items-center gap-1.5 px-2.5 py-1 ${config.bgLight} ${config.borderLight} border rounded-full`}
-            >
-              <IconComponent className="w-3 h-3 text-foreground" />
-              <span className="text-[10px] font-medium text-foreground">{config.label}</span>
+            <div className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-primary-soft border border-primary/20 rounded-full">
+              <IconComponent className="w-3 h-3 text-primary-foreground" />
+              <span className="text-[10px] font-medium text-primary-foreground">
+                {config.label}
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Scrollable Content */}
+      {/* স্ক্রলযোগ্য বিষয়বস্তু */}
       <div className="flex-1 overflow-y-auto space-y-4 px-4 scrollbar-tourist">
-        {/* Short Description */}
+        {/* সংক্ষিপ্ত বিবরণ */}
         <div className="p-3 bg-muted/50 border border-border/50 rounded-xl">
           <p className="text-sm text-foreground leading-relaxed">{place.description.short}</p>
         </div>
 
-        {/* Distance Card */}
+        {/* দূরত্ব কার্ড */}
         {distance !== null && (
-          <div className={`p-4 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-            <div className={`flex items-center gap-2 ${config.textLight} mb-3`}>
+          <div className="p-4 bg-primary-soft border border-primary/20 rounded-xl">
+            <div className="flex items-center gap-2 text-primary mb-3">
               <MapPin className="w-4 h-4" />
-              <span className="text-sm font-medium">Your Distance</span>
+              <span className="text-sm font-medium">আপনার দূরত্ব</span>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-2xl font-bold text-foreground">{formatDistance(distance)}</p>
-                <p className="text-xs text-muted-foreground">Walking Distance</p>
+                <p className="text-xs text-muted-foreground">হাঁটার দূরত্ব</p>
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">
-                  {walkingTime ? formatWalkingTime(walkingTime) : "--"}
+                  {walkingTime ? formatWalkingTime(walkingTime) : "—"}
                 </p>
-                <p className="text-xs text-muted-foreground">Walking Time</p>
+                <p className="text-xs text-muted-foreground">হাঁটার সময়</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Historical Significance */}
+        {/* ঐতিহাসিক গুরুত্ব */}
         {place.historicalInfo && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <BookOpen className="w-4 h-4 text-amber-400" />
-              <p className="text-xs text-muted-foreground font-medium">Historical Significance</p>
+              <BookOpen className="w-4 h-4 text-primary" />
+              <p className="text-xs text-muted-foreground font-medium">ঐতিহাসিক গুরুত্ব</p>
             </div>
-            <div className="p-3 bg-amber-500/10 border border-amber-500/20 rounded-xl">
+            <div className="p-3 bg-primary-soft border border-primary/20 rounded-xl">
               <p className="text-sm text-foreground mb-2">{place.historicalInfo.significance}</p>
-              <div className="flex items-center gap-2 text-xs text-amber-400">
+              <div className="flex items-center gap-2 text-xs text-primary">
                 <Clock className="w-3 h-3" />
                 <span>{place.historicalInfo.period}</span>
               </div>
@@ -256,65 +172,65 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Full Description */}
+        {/* বিস্তারিত বিবরণ */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Info className="w-4 h-4 text-muted-foreground" />
-            <p className="text-xs text-muted-foreground font-medium">About This Place</p>
+            <p className="text-xs text-muted-foreground font-medium">এই স্থান সম্পর্কে</p>
           </div>
           <p className="text-sm text-muted-foreground leading-relaxed">{place.description.full}</p>
         </div>
 
-        {/* Historical Context */}
+        {/* ঐতিহাসিক প্রসঙ্গ */}
         {place.description.historical && (
           <div className="p-3 bg-muted/30 border border-border/30 rounded-xl">
-            <p className="text-xs text-amber-400/80 mb-1 font-medium">Historical Note</p>
+            <p className="text-xs text-primary mb-1 font-medium">ঐতিহাসিক নোট</p>
             <p className="text-sm text-muted-foreground leading-relaxed">
               {place.description.historical}
             </p>
           </div>
         )}
 
-        {/* Visiting Information */}
+        {/* ভ্রমণ তথ্য */}
         <div>
           <div className="flex items-center gap-2 mb-2">
             <Sparkles className="w-4 h-4 text-primary" />
-            <p className="text-xs text-muted-foreground font-medium">Visiting Information</p>
+            <p className="text-xs text-muted-foreground font-medium">ভ্রমণ তথ্য</p>
           </div>
           <div className="space-y-2">
             <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
               <TrendingUp className="w-4 h-4 text-primary mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground">Best Time to Visit</p>
+                <p className="text-xs text-muted-foreground">সেরা সময়</p>
                 <p className="text-sm text-foreground">{place.visitingInfo.bestTimeToVisit}</p>
               </div>
             </div>
             <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
-              <Clock className="w-4 h-4 text-blue-400 mt-0.5" />
+              <Clock className="w-4 h-4 text-info mt-0.5" />
               <div className="flex-1">
-                <p className="text-xs text-muted-foreground">Duration</p>
+                <p className="text-xs text-muted-foreground">সময়কাল</p>
                 <p className="text-sm text-foreground">{place.visitingInfo.duration}</p>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Dress Code & Accessibility */}
+        {/* পোশাক ও প্রবেশাধিকার */}
         <div className="grid grid-cols-2 gap-2">
           <div className="p-3 bg-muted/50 rounded-xl">
-            <p className="text-xs text-muted-foreground mb-1">Dress Code</p>
+            <p className="text-xs text-muted-foreground mb-1">পোশাকবিধি</p>
             <p className="text-sm text-foreground">{place.visitingInfo.dressCode}</p>
           </div>
           <div className="p-3 bg-muted/50 rounded-xl">
-            <p className="text-xs text-muted-foreground mb-1">Accessibility</p>
+            <p className="text-xs text-muted-foreground mb-1">প্রবেশাধিকার</p>
             <p className="text-sm text-foreground">{place.visitingInfo.accessibility}</p>
           </div>
         </div>
 
-        {/* Facilities */}
+        {/* সুবিধা */}
         {place.visitingInfo.facilities.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Available Facilities</p>
+            <p className="text-xs text-muted-foreground mb-2">উপলব্ধ সুবিধা</p>
             <div className="flex flex-wrap gap-2">
               {place.visitingInfo.facilities.map((facility) => (
                 <span
@@ -328,12 +244,12 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Tips */}
+        {/* টিপস */}
         {place.visitingInfo.tips.length > 0 && (
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-4 h-4 text-rose-400" />
-              <p className="text-xs text-muted-foreground font-medium">Visitor Tips</p>
+              <Heart className="w-4 h-4 text-gold" />
+              <p className="text-xs text-muted-foreground font-medium">দর্শনার্থী টিপস</p>
             </div>
             <div className="space-y-1.5">
               {place.visitingInfo.tips.map((tip, index) => (
@@ -346,36 +262,38 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Opening Hours */}
+        {/* খোলার সময় */}
         {place.openingHours && (
-          <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-xl">
+          <div className="p-3 bg-info/10 border border-info/20 rounded-xl">
             <div className="flex items-center gap-2 mb-1">
-              <Clock className="w-4 h-4 text-blue-400" />
-              <p className="text-xs text-muted-foreground font-medium">Opening Hours</p>
+              <Clock className="w-4 h-4 text-info" />
+              <p className="text-xs text-muted-foreground font-medium">খোলার সময়</p>
             </div>
             <p className="text-sm text-foreground">{place.openingHours}</p>
           </div>
         )}
 
-        {/* Ticket Information */}
+        {/* টিকিট তথ্য */}
         {place.ticketInfo?.required && (
-          <div className="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+          <div className="p-3 bg-muted/50 border border-border/50 rounded-xl">
             <div className="flex items-center gap-2 mb-2">
-              <Ticket className="w-4 h-4 text-purple-400" />
-              <p className="text-xs text-muted-foreground font-medium">Ticket Information</p>
+              <Ticket className="w-4 h-4 text-primary" />
+              <p className="text-xs text-muted-foreground font-medium">টিকিট তথ্য</p>
             </div>
             {place.ticketInfo.price && (
               <div className="flex items-center gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Adult</p>
+                  <p className="text-xs text-muted-foreground">প্রাপ্তবয়স্ক</p>
                   <p className="text-lg font-bold text-foreground">
-                    {place.ticketInfo.price.adult} {place.ticketInfo.price.currency}
+                    {toBengaliNumber(place.ticketInfo.price.adult)}{" "}
+                    {place.ticketInfo.price.currency}
                   </p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Child</p>
+                  <p className="text-xs text-muted-foreground">শিশু</p>
                   <p className="text-lg font-bold text-foreground">
-                    {place.ticketInfo.price.child} {place.ticketInfo.price.currency}
+                    {toBengaliNumber(place.ticketInfo.price.child)}{" "}
+                    {place.ticketInfo.price.currency}
                   </p>
                 </div>
               </div>
@@ -383,10 +301,10 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Contact Information */}
+        {/* যোগাযোগ */}
         {place.contact && (place.contact.phone || place.contact.website) && (
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Contact</p>
+            <p className="text-xs text-muted-foreground mb-2">যোগাযোগ</p>
             <div className="space-y-2">
               {place.contact.phone && (
                 <a
@@ -412,21 +330,21 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Address */}
+        {/* ঠিকানা */}
         <div>
-          <p className="text-xs text-muted-foreground mb-1">Address</p>
+          <p className="text-xs text-muted-foreground mb-1">ঠিকানা</p>
           <p className="text-sm text-foreground">{place.location.address}</p>
           {place.location.nearestLandmark && (
             <p className="text-xs text-muted-foreground mt-1">
-              Near: {place.location.nearestLandmark}
+              কাছাকাছি: {place.location.nearestLandmark}
             </p>
           )}
         </div>
 
-        {/* Tags */}
+        {/* ট্যাগ */}
         {place.tags.length > 0 && (
           <div>
-            <p className="text-xs text-muted-foreground mb-2">Tags</p>
+            <p className="text-xs text-muted-foreground mb-2">ট্যাগ</p>
             <div className="flex flex-wrap gap-1.5">
               {place.tags.map((tag) => (
                 <span
@@ -440,31 +358,32 @@ function TouristPlaceInfoContent({
           </div>
         )}
 
-        {/* Coordinates */}
-        <div className={`p-3 ${config.bgLight} ${config.borderLight} border rounded-xl`}>
-          <p className="text-[10px] text-muted-foreground mb-1">Coordinates</p>
+        {/* স্থানাঙ্ক */}
+        <div className="p-3 bg-primary-soft border border-primary/20 rounded-xl">
+          <p className="text-[10px] text-muted-foreground mb-1">স্থানাঙ্ক</p>
           <p className="text-xs font-mono text-muted-foreground">
-            {place.location.coordinates[1].toFixed(6)}, {place.location.coordinates[0].toFixed(6)}
+            {toBengaliNumber(Number(place.location.coordinates[1].toFixed(6)))},{" "}
+            {toBengaliNumber(Number(place.location.coordinates[0].toFixed(6)))}
           </p>
         </div>
       </div>
 
-      {/* Footer Actions */}
+      {/* ফুটার অ্যাকশন */}
       <div className="p-4 border-t border-border/50 shrink-0">
         <Button
           onClick={onGetDirections}
           disabled={isCalculating || isRouting}
-          className={`w-full gap-2 ${config.bg} hover:opacity-90 text-foreground border-0 shadow-lg`}
+          className="w-full gap-2 bg-primary hover:bg-primary-hover text-primary-foreground border-0 shadow-lg"
         >
           {isCalculating || isRouting ? (
             <>
-              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              Calculating route...
+              <div className="w-4 h-4 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full animate-spin" />
+              রুট হিসাব হচ্ছে…
             </>
           ) : (
             <>
               <Navigation className="w-4 h-4" />
-              Get Directions
+              দিকনির্দেশনা নিন
             </>
           )}
         </Button>
@@ -493,7 +412,7 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
     setIsRouting(false);
   };
 
-  // Mobile bottom sheet
+  // মোবাইল বটম শীট
   const mobileContent = (
     <BottomSheet
       open={activePanel === "tourist-place"}
@@ -520,14 +439,14 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
     </BottomSheet>
   );
 
-  // Desktop floating panel
+  // ডেস্কটপ ভাসমান প্যানেল
   const desktopContent = (
     <div className="absolute top-4 right-4 z-[100] w-96 h-[calc(100vh-7rem)]">
       <div className="bg-surface/95 backdrop-blur-xl border border-border/50 rounded-2xl shadow-2xl overflow-hidden flex flex-col h-full">
         <button
           onClick={handleClose}
           className="absolute top-3 right-3 z-10 p-2 bg-black/20 hover:bg-black/30 rounded-xl transition-colors"
-          aria-label="Close"
+          aria-label="বন্ধ করুন"
         >
           <X className="w-4 h-4 text-foreground" />
         </button>

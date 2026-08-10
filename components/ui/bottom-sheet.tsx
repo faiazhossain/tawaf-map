@@ -12,6 +12,7 @@ import {
 } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 
 interface BottomSheetContextValue {
   close: () => void;
@@ -78,6 +79,10 @@ export function BottomSheet({
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
   const backdropRef = useRef<HTMLDivElement>(null);
+
+  // Focus trap + restore: move focus into the sheet on open, constrain Tab,
+  // restore to the trigger on close (audit: "No focus trap anywhere").
+  useFocusTrap(sheetRef, open && !isClosing);
 
   const startY = useRef(0);
   const startHeight = useRef(0);
@@ -333,6 +338,14 @@ export function BottomSheet({
               className="p-2 rounded-full hover:bg-muted active:bg-muted transition-colors cursor-grab active:cursor-grabbing"
               aria-label="শীট সরাতে টানুন"
               tabIndex={0}
+              // কীবোর্ড: Enter/Space পরবর্তী স্ন্যাপ পয়েন্টে যায় (উপরে থাকলে বড়, নিচে থাকলে ছোট)।
+              // আগে এই <button> এ aria-label ছিল কিন্তু কীবোর্ড অ্যাকশন ছিল না (অডিট)।
+              onKeyDown={(e) => {
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  snapToIndex(Math.min(currentSnapIndex + 1, snapPoints.length - 1));
+                }
+              }}
             >
               <div className="w-10 h-1.5 bg-muted-foreground/40 rounded-full" />
             </button>

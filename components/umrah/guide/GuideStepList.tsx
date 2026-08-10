@@ -44,10 +44,10 @@ function StepDetail({ step, counterValue }: { step: UmrahStep; counterValue: num
 
       {/* নিয়ম ও সতর্কতা */}
       {step.rules ? (
-        <div className="rounded-xl border border-amber-500/20 bg-amber-500/5 p-2.5">
+        <div className="rounded-xl border border-gold/20 bg-gold/5 p-2.5">
           <div className="mb-1 flex items-center gap-1.5">
-            <AlertTriangle className="h-3.5 w-3.5 text-amber-400" />
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-300">
+            <AlertTriangle className="h-3.5 w-3.5 text-gold" />
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-gold">
               নিয়ম ও সতর্কতা
             </p>
           </div>
@@ -68,7 +68,7 @@ function StepDetail({ step, counterValue }: { step: UmrahStep; counterValue: num
   );
 }
 
-/** রেলের নোড (বৃত্ত) - সম্পন্ন/বর্তমান/পরবর্তী/ভবিষ্যৎ অবস্থা অনুযায়ী রং। */
+/** রেলের নোড (বৃত্ত) - সম্পন্ন/বর্তমান/পরবর্তী/ভবিষ্যৎ অবস্থা অনুযায়ী রং (টোকেন)। */
 function StepNode({
   index,
   isDone,
@@ -86,9 +86,9 @@ function StepNode({
       className={cn(
         "flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full text-[11px] font-bold transition-colors",
         isDone
-          ? "bg-emerald-500 text-white"
+          ? "bg-map-route-completed text-primary-foreground"
           : isActive
-            ? "bg-teal-500 text-white ring-4 ring-teal-500/20"
+            ? "bg-primary text-primary-foreground ring-4 ring-primary/20"
             : isNext
               ? "bg-muted text-primary ring-1 ring-inset ring-primary/40"
               : "bg-muted text-muted-foreground"
@@ -164,7 +164,7 @@ export function GuideStepList({ steps, className }: { steps: UmrahStep[]; classN
                 <span
                   className={cn(
                     "w-0.5 flex-1 rounded-full",
-                    done ? "bg-emerald-500/50" : "bg-muted/60"
+                    done ? "bg-map-route-completed/60" : "bg-muted/60"
                   )}
                 />
               )}
@@ -186,7 +186,7 @@ export function GuideStepList({ steps, className }: { steps: UmrahStep[]; classN
                     : isNext
                       ? "border-primary/25 bg-muted/40 hover:bg-muted/70"
                       : done
-                        ? "border-emerald-500/20 bg-emerald-500/5 hover:bg-emerald-500/10"
+                        ? "border-map-route-completed/30 bg-primary-soft hover:bg-primary/10"
                         : "border-border/40 bg-muted/30 hover:bg-muted/60"
                 )}
               >
@@ -194,7 +194,11 @@ export function GuideStepList({ steps, className }: { steps: UmrahStep[]; classN
                   <p
                     className={cn(
                       "flex-1 truncate text-[13px] font-semibold",
-                      isActive ? "text-primary" : done ? "text-emerald-700" : "text-foreground"
+                      isActive
+                        ? "text-primary"
+                        : done
+                          ? "text-map-route-completed"
+                          : "text-foreground"
                     )}
                   >
                     {step.title.bn}
@@ -211,7 +215,7 @@ export function GuideStepList({ steps, className }: { steps: UmrahStep[]; classN
                     </span>
                   )}
                   {done && !isActive && (
-                    <span className="rounded-full bg-emerald-500/15 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-emerald-700">
+                    <span className="rounded-full bg-map-route-completed/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-map-route-completed">
                       সম্পন্ন
                     </span>
                   )}

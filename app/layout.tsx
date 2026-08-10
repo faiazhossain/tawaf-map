@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Hind_Siliguri, Noto_Naskh_Arabic } from "next/font/google";
+import { Inter, Noto_Naskh_Arabic } from "next/font/google";
+import local from "next/font/local";
 import "./globals.css";
 import { ThemeProvider, themeNoFlashScript } from "@/components/theme/theme-provider";
 
@@ -11,11 +12,22 @@ const inter = Inter({
 });
 
 // Bengali — the primary content language. Inter has no Bengali glyphs, so all
-// Bengali text falls through to this face in the body font stack.
-const hindSiliguri = Hind_Siliguri({
-  subsets: ["bengali"],
-  weight: ["400", "500", "600", "700"],
-  variable: "--font-hind-siliguri",
+// Bengali text falls through to this face (Mehdi Ekushey, local) in the body
+// font stack. Only Regular + Italic ship with the family.
+const mehdiEkushey = local({
+  src: [
+    {
+      path: "../public/MehdiEkushey/Unicode/Li Mehdi Ekushey Unicode.ttf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/MehdiEkushey/Unicode/Li Mehdi Ekushey Unicode Italic.ttf",
+      weight: "400",
+      style: "italic",
+    },
+  ],
+  variable: "--font-mehdi-ekushey",
   display: "swap",
 });
 
@@ -29,8 +41,9 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "TawafMap - Navigate Makkah & Madinah",
-  description: "Localized AI navigation platform for pilgrims in Makkah and Madinah",
+  title: "TawafMap — তওয়াফ গাইড ও মক্কা-মদিনা ম্যাপ",
+  description:
+    "হজ ও ওমরাহ যাত্রীদের জন্য সহজ ম্যাপ গাইড — তওয়াফের প্রতিটি চক্কর, প্রতিটি ধাপ স্পষ্টভাবে দেখুন।",
   applicationName: "TawafMap",
   authors: [{ name: "TawafMap Team" }],
   icons: {
@@ -60,7 +73,7 @@ export default function RootLayout({
         {/* Apply stored theme before hydration to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeNoFlashScript }} />
       </head>
-      <body className={`${inter.variable} ${hindSiliguri.variable} ${notoNaskhArabic.variable}`}>
+      <body className={`${inter.variable} ${mehdiEkushey.variable} ${notoNaskhArabic.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

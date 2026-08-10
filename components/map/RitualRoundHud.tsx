@@ -16,9 +16,9 @@ export interface RitualRoundHudProps {
 }
 
 const DOT_CLASS: Record<ArcState, string> = {
-  completed: "bg-emerald-400",
-  active: "bg-teal-400 ritual-hud-dot-active",
-  future: "bg-slate-600",
+  completed: "bg-map-route-completed",
+  active: "bg-primary ritual-hud-dot-active",
+  future: "bg-map-route-upcoming",
 };
 
 /**

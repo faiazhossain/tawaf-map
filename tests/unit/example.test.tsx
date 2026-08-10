@@ -2,16 +2,19 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import HomePage from "@/app/page";
 
+// হোমপেজ পুনঃনকশার পরে এই পরীক্ষাগুলো বর্তমান কপি ও কাঠামোর সাথে মিলিয়ে আপডেট করা হয়েছে।
 describe("HomePage", () => {
-  it("renders the heading", () => {
+  it("renders the hero heading", () => {
     render(<HomePage />);
-    const heading = screen.getByText("TawafMap");
+    // হিরো শিরোনাম: "উমরাহ করুন নিশ্চিন্তে,"
+    const heading = screen.getByText(/উমরাহ করুন নিশ্চিন্তে/);
     expect(heading).toBeDefined();
   });
 
-  it("renders the description", () => {
+  it("renders the brand name in the header", () => {
     render(<HomePage />);
-    const description = screen.getByText(/মক্কা-মদিনায় হারাবেন না আর কখনও/);
-    expect(description).toBeDefined();
+    // হেডারে লোগো + "TawafMap" (Tawaf + Map দুটি টেক্সট নোড)।
+    const brand = screen.getByRole("link", { name: /TawafMap home/i });
+    expect(brand).toBeDefined();
   });
 });

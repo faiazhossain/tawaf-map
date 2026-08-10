@@ -62,6 +62,8 @@ import {
 } from "@/lib/map/markers";
 import { RecenterButton } from "./RecenterButton";
 import { RitualRoundHud } from "./RitualRoundHud";
+import { MapInstanceProvider } from "@/lib/map/MapInstanceContext";
+import { MAP_COLORS } from "@/lib/map/colors";
 
 interface MapViewProps {
   className?: string;
@@ -80,9 +82,11 @@ interface MapViewProps {
   onMiqatClick?: (miqatId: string) => void;
 }
 
-// Barikoi Map Style URL
-const BARIKOI_MAP_STYLE =
-  "https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=MjY0NDpHRUswODE3R1VV";
+// Barikoi Map Style URL — key sourced from env so it isn't hardcoded in the
+// client bundle. Falls back to a dev-only default so local dev still works.
+// NOTE: any NEXT_PUBLIC_* value ships in the bundle; treat it as public.
+const BARIKOI_API_KEY = process.env.NEXT_PUBLIC_BARIKOI_API_KEY ?? "MjY0NDpHRUswODE3R1VV";
+const BARIKOI_MAP_STYLE = `https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=${BARIKOI_API_KEY}`;
 
 /**
  * একটি আনুষ্ঠানিক রিং লেয়ারে সংক্ষিপ্ত ঝলক (flashColor → originalColor)। MapLibre-এর
@@ -253,7 +257,9 @@ export function MapView({
       pitch,
       minZoom: 6,
       maxZoom: 20,
-      attributionControl: false,
+      // OSM-derived tiles require attribution. Barikoi adds its own attribution
+      // via the style; the AttributionControl shows the active source attributions.
+      attributionControl: { compact: true },
       hash: "map",
     });
 
@@ -282,20 +288,38 @@ export function MapView({
       setMapLoaded(true);
     });
 
-    map.on("move", () => {
-      const newCenter = map.getCenter();
-      setCenter([newCenter.lng, newCenter.lat]);
+    // `move` ও `zoom` হ্যান্ডলার আগে প্রতি ফ্রেমে স্টোর লিখত (60×/s)। rAF কো-অলেসিংয়ের
+    // মাধ্যমে একাধিক ইভেন্টকে পরবর্তী ফ্রেমে একবার লিখতে থ্রটল করা হয়েছে (অডিট:
+    // "move handler writes the store ~60×/s during pan")।
+    let moveRafId: number | null = null;
+    let zoomRafId: number | null = null;
+    const flushMove = () => {
+      moveRafId = null;
+      const c = map.getCenter();
+      setCenter([c.lng, c.lat]);
       setZoom(map.getZoom());
+    };
+    const flushZoom = () => {
+      zoomRafId = null;
+      setZoom(map.getZoom());
+    };
+
+    map.on("move", () => {
+      if (moveRafId != null) return;
+      moveRafId = requestAnimationFrame(flushMove);
     });
 
     map.on("zoom", () => {
-      setZoom(map.getZoom());
+      if (zoomRafId != null) return;
+      zoomRafId = requestAnimationFrame(flushZoom);
     });
 
     mapRef.current = map;
     setMapInstance(map);
 
     return () => {
+      if (moveRafId != null) cancelAnimationFrame(moveRafId);
+      if (zoomRafId != null) cancelAnimationFrame(zoomRafId);
       map.remove();
       mapRef.current = null;
       setMapInstance(null);
@@ -378,7 +402,12 @@ export function MapView({
       // Add gate markers
       HARAM_GATES.forEach((gate) => {
         const isSelected = selectedGate?.id === gate.id;
-        const el = createGateMarkerElement(gate.type, isSelected);
+        const el = createGateMarkerElement(
+          gate.type,
+          isSelected,
+          () => onGateClick?.(gate.id),
+          (gate.name as string) ?? "গেট"
+        );
 
         const marker = new Marker({
           element: el,
@@ -386,13 +415,6 @@ export function MapView({
         })
           .setLngLat(gate.location.coordinates as [number, number])
           .addTo(map);
-
-        // Add click handler using DOM event (MapLibre's Marker uses standard DOM events for custom elements)
-        el.addEventListener("click", () => {
-          if (onGateClick) {
-            onGateClick(gate.id);
-          }
-        });
 
         markersMap.set(gate.id, marker);
       });
@@ -425,7 +447,12 @@ export function MapView({
       // Add hotel markers
       NEARBY_HOTELS.forEach((hotel) => {
         const isSelected = selectedHotel?.id === hotel.id;
-        const el = createHotelMarkerElement(hotel.priceLevel, isSelected);
+        const el = createHotelMarkerElement(
+          hotel.priceLevel,
+          isSelected,
+          () => onHotelClick?.(hotel.id),
+          (hotel.name as string) ?? "হোটেল"
+        );
 
         const marker = new Marker({
           element: el,
@@ -433,13 +460,6 @@ export function MapView({
         })
           .setLngLat(hotel.location.coordinates as [number, number])
           .addTo(map);
-
-        // Add click handler using DOM event (MapLibre's Marker uses standard DOM events for custom elements)
-        el.addEventListener("click", () => {
-          if (onHotelClick) {
-            onHotelClick(hotel.id);
-          }
-        });
 
         markersMap.set(hotel.id, marker);
       });
@@ -466,7 +486,13 @@ export function MapView({
       // Add tourist place markers
       placesToShow.forEach((place) => {
         const isSelected = selectedTouristPlace?.id === place.id;
-        const el = createTouristPlaceMarkerElement(place.category, isSelected, place.popular);
+        const el = createTouristPlaceMarkerElement(
+          place.category,
+          isSelected,
+          place.popular,
+          () => onTouristPlaceClick?.(place.id),
+          (place.name as string) ?? "চিহ্নিত স্থান"
+        );
 
         const marker = new Marker({
           element: el,
@@ -474,13 +500,6 @@ export function MapView({
         })
           .setLngLat(place.location.coordinates as [number, number])
           .addTo(map);
-
-        // Add click handler using DOM event
-        el.addEventListener("click", () => {
-          if (onTouristPlaceClick) {
-            onTouristPlaceClick(place.id);
-          }
-        });
 
         markersMap.set(place.id, marker);
       });
@@ -659,11 +678,13 @@ export function MapView({
     const allSourceIds = [UMRAH_OVERLAY_SOURCE, UMRAH_SACRED_SOURCE, UMRAH_JOURNEY_SOURCE];
 
     const removeUmrah = () => {
+      const m = mapRef.current;
+      if (!m) return;
       allLayerIds.forEach((id) => {
-        if (map.getLayer(id)) map.removeLayer(id);
+        if (m.getLayer(id)) m.removeLayer(id);
       });
       allSourceIds.forEach((src) => {
-        if (map.getSource(src)) map.removeSource(src);
+        if (m.getSource(src)) m.removeSource(src);
       });
     };
 
@@ -731,7 +752,7 @@ export function MapView({
     const prev = prevTawafFlashRef.current;
     prevTawafFlashRef.current = tawafCounter;
     if (prev == null || tawafCounter <= prev) return;
-    flashRitualRing(mapRef.current, TAWAF_RING_LAYER, "#10b981", "#14b8a6"); // emerald -> teal
+    flashRitualRing(mapRef.current, TAWAF_RING_LAYER, MAP_COLORS.pilgrim, MAP_COLORS.route); // gold flash -> emerald base
   }, [tawafCounter, showUmrah, mapLoaded]);
 
   useEffect(() => {
@@ -739,7 +760,7 @@ export function MapView({
     const prev = prevSaiFlashRef.current;
     prevSaiFlashRef.current = saiCounter;
     if (prev == null || saiCounter <= prev) return;
-    flashRitualRing(mapRef.current, SAI_CORRIDOR_LAYER, "#10b981", "#06b6d4"); // emerald -> cyan
+    flashRitualRing(mapRef.current, SAI_CORRIDOR_LAYER, MAP_COLORS.pilgrim, MAP_COLORS.route);
   }, [saiCounter, showUmrah, mapLoaded]);
 
   // ----- ওমরাহ: ধাপ মার্কার ও যাত্রা রেখা -----
@@ -804,8 +825,7 @@ export function MapView({
 
     // DOM মার্কার যোগ
     positioned.forEach((p) => {
-      const el = createUmrahStepMarkerElement(p.order, p.status);
-      el.addEventListener("click", () => onUmrahStepClick?.(p.id));
+      const el = createUmrahStepMarkerElement(p.order, p.status, () => onUmrahStepClick?.(p.id));
       const marker = new Marker({ element: el, anchor: "center" }).setLngLat(p.coords).addTo(map);
       markersMap.set(p.id, marker);
     });
@@ -866,6 +886,13 @@ export function MapView({
       const isActive = miqat.id === activeMiqatId;
       const el = createMiqatMarkerElement(miqat.name.bn, isActive);
       el.addEventListener("click", () => onMiqatClick?.(miqat.id));
+      // Keyboard activation (Enter/Space) — miqat markers are focusable via makeAccessible.
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onMiqatClick?.(miqat.id);
+        }
+      });
       const marker = new Marker({ element: el, anchor: "center" })
         .setLngLat(miqat.location.coordinates)
         .addTo(map);
@@ -916,32 +943,40 @@ export function MapView({
   const showRecenter = userTookControl && recenterTarget !== null;
 
   return (
-    <div className={`relative w-full h-full ${className}`}>
-      <div ref={mapContainerRef} className="w-full h-full" style={{ position: "relative" }} />
-      {ritualHud && (
-        <RitualRoundHud
-          stageLabel={ritualHud.stageLabel}
-          roundLabel={ritualHud.roundLabel}
-          value={ritualHud.value}
-          max={ritualHud.max}
-          className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
+    <MapInstanceProvider map={mapInstance}>
+      <div className={`relative w-full h-full ${className}`}>
+        <div
+          ref={mapContainerRef}
+          className="w-full h-full"
+          style={{ position: "relative" }}
+          role="application"
+          aria-label="মক্কা-মদিনা ইন্টারঅ্যাক্টিভ ম্যাপ — গেট, হোটেল ও ওমরাহ গাইড দেখুন"
         />
-      )}
-      {contextualLandmarkHint && !hintDismissed && (
-        <LandmarkHint
-          title={contextualLandmarkHint.title}
-          description={contextualLandmarkHint.description}
-          anchorName={contextualLandmarkHint.anchorName}
-          onDismiss={() => setHintDismissed(true)}
-          className="absolute bottom-28 left-4 z-[40] sm:bottom-8"
-        />
-      )}
-      {showRecenter && (
-        <RecenterButton
-          onClick={handleRecenter}
-          className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
-        />
-      )}
-    </div>
+        {ritualHud && (
+          <RitualRoundHud
+            stageLabel={ritualHud.stageLabel}
+            roundLabel={ritualHud.roundLabel}
+            value={ritualHud.value}
+            max={ritualHud.max}
+            className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
+          />
+        )}
+        {contextualLandmarkHint && !hintDismissed && (
+          <LandmarkHint
+            title={contextualLandmarkHint.title}
+            description={contextualLandmarkHint.description}
+            anchorName={contextualLandmarkHint.anchorName}
+            onDismiss={() => setHintDismissed(true)}
+            className="absolute bottom-28 left-4 z-[40] sm:bottom-8"
+          />
+        )}
+        {showRecenter && (
+          <RecenterButton
+            onClick={handleRecenter}
+            className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
+          />
+        )}
+      </div>
+    </MapInstanceProvider>
   );
 }

@@ -4,6 +4,35 @@ import { cleanup } from "@testing-library/react";
 // (toBeVisible, toHaveAttribute ইত্যাদি)।
 import "@testing-library/jest-dom/vitest";
 
+// jsdom-এ window.matchMedia / IntersectionObserver নেই — যেসব ক্লায়েন্ট কম্পোনেন্ট
+// (Reveal, BottomSheet, theme-provider) এগুলো ব্যবহার করে তাদের পরীক্ষার জন্য মক।
+if (typeof window !== "undefined") {
+  if (!window.matchMedia) {
+    window.matchMedia = (query: string) =>
+      ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: () => {},
+        removeListener: () => {},
+        addEventListener: () => {},
+        removeEventListener: () => {},
+        dispatchEvent: () => false,
+      }) as unknown as MediaQueryList;
+  }
+  if (!window.IntersectionObserver) {
+    class FakeIO {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    }
+    (window as unknown as { IntersectionObserver: unknown }).IntersectionObserver = FakeIO;
+  }
+}
+
 afterEach(() => {
   cleanup();
 });

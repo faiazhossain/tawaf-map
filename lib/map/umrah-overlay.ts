@@ -9,6 +9,7 @@
  */
 
 import { UMRAH_ANCHORS } from "@/lib/data/umrah/anchors";
+import { MAP_COLORS, RITUAL_STATE_COLORS } from "@/lib/map/colors";
 
 const DEG_PER_M_LAT = 1 / 110540; // অক্ষাংশ ১ মিটার ≈ এত ডিগ্রি
 
@@ -218,13 +219,13 @@ function rectangleRing(
 // লেয়ার কনফিগ
 // ---------------------------------------------------------------------------
 
-/** তওয়াফ রিং লেয়ার (টিল রেখা) */
+/** তওয়াফ রিং লেয়ার (emerald রেখা — --map-route) */
 export const tawafRingLayer = {
   id: TAWAF_RING_LAYER,
   type: "line",
   filter: ["==", ["get", "kind"], "tawaf-ring"],
   paint: {
-    "line-color": "#14b8a6", // teal-500
+    "line-color": MAP_COLORS.route,
     "line-width": 4,
     "line-opacity": 0.85,
     "line-dasharray": [1, 0.5],
@@ -238,7 +239,7 @@ export const tawafRingCasingLayer = {
   type: "line",
   filter: ["==", ["get", "kind"], "tawaf-ring"],
   paint: {
-    "line-color": "#ffffff",
+    "line-color": MAP_COLORS.casing,
     "line-width": 7,
     "line-opacity": 0.5,
   },
@@ -267,13 +268,13 @@ export const hateemLayer = {
   },
 } as const;
 
-/** সাঈ করিডোর (সায়ান রেখা) */
+/** সাঈ করিডোর (emerald রেখা — --map-route; আগে সায়ান ছিল) */
 export const saiCorridorLayer = {
   id: SAI_CORRIDOR_LAYER,
   type: "line",
   filter: ["==", ["get", "kind"], "sai-corridor"],
   paint: {
-    "line-color": "#06b6d4", // cyan-500
+    "line-color": MAP_COLORS.route,
     "line-width": 4,
     "line-opacity": 0.85,
   },
@@ -308,7 +309,7 @@ export const umrahJourneyLayer = {
   id: UMRAH_JOURNEY_LAYER,
   type: "line",
   paint: {
-    "line-color": "#14b8a6",
+    "line-color": MAP_COLORS.route,
     "line-width": 3,
     "line-opacity": 0.7,
     "line-dasharray": [2, 2],
@@ -568,9 +569,9 @@ export const EMPTY_FEATURE_COLLECTION = {
   features: [],
 };
 
-/** অঙ্কন লেয়ারের চকচকে টিল রেখা - সক্রিয়ভাবে আঁকা চাপের জন্য। */
+/** অঙ্কন লেয়ারের চকচকে emerald রেখা - সক্রিয়ভাবে আঁকা চাপের জন্য (ট্রেসার)। */
 export const drawLineLayerPaint = {
-  "line-color": "#5eead4", // teal-300 - উজ্জ্বল ট্রেসার
+  "line-color": MAP_COLORS.route,
   "line-width": 6,
   "line-opacity": 0.95,
   "line-blur": 1,
@@ -596,7 +597,7 @@ export function createProgressLayerSet(prefix: string, source: string) {
       source,
       filter: ["==", ["get", "state"], "future"],
       paint: {
-        "line-color": "#64748b", // slate-500 - ম্লান ভবিষ্যৎ
+        "line-color": RITUAL_STATE_COLORS.future,
         "line-width": 3,
         "line-opacity": 0.45,
         "line-dasharray": [2, 2],
@@ -609,7 +610,7 @@ export function createProgressLayerSet(prefix: string, source: string) {
       source,
       filter: ["==", ["get", "state"], "completed"],
       paint: {
-        "line-color": "#10b981", // emerald-500 - সম্পন্ন
+        "line-color": RITUAL_STATE_COLORS.completed,
         "line-width": 4,
         "line-opacity": 0.9,
       },
@@ -621,7 +622,7 @@ export function createProgressLayerSet(prefix: string, source: string) {
       source,
       filter: ["==", ["get", "state"], "active"],
       paint: {
-        "line-color": "#2dd4bf", // teal-400 - সক্রিয়, সবচেয়ে গাঢ
+        "line-color": RITUAL_STATE_COLORS.active,
         "line-width": 6,
         "line-opacity": 1,
       },

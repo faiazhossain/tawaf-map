@@ -45,10 +45,19 @@ export function TawafGuidePanel({
 
   return (
     <div
-      className="absolute top-4 right-4 z-[100] w-96 h-[calc(100vh-7rem)]"
+      className="absolute top-4 right-4 z-[100] w-96 h-[calc(100dvh-7rem)]"
       data-testid="umrah-step-list-desktop"
+      style={{
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
     >
-      <div className="flex flex-col h-full overflow-hidden rounded-2xl border border-border/60 bg-surface/95 backdrop-blur-xl shadow-2xl">
+      <div
+        className="flex flex-col h-full overflow-hidden rounded-2xl border border-border/60 bg-surface/95 backdrop-blur-xl shadow-2xl"
+        role="dialog"
+        aria-modal="false"
+        aria-label="ওমরাহ গাইড প্যানেল"
+      >
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/20 to-primary/5">
           <h3 className="text-base font-bold text-foreground">ওমরাহ গাইড</h3>
           <button

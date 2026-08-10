@@ -24,9 +24,9 @@ describe("RitualRoundHud - তওয়াফ/সাঈ রাউন্ড ট�
     const { container } = render(
       <RitualRoundHud stageLabel="তওয়াফ" roundLabel="চক্কর" value={3} max={7} />
     );
-    expect(container.querySelectorAll(".bg-emerald-400")).toHaveLength(2);
+    expect(container.querySelectorAll(".bg-map-route-completed")).toHaveLength(2);
     expect(container.querySelectorAll(".ritual-hud-dot-active")).toHaveLength(1);
-    expect(container.querySelectorAll(".bg-slate-600")).toHaveLength(4);
+    expect(container.querySelectorAll(".bg-map-route-upcoming")).toHaveLength(4);
   });
 
   it("শুরুতে (value=1) প্রথমটিই সক্রিয়, বাকি বাকি", () => {
@@ -34,17 +34,17 @@ describe("RitualRoundHud - তওয়াফ/সাঈ রাউন্ড ট�
       <RitualRoundHud stageLabel="সাঈ" roundLabel="পাক" value={1} max={7} />
     );
     expect(container.querySelectorAll(".ritual-hud-dot-active")).toHaveLength(1);
-    expect(container.querySelectorAll(".bg-slate-600")).toHaveLength(6);
-    expect(container.querySelectorAll(".bg-emerald-400")).toHaveLength(0);
+    expect(container.querySelectorAll(".bg-map-route-upcoming")).toHaveLength(6);
+    expect(container.querySelectorAll(".bg-map-route-completed")).toHaveLength(0);
   });
 
   it("সম্পূর্ণ হলে (value>=max) সব পয়েন্ট সবুজ, কোনো সক্রিয় নেই", () => {
     const { container } = render(
       <RitualRoundHud stageLabel="তওয়াফ" roundLabel="চক্কর" value={7} max={7} />
     );
-    expect(container.querySelectorAll(".bg-emerald-400")).toHaveLength(7);
+    expect(container.querySelectorAll(".bg-map-route-completed")).toHaveLength(7);
     expect(container.querySelectorAll(".ritual-hud-dot-active")).toHaveLength(0);
-    expect(container.querySelectorAll(".bg-slate-600")).toHaveLength(0);
+    expect(container.querySelectorAll(".bg-map-route-upcoming")).toHaveLength(0);
   });
 
   it("className প্রপ প্রয়োগ করে", () => {

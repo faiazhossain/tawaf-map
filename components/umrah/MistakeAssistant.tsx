@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { UMRAH_MISTAKES, getMistakeById, getMistakesByCategory } from "@/lib/data/umrah/mistakes";
 import type { Mistake, MistakeCategory, ExpiationType, Validity } from "@/types/umrah";
 
@@ -140,6 +141,22 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
   const [category, setCategory] = useState<MistakeCategory | null>(null);
   const [path, setPath] = useState<string[]>([]); // ভ্রমণকৃত নোড id স্ট্যাক
 
+  // ডায়ালগ অ্যাক্সেসিবিলিটি: focus trap + Escape বন্ধ + body scroll lock।
+  const dialogRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(dialogRef, true);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose?.();
+    };
+    document.addEventListener("keydown", onKey);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [onClose]);
+
   const currentId = path.length > 0 ? path[path.length - 1] : null;
   const current = currentId ? getMistakeById(currentId) : null;
 
@@ -158,7 +175,13 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
 
   return (
     <div className="fixed inset-0 z-[200] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4">
-      <div className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col bg-surface sm:rounded-2xl rounded-t-3xl border border-border/60 shadow-2xl overflow-hidden">
+      <div
+        ref={dialogRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="mistake-assistant-title"
+        className="w-full sm:max-w-lg max-h-[92dvh] sm:max-h-[85vh] flex flex-col bg-surface sm:rounded-2xl rounded-t-3xl border border-border/60 shadow-2xl overflow-hidden"
+      >
         {/* হেডার */}
         <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-gradient-to-r from-amber-600/15 to-rose-600/10">
           <div className="flex items-center gap-2.5">
@@ -166,8 +189,10 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
               <LifeBuoy className="w-5 h-5 text-foreground" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-foreground">আমি একটি ভুল করেছি</h2>
-              <p className="text-[11px] text-amber-600">শান্ত হোন — একসাথে সমাধান করি</p>
+              <h2 id="mistake-assistant-title" className="text-base font-bold text-foreground">
+                আমি একটি ভুল করেছি
+              </h2>
+              <p className="text-[11px] text-gold">শান্ত হোন — একসাথে সমাধান করি</p>
             </div>
           </div>
           <div className="flex items-center gap-1">

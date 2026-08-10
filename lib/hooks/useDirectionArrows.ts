@@ -2,6 +2,9 @@
 
 import { useEffect, useRef } from "react";
 import type { Map as MapLibreMap } from "maplibre-gl";
+// NOTE: আগে এই হুক requestAnimationFrame দিয়ে প্রতি ফ্রেমে setPaintProperty কল করত
+// (অডিট: "unbounded RAF loop")। এখন একটি থ্রটল করা setInterval ব্যবহার করে —
+// SWEEP_INTERVAL_MS অনুযায়ী আপডেট করে, যা একটি ধীর কমেটের জন্য যথেষ্ট।
 import {
   DIRECTION_ARROWS_SOURCE,
   DIRECTION_ARROWS_LAYER,
@@ -14,9 +17,13 @@ import {
 const SWEEP_PERIOD = 4500; // ms - পুরো পথ ধরে একবার কমেট সুইপ (ধীর, সম্মানজনক)
 const STATIC_OPACITY = 0.7; // reduced-motion বা স্থির অবস্থায়
 const DIM_OPACITY = 0.2; // কমেট থেকে দূরে থাকা চেভরনের ম্লান বেসলাইন
+// কমেট সুইপ আপডেট ফ্রিকোয়েন্সি। আগে এটি একটি unbounded requestAnimationFrame লুপ ছিল
+// যা প্রতি ফ্রেমে setPaintProperty কল করত (60fps)। এখন একটি সাব-সেকেন্ড ইন্টারভালে থ্রটল করা
+// হয়েছে — একটি ধীর কমেটের জন্য যথেষ্ট মসৃণ, অথচ মেইন-থ্রেড/GPU খরচ ~১/৪।
+const SWEEP_INTERVAL_MS = 50;
 
-// টিল রঙের দুই-পাল্লের চেভরন তীর, উত্তরমুখী আঁকা (icon-rotate = bearing দ্বারা ঘোরানো)।
-const CHEVRON_SVG = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6 L25 17 M16 6 L7 17" stroke="#2dd4bf" stroke-width="4" stroke-linecap="round"/><path d="M16 14 L23 23 M16 14 L9 23" stroke="#5eead4" stroke-width="4" stroke-linecap="round" opacity="0.5"/></svg>`;
+// Emerald চেভরন (দুই-পাল্লা) — আগের টিল #2dd4bf/#5eead4 টোকেনে স্থানান্তরিত।
+const CHEVRON_SVG = `<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6 L25 17 M16 6 L7 17" stroke="#0F5C4D" stroke-width="4" stroke-linecap="round"/><path d="M16 14 L23 23 M16 14 L9 23" stroke="#2EA78C" stroke-width="4" stroke-linecap="round" opacity="0.6"/></svg>`;
 
 export interface UseDirectionArrowsOptions {
   /** গাইড সক্রিয় কিনা (সোর্স/লেয়ার জীবনচক্রের জন্য)। */
@@ -46,6 +53,7 @@ export function useDirectionArrows(
   { show, active, coords, count, closed = false }: UseDirectionArrowsOptions
 ) {
   const rafRef = useRef<number | null>(null);
+  const intervalRef = useRef<number | null>(null);
   const startRef = useRef(0);
 
   // সোর্স + লেয়ার + চেভরন আইকন জীবনচক্র - show চালু থাকাকালীন একবার।
@@ -83,6 +91,8 @@ export function useDirectionArrows(
       cancelled = true;
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      if (intervalRef.current != null) window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
       if (map.getLayer(DIRECTION_ARROWS_LAYER)) map.removeLayer(DIRECTION_ARROWS_LAYER);
       if (map.getSource(DIRECTION_ARROWS_SOURCE)) map.removeSource(DIRECTION_ARROWS_SOURCE);
       if (map.hasImage(DIRECTION_ARROW_ICON)) map.removeImage(DIRECTION_ARROW_ICON);
@@ -99,6 +109,8 @@ export function useDirectionArrows(
       source.setData(EMPTY_FEATURE_COLLECTION);
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      if (intervalRef.current != null) window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
       return;
     }
 
@@ -107,7 +119,7 @@ export function useDirectionArrows(
 
     const reduced =
       typeof window !== "undefined" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
     if (reduced) {
       // স্থির: সব চেভরন একই ম্লান-মধ্যম অস্বচ্ছতায়, কোনো নড়াচড়া নেই।
@@ -118,6 +130,8 @@ export function useDirectionArrows(
       }
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      if (intervalRef.current != null) window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
       return;
     }
 
@@ -133,9 +147,9 @@ export function useDirectionArrows(
 
     startRef.current = performance.now();
 
-    const tick = (now: number) => {
-      const phase = ((now - startRef.current) / SWEEP_PERIOD) * n; // প্রতি সুইপে ০..n
-      // প্রতিটি seq-এর জন্য কমেট থেকে দূরত্ব, হাঁটার দিকে মোড়ানো।
+    // কমেট সুইপ আপডেট — থ্রটল করা interval (আগে প্রতি-ফ্রেম RAF)।
+    const updateSweep = () => {
+      const phase = ((performance.now() - startRef.current) / SWEEP_PERIOD) * n;
       const stops: number[] = [];
       for (let s = 0; s < n; s++) {
         const d = (((s - phase) % n) + n) % n;
@@ -145,15 +159,17 @@ export function useDirectionArrows(
       try {
         map.setPaintProperty(DIRECTION_ARROWS_LAYER, "icon-opacity", expr as any);
       } catch {
-        // লেয়ার সরানো হলে উপেক্ষা - পরের ফ্রেমে আবার চেষ্টা।
+        // লেয়ার সরানো হলে উপেক্ষা।
       }
-      rafRef.current = requestAnimationFrame(tick);
     };
-    rafRef.current = requestAnimationFrame(tick);
+    updateSweep(); // সাথে সাথে প্রথম ফ্রেম
+    intervalRef.current = window.setInterval(updateSweep, SWEEP_INTERVAL_MS);
 
     return () => {
       if (rafRef.current != null) cancelAnimationFrame(rafRef.current);
       rafRef.current = null;
+      if (intervalRef.current != null) window.clearInterval(intervalRef.current);
+      intervalRef.current = null;
     };
   }, [map, show, active, coords, count, closed]);
 }

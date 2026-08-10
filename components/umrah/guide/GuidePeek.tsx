@@ -3,6 +3,7 @@
 import { ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
+import { ProgressBar } from "@/components/ui/progress";
 import { stageLabel, directionHint } from "./stage-label";
 import type { UmrahStep } from "@/types/umrah";
 
@@ -39,14 +40,7 @@ export function GuidePeek({
     >
       <div className="min-w-0 flex-1">
         <p className="truncate text-sm font-semibold text-foreground">{line}</p>
-        {ratio !== null && (
-          <div className="mt-1.5 h-1 w-full overflow-hidden rounded-full bg-muted">
-            <div
-              className="h-full rounded-full bg-primary transition-all duration-500"
-              style={{ width: `${ratio * 100}%` }}
-            />
-          </div>
-        )}
+        {ratio !== null && <ProgressBar className="mt-1.5 h-1" value={ratio} />}
       </div>
       <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
     </button>

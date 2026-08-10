@@ -16,10 +16,10 @@ export function ThemeToggle({ className }: { className?: string }) {
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "আলো থিমে যান" : "গাঢ় থিমে যান"}
-      title={isDark ? "আলো থিম" : "গাঢ় থিম"}
+      aria-label={isDark ? "আলো মোডে যান" : "অন্ধকার মোডে যান"}
+      title={isDark ? "আলো মোড" : "অন্ধকার মোড"}
       className={cn(
-        "inline-flex h-10 w-10 sm:h-auto sm:w-auto sm:min-w-[4.5rem] sm:px-4 items-center justify-center gap-1.5 rounded-xl",
+        "inline-flex h-10 w-10 sm:h-auto sm:w-auto sm:min-w-[6rem] sm:px-4 items-center justify-center gap-1.5 rounded-xl",
         "border border-border bg-surface/80 text-muted-foreground",
         "hover:bg-muted hover:text-foreground transition-colors",
         "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
@@ -28,7 +28,7 @@ export function ThemeToggle({ className }: { className?: string }) {
     >
       {isDark ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
       <span className="hidden sm:inline whitespace-nowrap text-sm font-medium">
-        {isDark ? "আলো" : "গাঢ়"}
+        {isDark ? "আলো মোড" : "অন্ধকার মোড"}
       </span>
     </button>
   );

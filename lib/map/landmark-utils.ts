@@ -17,7 +17,7 @@ const LANDMARK_HINTS: Record<string, LandmarkHintData> = {
   },
   "tawaf-corner": {
     title: "ইয়েমেনি কোণার কাছে আসলে স্পর্শ করুন",
-    description: "চক্করের মাঝেমধ্যে রুকনে ইয়ামানি স্পর্শ করুন, কিন্তু চুম্বন বা takbir করবেন না।",
+    description: "চক্করের মাঝেমধ্যে রুকনে ইয়ামানি স্পর্শ করুন, কিন্তু চুম্বন বা তাকবীর করবেন না।",
     anchorName: "রুকনে ইয়ামানি",
   },
   "pray-after-tawaf": {
@@ -38,6 +38,13 @@ const LANDMARK_HINTS: Record<string, LandmarkHintData> = {
   },
 };
 
+/**
+ * proximityRangeM — কত মিটারের মধ্যে থাকলে আনুষ্ঠানিক ল্যান্ডমার্ক ইঙ্গিত দেখানো হবে।
+ * এর বাইরে হলে ইঙ্গিত স্বয়ংক্রিয়ভাবে লুকানো হয় (auto-hide), যাতে পুরো তওয়াফ/সাঈ জুড়ে
+ * ইঙ্গিত ম্যাপের ওপর জ্বলজ্বল করে না থাকে।
+ */
+const PROXIMITY_RANGE_M = 25;
+
 export function getContextualLandmarkHint(
   stage: string | undefined,
   anchorId: string | null,
@@ -45,28 +52,34 @@ export function getContextualLandmarkHint(
 ): LandmarkHintData | null {
   if (!stage) return null;
 
+  // কোনো লোকেশন নেই (GPS বন্ধ/দুর্বল) — সাধারণ গাইডেন্স ইঙ্গিত দেখাও, যাতে প্রিভিউ মোডে
+  // হাজি দেখতে পান। কিন্তু লোকেশন আছে আর কোনো অ্যাংকর কাছে নেই — auto-hide (null)।
+  const hasLocation = distanceMeters !== null;
+  const within = (d: number | null, range = PROXIMITY_RANGE_M) => d !== null && d < range;
+
   if (stage === "tawaf") {
-    if (anchorId === "black-stone" && distanceMeters !== null && distanceMeters < 25) {
+    if (anchorId === "black-stone" && within(distanceMeters)) {
       return LANDMARK_HINTS["tawaf"];
     }
-    if (anchorId === "rukn-yamani" && distanceMeters !== null && distanceMeters < 25) {
+    if (anchorId === "rukn-yamani" && within(distanceMeters)) {
       return LANDMARK_HINTS["tawaf-corner"];
     }
-    return LANDMARK_HINTS["tawaf"];
+    return hasLocation ? null : LANDMARK_HINTS["tawaf"];
   }
 
   if (stage === "pray") {
+    // প্রে-তওয়াফ নামাজ ধাপে সাধারণ ইঙ্গিত দেখাও ( proximity optional)।
     return LANDMARK_HINTS["pray-after-tawaf"];
   }
 
   if (stage === "sai") {
-    if (anchorId === "safa") {
+    if (anchorId === "safa" && within(distanceMeters)) {
       return LANDMARK_HINTS["sai-start"];
     }
-    if (anchorId === "marwa") {
+    if (anchorId === "marwa" && within(distanceMeters)) {
       return LANDMARK_HINTS["sai-end"];
     }
-    return LANDMARK_HINTS["sai-start"];
+    return hasLocation ? null : LANDMARK_HINTS["sai-start"];
   }
 
   return null;

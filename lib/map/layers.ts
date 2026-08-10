@@ -2,6 +2,8 @@
  * Map layer configurations for gates, POIs, routes, and user location
  */
 
+import { MAP_COLORS } from "@/lib/map/colors";
+
 // Gate marker layer
 export const GATE_MARKER_LAYER_ID = "gate-markers";
 export const GATE_LABEL_LAYER_ID = "gate-labels";
@@ -63,38 +65,39 @@ export const gateMarkerSelectedPaint: any = {
 };
 
 /**
- * Route line paint properties
+ * Route line paint properties — emerald guidance line (was blue #3b82f6).
+ * Unified with ritual active line via --map-route token.
  */
 export const routeLinePaint: any = {
-  "line-color": "#3b82f6",
+  "line-color": MAP_COLORS.route,
   "line-width": 5,
-  "line-opacity": 0.8,
+  "line-opacity": 0.85,
 };
 
 /**
  * Route casing paint properties
  */
 export const routeCasingPaint: any = {
-  "line-color": "#ffffff",
+  "line-color": MAP_COLORS.casing,
   "line-width": 8,
   "line-opacity": 0.9,
 };
 
 /**
- * User location paint properties
+ * User location paint properties — gold ("you" marker), was blue.
  */
 export const userLocationPaint: any = {
   "circle-radius": 8,
-  "circle-color": "#3b82f6",
+  "circle-color": MAP_COLORS.pilgrim,
   "circle-stroke-width": 3,
   "circle-stroke-color": "#ffffff",
 };
 
 /**
- * User accuracy ring paint properties
+ * User accuracy ring paint properties — gold tint (matches pilgrim marker).
  */
 export const userAccuracyPaint: any = {
-  "fill-color": "#3b82f6",
+  "fill-color": MAP_COLORS.pilgrim,
   "fill-opacity": 0.15,
 };
 
