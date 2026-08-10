@@ -38,7 +38,7 @@ docker compose logs -f --tail=200 tawaf-frontend
 Health check from server:
 
 ```bash
-curl -I http://127.0.0.1:3000
+curl -I http://127.0.0.1:4005
 ```
 
 ## 4) Install Nginx site config
@@ -101,6 +101,6 @@ docker compose ps
 ## Notes
 
 - Image is pulled from Docker Hub: `rilusmahmud/tawaf-map:latest`
-- App is exposed only on `127.0.0.1:3000`; external traffic should come via Nginx.
+- App is exposed only on `127.0.0.1:4005`; external traffic should come via Nginx.
 - Use `.env.production` for environment-specific variables (create from `.env.production.example`).
 - Prefer running all `sudo` commands manually with confirmation.
