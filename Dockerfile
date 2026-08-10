@@ -39,7 +39,14 @@ ENV HOSTNAME="0.0.0.0"
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/public ./public
+COPY --chown=nextjs:nodejs --from=builder /app/public ./public
+
+# Static assets must be readable and directories traversable by the non-root
+# nextjs runtime user. Source dirs (e.g. font bundles copied from macOS) can
+# land in the image with restrictive 0700 modes, which blocks Next.js from
+# scanning /app/public on startup (EACCES crash loop). Normalize regardless
+# of the permissions baked into the build context.
+RUN chmod -R a+rX /app/public
 
 RUN mkdir .next
 RUN chown nextjs:nodejs .next
