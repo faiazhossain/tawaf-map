@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import {
   MapPin,
   Navigation,
@@ -78,12 +79,13 @@ function TouristPlaceInfoContent({
       <div className="relative h-40 sm:h-36 bg-primary shrink-0">
         {place.images?.main && (
           <div className="absolute inset-0 overflow-hidden">
-            <img
+            <Image
               src={place.images.main}
               alt={place.name}
+              fill
+              sizes="(max-width: 640px) 100vw, 400px"
               loading="lazy"
-              decoding="async"
-              className="w-full h-full object-cover"
+              className="object-cover"
               onError={(e) => {
                 e.currentTarget.style.display = "none";
               }}
