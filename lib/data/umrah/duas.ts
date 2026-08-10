@@ -41,11 +41,12 @@ export const UMRAH_DUAS: Dua[] = [
     translationEn: "O Allah, here I am for Umrah.",
     whenToRecite: {
       bn:
-        "নিয়ত মূলত অন্তরের সংকল্প। মীকাতের সমান্তরালে পৌঁছে উমরাহর জন্য ইহরামে প্রবেশ করুন " +
-        "এবং তালবিয়া পাঠ শুরু করুন।",
+        "উমরাহর নিয়ত মূলত অন্তরের সংকল্প। মীকাত অতিক্রম করার আগে উমরাহর জন্য ইহরামে প্রবেশ করুন, " +
+        "অন্তরে উমরাহর নিয়ত করুন এবং তালবিয়া পাঠ শুরু করুন।",
       en:
-        "Intention is fundamentally a resolve of the heart. As you reach the miqat, " +
-        "enter ihram for Umrah and begin reciting the Talbiyah.",
+        "The intention for Umrah is fundamentally a resolve of the heart. Before crossing " +
+        "the miqat, enter ihram for Umrah, form the intention in your heart, and begin " +
+        "reciting the Talbiyah.",
     },
     sourceRefs: ["https://islamqa.info/en/answers/31819", "https://umrah.nusuk.sa/Journey"],
   },

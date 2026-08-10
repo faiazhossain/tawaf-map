@@ -131,15 +131,15 @@ export const UMRAH_STEPS: UmrahStep[] = [
     gender: "all",
     whatToDo: {
       bn:
-        "• মক্কায় পৌঁছে আবাসস্থলে লাগেজ রেখে হারামের দিকে বের হোন।\n" +
-        "• পথে তালবিয়াহ পড়তে থাকুন (তওয়াফ শুরুর আগ পর্যন্ত)।\n" +
-        "• কোন গেট দিয়ে প্রবেশ করবেন তা 'নিকটতম গেট' সুপারিশ থেকে দেখুন।\n" +
-        "• তওয়াফের জন্য সাধারণত উমরাহ গেট বা কিং আব্দুল আজিজ গেট সুবিধাজনক।",
+        "* **মক্কায় পৌঁছে** আবাসস্থলে লাগেজ রেখে মসজিদুল হারামের উদ্দেশ্যে রওনা দিন।\n" +
+        "* **তালবিয়া পাঠ করতে থাকুন** — তওয়াফ শুরু করার আগ পর্যন্ত তালবিয়া পাঠ করতে পারেন।\n" +
+        "* **প্রবেশের গেট নির্বাচন করুন** — আপনার অবস্থান অনুযায়ী কাছের ও সুবিধাজনক গেটের পরামর্শ ম্যাপে দেখুন।\n" +
+        "* **তওয়াফের জন্য** উমরাহ গেট বা কিং আব্দুল আজিজ গেট ব্যবহার করতে পারেন।",
       en:
-        "• After arriving in Makkah, drop luggage at your accommodation and head to the Haram.\n" +
-        "• Keep reciting the Talbiyah along the way (until Tawaf begins).\n" +
-        "• Check the 'nearest gate' recommendation for which gate to use.\n" +
-        "• For Tawaf, the Umrah Gate or King Abdul Aziz Gate are convenient.",
+        "* **Arriving in Makkah** — drop your luggage at your accommodation and head toward Masjid al-Haram.\n" +
+        "* **Keep reciting the Talbiyah** — you may continue it until Tawaf begins.\n" +
+        "* **Choose your entry gate** — see the map for nearby, convenient gate suggestions based on your location.\n" +
+        "* **For Tawaf** — you can use the Umrah Gate or King Abdul Aziz Gate.",
     },
     isCompleteWhen: "proximity",
     tip: {
@@ -158,23 +158,23 @@ export const UMRAH_STEPS: UmrahStep[] = [
     order: 4,
     title: { bn: "মসজিদুল হারামে প্রবেশ", en: "Enter Masjid al-Haram" },
     summary: {
-      bn: "ডান পা আগে রেখে প্রবেশের দোয়া পড়ুন। তাহিয়্যাতুল মসজিদ নামাজ আদায় করুন।",
-      en: "Step in with the right foot first, recite the entry supplication, and pray Tahiyyatul Masjid.",
+      bn: "ডান পা আগে দিয়ে মসজিদে প্রবেশ করুন এবং প্রবেশের দোয়া পড়ুন।",
+      en: "Enter the mosque with your right foot first and recite the entry supplication.",
     },
     gender: "all",
     anchors: ["mataf"],
     duas: ["mosque-entry"],
     whatToDo: {
       bn:
-        "• ডান পা আগে রেখে প্রবেশের দোয়া পড়ুন।\n" +
-        "• প্রবেশের পর তাহিয়্যাতুল মসজিদ (২ রাকাআত) আদায় করা মুস্তাহাব।\n" +
-        "• তালবিয়াহ পড়তে থাকুন - তওয়াফ শুরু হলে তালবিয়াহ থামিয়ে দিন।\n" +
-        "• মাতাফের দিকে এগিয়ে তওয়াফের প্রস্তুতি নিন।",
+        "* **ডান পা আগে দিয়ে প্রবেশ করুন** এবং প্রবেশের দোয়া পড়ুন (নিচের 'দোয়া ও স্মরণবাক্য' দেখুন)।\n" +
+        "* **তাহিয়্যাতুল মসজিদ:** সাধারণভাবে মসজিদে প্রবেশ করে বসার আগে দুই রাকাআত পড়া সুন্নাহ। তবে উমরাহর তওয়াফের জন্য মসজিদুল হারামে প্রবেশ করলে **তওয়াফই তাহিয়্যাতুল মসজিদ হিসেবে যথেষ্ট** — তাই আলাদাভাবে দুই রাকাআত পড়া আবশ্যক নয়।\n" +
+        "* **তালবিয়া পড়তে থাকুন** এবং তওয়াফ শুরু করার প্রস্তুতি নিন।\n" +
+        "* **তওয়াফ শুরু করার সময়** তালবিয়া বন্ধ করে হাজরে আসওয়াদের সমান্তরাল স্থান থেকে তওয়াফ শুরু করুন।",
       en:
-        "• Step in with the right foot first and recite the entry supplication.\n" +
-        "• It is recommended to pray Tahiyyatul Masjid (2 rak'ahs) upon entering.\n" +
-        "• Continue the Talbiyah - stop it when Tawaf begins.\n" +
-        "• Proceed toward the Mataf and prepare for Tawaf.",
+        "* **Enter with your right foot first** and recite the entry supplication (see 'Duas & adhkar' below).\n" +
+        "* **Tahiyyatul Masjid:** it is normally sunnah to pray two rak'ahs before sitting in any mosque. However, when entering Masjid al-Haram for Umrah's Tawaf, **the Tawaf itself suffices as Tahiyyatul Masjid** — so a separate two rak'ahs is not required.\n" +
+        "* **Keep reciting the Talbiyah** and prepare to begin Tawaf.\n" +
+        "* **When starting Tawaf**, stop the Talbiyah and begin at the point aligned with the Black Stone (Hajr al-Aswad).",
     },
     isCompleteWhen: "manual",
     sourceRefs: [
@@ -192,7 +192,7 @@ export const UMRAH_STEPS: UmrahStep[] = [
     order: 5,
     title: { bn: "তওয়াফ (৭ চক্কর)", en: "Tawaf (7 circuits)" },
     summary: {
-      bn: "কাবা শরীফের চারপাশে সাতবার প্রদক্ষিণ করুন - কাবা বাম দিকে রেখে।",
+      bn: "কাবা শরীফকে আপনার বাম পাশে রেখে হাজরে আসওয়াদের সমান্তরাল স্থান থেকে তাওয়াফ শুরু করুন এবং সাতটি চক্কর সম্পন্ন করুন।",
       en: "Circumambulate the Kaaba seven times, keeping it on your left.",
     },
     gender: "all",
@@ -238,12 +238,13 @@ export const UMRAH_STEPS: UmrahStep[] = [
     },
     whatToDo: {
       bn:
-        "• হাজরে আসওয়াদ (কালো পাথর) থেকে শুরু করুন - কাবা বাম দিকে রেখে।\n" +
-        "• সম্ভব হলে কালো পাথর স্পর্শ/চুম্বন করুন, নয়তো ডান হাতে ইশারা করে 'আল্লাহু আকবার' বলুন।\n" +
-        "• ঘড়ির কাঁটার বিপরীতে (বাম দিকে) চলুন; কাবা সবসময় বাম দিকে থাকবে।\n" +
-        "• রুকনে ইয়ামানি (ইয়েমেনি কোণা) স্পর্শ করুন - চুম্বন করবেন না, তাকবির বলবেন না।\n" +
-        '• রুকনে ইয়ামানি ও কালো পাথরের মধ্যে: "রব্বানা আতিনা ফিদ্দুনিয়া হাসানাহ..." পড়ুন।\n' +
-        "• ৭টি চক্কর সম্পূর্ণ করুন। হিজরে ইসমাইল (হাতিম) চক্করের ভেতরে পড়ে - এটি ঘুরে চলুন।",
+        '* **হাজরে আসওয়াদ:** সম্ভব হলে চুম্বন বা স্পর্শ করুন। তা সম্ভব না হলে দূর থেকে ডান হাত দিয়ে ইশারা করে **"আল্লাহু আকবার"** বলুন।\n' +
+        "* **কাবা বাম পাশে রাখুন:** তাওয়াফের পুরো সময় কাবা আপনার বাম পাশে থাকবে এবং তার চারপাশে প্রদক্ষিণ করবেন।\n" +
+        "* **রুকনে ইয়ামানি:** সম্ভব হলে হাত দিয়ে স্পর্শ করুন। চুম্বন করবেন না এবং স্পর্শ করতে না পারলে দূর থেকে ইশারা করার প্রয়োজন নেই।\n" +
+        '* **রুকনে ইয়ামানি থেকে হাজরে আসওয়াদের মাঝখানে:** "রব্বানা আতিনা ফিদ্দুনিয়া হাসানাহ..." দোয়াটি পড়ুন (নিচের দোয়া কার্ড দেখুন)।\n' +
+        "* **অন্য সময়:** প্রতিটি চক্করের জন্য নির্দিষ্ট কোনো দোয়া নির্ধারিত নেই। নিজের মতো দোয়া, যিকির বা কুরআন তিলাওয়াত করতে পারেন।\n" +
+        "* **হাতিম:** হাতিমের **বাইরের দিক দিয়ে** তাওয়াফ করুন। হাতিমের ভেতর দিয়ে যাবেন না।\n" +
+        "* **সাত চক্কর:** হাজরে আসওয়াদের সমান্তরাল স্থান থেকে শুরু করে মোট সাতটি চক্কর সম্পন্ন করুন।",
       en:
         "• Start at the Black Stone, keeping the Kaaba on your left.\n" +
         "• Touch/kiss the Black Stone if possible, else point with the right hand and say 'Allahu Akbar'.\n" +
