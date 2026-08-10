@@ -12,22 +12,62 @@ const inter = Inter({
 });
 
 // Bengali — the primary content language. Inter has no Bengali glyphs, so all
-// Bengali text falls through to this face (Mehdi Ekushey, local) in the body
-// font stack. Only Regular + Italic ship with the family.
-const mehdiEkushey = local({
+// Bengali text falls through to this face (Ador Noirrit, local) in the body
+// font stack. Full weight range ships with the family.
+const adorNoir = local({
   src: [
     {
-      path: "../public/MehdiEkushey/Unicode/Li Mehdi Ekushey Unicode.ttf",
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit ExtraLight.ttf",
+      weight: "200",
+      style: "normal",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit ExtraLight Italic.ttf",
+      weight: "200",
+      style: "italic",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Light.ttf",
+      weight: "300",
+      style: "normal",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Light Italic.ttf",
+      weight: "300",
+      style: "italic",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Regular.ttf",
       weight: "400",
       style: "normal",
     },
     {
-      path: "../public/MehdiEkushey/Unicode/Li Mehdi Ekushey Unicode Italic.ttf",
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Italic.ttf",
       weight: "400",
       style: "italic",
     },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit SemiBold.ttf",
+      weight: "600",
+      style: "normal",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit SemiBold Italic.ttf",
+      weight: "600",
+      style: "italic",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+    {
+      path: "../public/Ador Noir Font/Unicode/Li Ador Noirrit Bold Italic.ttf",
+      weight: "700",
+      style: "italic",
+    },
   ],
-  variable: "--font-mehdi-ekushey",
+  variable: "--font-ador-noir",
   display: "swap",
 });
 
@@ -73,7 +113,7 @@ export default function RootLayout({
         {/* Apply stored theme before hydration to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeNoFlashScript }} />
       </head>
-      <body className={`${inter.variable} ${mehdiEkushey.variable} ${notoNaskhArabic.variable}`}>
+      <body className={`${inter.variable} ${adorNoir.variable} ${notoNaskhArabic.variable}`}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

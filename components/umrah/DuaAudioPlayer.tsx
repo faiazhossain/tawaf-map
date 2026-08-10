@@ -54,13 +54,15 @@ export function DuaAudioPlayer({ dua }: { dua: Dua }) {
         onClick={toggle}
         className={cn(
           "flex items-center gap-1.5 text-[11px] px-2.5 py-1 rounded-md transition-colors",
-          playing ? "bg-cyan-500 text-white" : "bg-cyan-500/15 text-cyan-300 hover:bg-cyan-500/25"
+          playing
+            ? "bg-primary text-primary-foreground"
+            : "bg-primary/15 text-primary hover:bg-primary/25"
         )}
       >
         {playing ? <Pause className="w-3.5 h-3.5" /> : <Play className="w-3.5 h-3.5" />}
         শুনুন
       </button>
-      <Volume2 className="w-3.5 h-3.5 text-slate-500" />
+      <Volume2 className="w-3.5 h-3.5 text-muted-foreground" />
       <audio ref={audioRef} src={src} preload="none" />
     </div>
   );

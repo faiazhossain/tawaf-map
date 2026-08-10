@@ -6,6 +6,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { cn } from "@/lib/utils";
 import { useUmrahGuideStore } from "@/lib/store/umrahGuideStore";
 import { MIQAT_POINTS, resolveMiqatForTravelPath } from "@/lib/data/umrah/miqat";
+import { MiqatInfoButton } from "@/components/umrah/MiqatInfoButton";
 import type { MiqatDirection } from "@/types/umrah";
 
 /**
@@ -57,9 +58,9 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
           <div className="px-3 py-3 space-y-2">
             <p className="text-xs text-foreground leading-relaxed">{mapping.explanation.bn}</p>
             {mapping.warning && (
-              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
-                <AlertTriangle className="w-3.5 h-3.5 text-amber-400 mt-0.5 flex-shrink-0" />
-                <p className="text-[11px] text-amber-200 leading-relaxed">{mapping.warning.bn}</p>
+              <div className="flex items-start gap-2 p-2.5 rounded-lg bg-warning/10 border border-warning/30">
+                <AlertTriangle className="w-3.5 h-3.5 text-warning mt-0.5 flex-shrink-0" />
+                <p className="text-[11px] text-warning leading-relaxed">{mapping.warning.bn}</p>
               </div>
             )}
           </div>
@@ -155,7 +156,11 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
       defaultSnap={1}
     >
       <BottomSheet.Header>
-        <BottomSheet.Title>মিকাত সারসংক্ষেপ</BottomSheet.Title>
+        <BottomSheet.Title>
+          <span className="inline-flex items-center gap-1.5">
+            মিকাত সারসংক্ষেপ <MiqatInfoButton />
+          </span>
+        </BottomSheet.Title>
         <BottomSheet.CloseButton />
       </BottomSheet.Header>
       <BottomSheet.Content>
@@ -173,7 +178,10 @@ export function MiqatOverviewPanel({ open, onOpenChange }: MiqatOverviewPanelPro
       <div className="bg-surface/95 backdrop-blur-xl border border-border/60 rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[calc(100vh-7rem)]">
         <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-gradient-to-r from-primary/20 to-primary/5">
           <div>
-            <h3 className="text-base font-bold text-foreground">মিকাত সারসংক্ষেপ</h3>
+            <h3 className="flex items-center gap-1.5 text-base font-bold text-foreground">
+              মিকাত সারসংক্ষেপ
+              <MiqatInfoButton />
+            </h3>
             <p className="text-[11px] text-primary">ইহরাম বাঁধার সীমানা</p>
           </div>
           <button

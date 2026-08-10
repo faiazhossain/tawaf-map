@@ -17,20 +17,21 @@ export const UMRAH_STEPS: UmrahStep[] = [
     id: "prep",
     stage: "prep",
     order: 1,
-    title: { bn: "প্রস্তুতি নেওয়া", en: "Preparation" },
+    title: { bn: "ইহরামের প্রস্তুতি", en: "Preparation" },
     summary: {
-      bn: "গোসল, পরিচ্ছন্নতা ও ইহরামের পোশাক পরিধান (অধিকাংশই সুন্নাত, কিন্তু গুরুত্বপূর্ণ)।",
-      en: "Ghusl, grooming, and donning the ihram garments (mostly sunnah but important).",
+      bn: "উমরাহর যাত্রা সহজ করতে বিমানে ওঠার আগেই ইহরামের প্রস্তুতি সম্পন্ন করে নিন। তবে ইহরামে প্রবেশ করবেন আপনার মীকাত অতিক্রম করার সময়—তার আগে নয়, পরে নয়।",
+      en: "Complete your ihram preparations before boarding. But enter ihram as you cross your miqat — not before, not after.",
     },
     gender: "all",
     whatToDo: {
       bn:
-        "• গোসল (রীতিমতো পরিচ্ছন্নতার স্নান) করুন, এটি সুন্নাত; নারী-পুরুষ উভয়ের জন্য।\n" +
-        "• নখ কাটুন, অতিরিক্ত লোম দূর করুন, দাড়ি পরিপাটি করুন।\n" +
-        "• ইহরামের পোশাক পরার আগে সুগন্ধি ব্যবহার করুন (ইহরামের পরে সুগন্ধি নিষিদ্ধ)।\n" +
-        "• পুরুষ: দুই খণ্ড সেলাইহীন সাদা কাপড় - ইজার (নিচের) ও রিদা (উপরের)। " +
-        "টাখনু ঢাকে না এমন সেলাইহীন চপ্পল। তওয়াফের সময় ডান কাঁধ খোলা রাখবেন (ইদতিবা)।\n" +
-        "• নারী: স্বাভাবিক পর্দার পোশাক পরুন (যেকোনো রঙ, সেলাই করা হতে পারে)।",
+        "* **গোসল করুন** — ইহরামের আগে গোসল করা সুন্নাত এবং নারী-পুরুষ উভয়ের জন্য প্রযোজ্য।\n" +
+        "* **নখ ও অতিরিক্ত লোম পরিষ্কার করুন** এবং দাড়ি-চুল পরিপাটি করে নিন।\n" +
+        "* **ইহরাম পরার আগে সুগন্ধি ব্যবহার করতে পারেন।** ইহরাম অবস্থায় সুগন্ধি ব্যবহার করা যাবে না।\n" +
+        "* **পুরুষ:** দুই খণ্ড সেলাইবিহীন সাদা কাপড়—ইজার (নিচের অংশ) ও রিদা (উপরের অংশ) পরুন। " +
+        "পায়ের টাখনু ঢাকে না এমন স্যান্ডেল বা চপ্পল পরুন। তওয়াফের সময় ডান কাঁধ খোলা রাখাকে " +
+        "ইদতিবা বলা হয়।\n" +
+        "* **নারী:** স্বাভাবিক পর্দার পোশাক পরুন। পোশাকের নির্দিষ্ট রং বা ধরন নির্ধারিত নেই এবং সাধারণ সেলাই করা পোশাক পরা যায়।",
       en:
         "• Perform ghusl (ritual bath) - sunnah for both men and women.\n" +
         "• Clip nails, remove excess hair, trim the beard.\n" +
@@ -42,18 +43,25 @@ export const UMRAH_STEPS: UmrahStep[] = [
     },
     rules: {
       bn:
-        "ইহরাম বাঁধার পরে নিষিদ্ধ: সুগন্ধি, নখ/চুল কাটা, শিকার, অশ্লীল কথাবার্তা, " +
-        "পুরুষের জন্য সেলাই করা পোশাক/টুপি পরা, এবং নারীর জন্য নিকাব (মুখে বাঁধা পর্দা) ও দস্তানা।",
+        "ইহরামে প্রবেশের পর:\n" +
+        "• সুগন্ধি ব্যবহার করবেন না।\n" +
+        "• চুল বা নখ কাটবেন না।\n" +
+        "• পুরুষ মাথা ঢেকে রাখবেন না এবং শরীরের আকৃতিতে তৈরি পোশাক পরবেন না।\n" +
+        "• নারী নিকাব ও দস্তানা পরবেন না।\n" +
+        "• শিকার করবেন না এবং অন্যান্য ইহরাম-নিষিদ্ধ কাজ থেকে বিরত থাকবেন।",
       en:
-        "Forbidden after ihram: perfume, cutting nails/hair, hunting, obscene speech, " +
-        "for men stitched clothing or head coverings, and for women the niqab (face " +
-        "veil tied to the face) and gloves.",
+        "After entering ihram:\n" +
+        "• Do not use perfume.\n" +
+        "• Do not cut hair or nails.\n" +
+        "• Men: do not cover the head or wear form-fitting (stitched) clothing.\n" +
+        "• Women: do not wear the niqab or gloves.\n" +
+        "• Do not hunt, and refrain from other ihram-prohibited acts.",
     },
     duas: ["niyyah-umrah"],
     isCompleteWhen: "manual",
     tip: {
-      bn: "বিমানে ওমরাহর পথে জেদ্দাগামী হলে উড্ডয়নের আগেই প্রস্তুতি ও ইহরামের পোশাক পরে নিন।",
-      en: "If flying to Jeddah, complete preparation and wear ihram garments before boarding.",
+      bn: "এরপর: মক্কার দিকে যাত্রা করুন এবং তালবিয়া পড়তে থাকুন।",
+      en: "Next: head toward Makkah and keep reciting the Talbiyah.",
     },
     sourceRefs: [
       "https://islamqa.info/en/answers/31819",
@@ -69,9 +77,9 @@ export const UMRAH_STEPS: UmrahStep[] = [
     id: "ihram-miqat",
     stage: "ihram",
     order: 2,
-    title: { bn: "মিকাতে ইহরাম বাঁধা", en: "Ihram at the Miqat" },
+    title: { bn: "মীকাতে ইহরামে প্রবেশ করুন", en: "Ihram at the Miqat" },
     summary: {
-      bn: "নিয়ত স্থির করুন ও তালবিয়াহ পড়ুন। সঠিক মিকাতে ইহরাম বাঁধা অত্যন্ত গুরুত্বপূর্ণ।",
+      bn: "আপনার নির্ধারিত মীকাত অতিক্রম করার আগে নিয়ত করে ইহরামে প্রবেশ করুন এবং তালবিয়া পাঠ করুন।",
       en: "Make the intention and recite the Talbiyah. Assuming ihram at the correct miqat is critical.",
     },
     gender: "all",

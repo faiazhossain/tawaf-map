@@ -12,7 +12,7 @@ import { CircuitControl } from "./CircuitControl";
 import { GuidePeek } from "./GuidePeek";
 import { GuideControls } from "./GuideControls";
 import { GuideStepList } from "./GuideStepList";
-import { GuideExpanded } from "./GuideExpanded";
+import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
 import { RoundDots } from "./RoundDots";
 import { stageLabel } from "./stage-label";
 
@@ -21,6 +21,8 @@ interface TawafGuideSheetProps {
   onOpenChange: (open: boolean) => void;
   onOpenMiqatOverview?: () => void;
   onOpenMistake: () => void;
+  /** পরবর্তী ধাপ হ্যান্ডলার (সাধারণত useGuardedNextStep থেকে)। না দিলে স্টোরের nextStep। */
+  onNext?: () => void;
 }
 
 /**
@@ -33,6 +35,7 @@ export function TawafGuideSheet({
   onOpenChange,
   onOpenMiqatOverview,
   onOpenMistake,
+  onNext,
 }: TawafGuideSheetProps) {
   return (
     <BottomSheet
@@ -42,7 +45,11 @@ export function TawafGuideSheet({
       defaultSnap={1}
       showBackdrop={false}
     >
-      <SheetBody onOpenMiqatOverview={onOpenMiqatOverview} onOpenMistake={onOpenMistake} />
+      <SheetBody
+        onOpenMiqatOverview={onOpenMiqatOverview}
+        onOpenMistake={onOpenMistake}
+        onNext={onNext}
+      />
     </BottomSheet>
   );
 }
@@ -50,22 +57,26 @@ export function TawafGuideSheet({
 function SheetBody({
   onOpenMiqatOverview,
   onOpenMistake,
+  onNext,
 }: {
   onOpenMiqatOverview?: () => void;
   onOpenMistake: () => void;
+  onNext?: () => void;
 }) {
   const { snapIndex, snapToIndex } = useBottomSheet();
   const step = useUmrahGuideStore(selectCurrentStep);
   const counterValue = useUmrahGuideStore((s) => (step ? selectCounter(s, step.id) : 0));
   const stepIds = useUmrahGuideStore((s) => s.stepIds);
   const currentIndex = useUmrahGuideStore((s) => s.currentIndex);
-  const nextStepAction = useUmrahGuideStore((s) => s.nextStep);
+  const storeNextStep = useUmrahGuideStore((s) => s.nextStep);
   const prevStep = useUmrahGuideStore((s) => s.prevStep);
+  const nextStepAction = onNext ?? storeNextStep;
   const steps = useMemo(
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
   const nextStepTitle = steps[currentIndex + 1]?.title.bn;
+  const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
 
   if (!step) {
     return (
@@ -93,7 +104,12 @@ function SheetBody({
         onOpenMistake={onOpenMistake}
       />
 
-      <InstructionCard step={step} counterValue={counterValue} nextStepTitle={nextStepTitle} />
+      <InstructionCard
+        step={step}
+        counterValue={counterValue}
+        nextStepTitle={nextStepTitle}
+        nextStepSummary={nextStepSummary}
+      />
 
       {counter && <CircuitControl step={step} />}
 
@@ -109,7 +125,7 @@ function SheetBody({
           )}
           <GuideStepList steps={steps} />
           <div className="pt-1 border-t border-border/40">
-            <GuideExpanded />
+            <LostGroupHelper />
           </div>
           <div className="flex items-center gap-2 pt-1">
             <Button

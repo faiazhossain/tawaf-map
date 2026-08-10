@@ -139,11 +139,11 @@ export const TRAVEL_PATH_MIQAT: TravelPathMiqat[] = [
     },
     warning: {
       bn:
-        "সতর্কতা: জেদ্দা বিমানবন্দরে ইহরাম বাঁধলে দম (একটি পশু কুরবানি) আবশ্যক হতে পারে। " +
-        "মিকাত পার হওয়ার আগেই বিমানে ইহরাম বাঁধুন।",
+        "গুরুত্বপূর্ণ: জেদ্দা বিমানবন্দর মীকাত নয়। উমরাহর উদ্দেশ্যে জেদ্দায় যাওয়ার সময় " +
+        "মীকাত অতিক্রম করে ইহরাম ছাড়া গেলে দম (একটি পশু কুরবানি) আবশ্যক হতে পারে।",
       en:
-        "Warning: assuming ihram at Jeddah airport may require a Dam (sacrifice " +
-        "of a sheep). Assume ihram on the plane before crossing the miqat.",
+        "Important: Jeddah airport is not a miqat. Travelling to Jeddah for Umrah " +
+        "without ihram after crossing the miqat may require a Dam (sacrifice of a sheep).",
     },
   },
   {
@@ -223,24 +223,24 @@ export function resolveMiqatForTravelPath(travelPath: TravelPath): TravelPathMiq
  */
 export const AIR_IHRAM_CHECKLIST: LocalizedString[] = [
   {
-    bn: "গোসল করে নেওয়া (পরিচ্ছন্নতার স্নান) — সুন্নাত",
-    en: "Perform ghusl (ritual bath) — sunnah",
+    bn: "গোসল করুন — ইহরামের আগে গোসল করা সুন্নাহ।",
+    en: "Perform ghusl — it is sunnah before ihram.",
   },
   {
-    bn: "ইহরামের পোশাক পরে নেওয়া (ইজার ও রিদা — দুই খণ্ড সেলাইহীন সাদা কাপড়)",
-    en: "Wear the ihram garments (izar & rida — two unstitched white sheets)",
+    bn: "পরিচ্ছন্নতা সম্পন্ন করুন — নখ ও অতিরিক্ত লোম পরিষ্কার করে নিন।",
+    en: "Groom yourself — trim nails and remove excess hair.",
   },
   {
-    bn: "নখ কাটা ও অতিরিক্ত লোম/দাড়ি পরিপাটি করা",
-    en: "Trim nails and tidy/remove excess hair and beard",
+    bn: "ইহরামের পোশাক প্রস্তুত রাখুন — পুরুষের জন্য ইযার ও রিদা; নারীরা স্বাভাবিক পর্দাশীল পোশাক পরবেন।",
+    en: "Ready the ihram garments — izar & rida for men; women wear normal modest clothing.",
   },
   {
-    bn: "সুগন্ধি ব্যবহার করা (ইহরামের আগেই; ইহরামের পরে নিষিদ্ধ)",
-    en: "Apply perfume (only before ihram; forbidden after)",
+    bn: "সুগন্ধি ব্যবহার করুন — ইহরামে প্রবেশের আগে শরীর বা চুলে সুগন্ধি ব্যবহার করা সুন্নাহ। ইহরামে প্রবেশের পর নতুন করে সুগন্ধি ব্যবহার করবেন না।",
+    en: "Apply perfume — sunnah on the body or hair before ihram. Do not apply new perfume after entering ihram.",
   },
   {
-    bn: "সেলাইহীন চপ্পল প্রস্তুত রাখা (যা টাখনু ঢাকে না)",
-    en: "Ready unstitched sandals that do not cover the ankle bone",
+    bn: "উপযুক্ত স্যান্ডেল প্রস্তুত রাখুন — পুরুষের জন্য এমন স্যান্ডেল/চপ্পল রাখুন যা টাখনু ঢাকে না।",
+    en: "Keep suitable sandals — for men, sandals that do not cover the ankle bone.",
   },
 ];
 
@@ -264,3 +264,40 @@ export function miqatRingBounds(padding = 0.2): LatLngBounds {
     [Math.max(...lngs) + padding, Math.max(...lats) + padding],
   ];
 }
+
+export interface MiqatInfoReference {
+  label: string;
+  detail: string;
+}
+
+export interface MiqatInfo {
+  /** মীকাতের মূল সংজ্ঞা। */
+  intro: string;
+  /** নবী নির্ধারিত মীকাতসমূহের বিবরণ। */
+  detail: string;
+  /** এক লাইনের সহজ সংজ্ঞা। */
+  short: string;
+  /** বাস্তব উদাহরণ (বাংলাদেশ থেকে বিমানে)। */
+  example: string;
+  /** হাদিসের রেফারেন্স। */
+  references: MiqatInfoReference[];
+}
+
+/**
+ * "মীকাত কী?" তথ্য — মীকাতের ধারণা, নবী নির্ধারিত মীকাতসমূহ, সহজ সংজ্ঞা,
+ * বাস্তব উদাহরণ ও রেফারেন্স। তথ্য বোতামে (info popover) দেখানো হয় যেখানে
+ * "মীকাত" লেখা আছে।
+ */
+export const MIQAT_INFO: MiqatInfo = {
+  intro:
+    "মীকাত (Miqat / مِيقات) হলো হজ বা উমরাহ পালন করতে ইচ্ছুক ব্যক্তির জন্য নির্ধারিত সীমারেখা/স্থান, যার আগে ইহরামের প্রস্তুতি নিতে হয় এবং মীকাত অতিক্রম করার সময় ইহরাম অবস্থায় থাকতে হয়।",
+  detail:
+    "রাসুলুল্লাহ ﷺ বিভিন্ন দিক থেকে মক্কায় আগত মানুষের জন্য নির্দিষ্ট মীকাত নির্ধারণ করেছেন। যেমন—মদিনার দিক থেকে যুল-হুলাইফা, শামের দিক থেকে জুহফা, নাজদের দিক থেকে কারনুল মানাজিল, এবং ইয়েমেনের দিক থেকে ইয়ালামলাম।",
+  short: "মীকাত = মক্কায় যাওয়ার পথে ইহরামের সীমা।",
+  example:
+    "উদাহরণস্বরূপ, বাংলাদেশ থেকে বিমানে জেদ্দার দিকে গেলে বিমান মীকাত অতিক্রম করার আগেই উমরাহর জন্য ইহরাম ও নিয়তের প্রস্তুতি নিতে হয়। মীকাত অতিক্রম করার পর ইহরাম শুরু করার বিষয়টি ফিকহের দৃষ্টিতে গুরুত্বপূর্ণ।",
+  references: [
+    { label: "সহিহ আল-বুখারি ১৫২৪", detail: "মীকাত নির্ধারণের হাদিস" },
+    { label: "সহিহ মুসলিম ১১৮১b", detail: "হজ ও উমরাহর মীকাত" },
+  ],
+};

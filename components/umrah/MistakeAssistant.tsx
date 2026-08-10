@@ -37,29 +37,29 @@ const CATEGORIES: { id: MistakeCategory; label: string; icon: typeof LifeBuoy }[
 ];
 
 const EXPIATION_LABELS: Record<ExpiationType, { bn: string; tone: string }> = {
-  none: { bn: "কোনো কাফফারা নেই", tone: "text-emerald-300" },
-  sadaqah: { bn: "সাদাকা/ফিদয়া (গরিবদের মাঝে খাদ্য)", tone: "text-amber-300" },
-  dam: { bn: "দম (একটি পশু কুরবানি, হারামের ভেতরে)", tone: "text-amber-300" },
+  none: { bn: "কোনো কাফফারা নেই", tone: "text-primary" },
+  sadaqah: { bn: "সাদাকা/ফিদয়া (গরিবদের মাঝে খাদ্য)", tone: "text-warning" },
+  dam: { bn: "দম (একটি পশু কুরবানি, হারামের ভেতরে)", tone: "text-warning" },
   takhyir: {
     bn: "যেকোনো একটি: দম অথবা ৬ জনকে খাদ্য অথবা ৩ দিন রোজা (তাকয়ীর — মালেকি/শাফেয়ী/হাম্বলী)",
-    tone: "text-amber-300",
+    tone: "text-warning",
   },
   tartib: {
     bn: "ক্রমান্বয়ে: সামর্থ্য থাকলে দম, না হলে রোজা, না হলে খাদ্য (তারতিব — হানাফী)",
-    tone: "text-amber-300",
+    tone: "text-warning",
   },
   "qada-plus-dam": {
     bn: "কাযা (ওমরাহ পুনরায় পালন) + দম (প্রত্যেকের জন্য একটি পশু)",
-    tone: "text-rose-300",
+    tone: "text-error",
   },
-  "see-scholar": { bn: "এ বিষয়ে একজন যোগ্য আলেমের পরামর্শ নিন", tone: "text-rose-300" },
+  "see-scholar": { bn: "এ বিষয়ে একজন যোগ্য আলেমের পরামর্শ নিন", tone: "text-error" },
 };
 
 function ValidityBadge({ valid }: { valid: Validity }) {
   const config = {
-    valid: { icon: CheckCircle2, color: "text-emerald-400", label: "ওমরাহ বৈধ" },
-    invalid: { icon: XCircle, color: "text-rose-400", label: "ওমরাহ বাতিল হয়েছে" },
-    depends: { icon: HelpCircle, color: "text-amber-400", label: "মতভেদ / নির্ভরশীল" },
+    valid: { icon: CheckCircle2, color: "text-primary", label: "ওমরাহ বৈধ" },
+    invalid: { icon: XCircle, color: "text-error", label: "ওমরাহ বাতিল হয়েছে" },
+    depends: { icon: HelpCircle, color: "text-warning", label: "মতভেদ / নির্ভরশীল" },
   }[valid];
   const Icon = config.icon;
   return (
@@ -78,9 +78,9 @@ function OutcomeView({ mistake, onRestart }: { mistake: Mistake; onRestart: () =
   return (
     <div className="space-y-4">
       {reassuring && (
-        <div className="flex items-start gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/25">
-          <Sparkles className="w-4 h-4 text-emerald-400 mt-0.5 flex-shrink-0" />
-          <p className="text-sm text-emerald-200 leading-relaxed">
+        <div className="flex items-start gap-2 p-3 rounded-xl bg-primary/10 border border-primary/25">
+          <Sparkles className="w-4 h-4 text-primary mt-0.5 flex-shrink-0" />
+          <p className="text-sm text-primary leading-relaxed">
             শান্ত হোন — সম্ভবত আপনার ওমরাহ এখনও বৈধ। বেশিরভাগ ভুলই ওমরাহ বাতিল করে না।
           </p>
         </div>
@@ -116,7 +116,7 @@ function OutcomeView({ mistake, onRestart }: { mistake: Mistake; onRestart: () =
               href={ref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-xs text-teal-400 hover:text-teal-300 break-all"
+              className="flex items-center gap-1.5 text-xs text-primary hover:text-primary-hover break-all"
             >
               <ExternalLink className="w-3 h-3 flex-shrink-0" />
               {ref.replace(/^https?:\/\//, "")}
@@ -241,7 +241,7 @@ export function MistakeAssistant({ onClose }: { onClose?: () => void }) {
                           : "bg-muted/50 border-border/60 hover:bg-muted hover:border-amber-500/40"
                       )}
                     >
-                      <Icon className="w-5 h-5 text-amber-400" />
+                      <Icon className="w-5 h-5 text-warning" />
                       <div>
                         <p className="text-sm font-medium text-foreground">{cat.label}</p>
                         <p className="text-[10px] text-muted-foreground">{count} টি বিষয়</p>

@@ -3,6 +3,7 @@ export { UmrahStepList } from "./UmrahStepList";
 export { MistakeAssistant } from "./MistakeAssistant";
 export { FlightIhramCard } from "./FlightIhramCard";
 export { MiqatOverviewPanel } from "./MiqatOverviewPanel";
+export { MiqatInfoButton } from "./MiqatInfoButton";
 export { OfflineBadge } from "./OfflineBadge";
 export { DuaAudioPlayer } from "./DuaAudioPlayer";
 export { LostGroupHelper } from "./LostGroupHelper";

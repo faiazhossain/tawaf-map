@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import {
   MapView,
   MapControls,
@@ -72,7 +72,7 @@ export default function MapPage() {
   } = useTouristPlaceStore();
   const umrahOnboarded = useUmrahGuideStore((s) => s.onboarded);
 
-  const [showGates, setShowGates] = useState(true);
+  const [showGates, setShowGates] = useState(false);
   const [showHotels, setShowHotels] = useState(false);
   const [showTerrain, setShowTerrain] = useState(false);
   const [showTouristPlaces, setShowTouristPlaces] = useState(false);
@@ -103,6 +103,14 @@ export default function MapPage() {
     if (!open) setShowUmrahGuide(true); // গাইডে ফেরা
     useUmrahGuideStore.getState().setMode(open ? "miqat-overview" : "guide");
   };
+
+  // ওমরাহ গাইড ডিফল্টে চালু: অনবোর্ডেড ব্যবহারকারীর জন্য অ্যাপের মূল ফিচারটি
+  // সরাসরি দৃশ্যমান রাখা। মাউন্টের পরে স্টোর হাইড্রেশন শেষ হয়েছে, তাই সঠিক মান পাওয়া যায়।
+  useEffect(() => {
+    if (useUmrahGuideStore.getState().onboarded) {
+      setShowUmrahGuide(true);
+    }
+  }, []);
 
   // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
   // এতে লোকেশন আপডেটে পেইজ রি-রেন্ডার হলেও MapView-এর effect পুনরায় না চলে —
@@ -249,8 +257,8 @@ export default function MapPage() {
               onClick={handleToggleUmrah}
               className={
                 showUmrahGuide || showUmrahOnboarding
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg shadow-primary/30 ring-2 ring-primary/25"
+                  : "border-primary/60 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary hover:text-primary min-w-[4.5rem] px-3 sm:px-4 shadow-sm"
               }
             >
               <Moon className="w-4 h-4" />

@@ -31,7 +31,7 @@ test.describe("Umrah Miqat Overview", () => {
 
     // প্রস্তুতি ধাপে বিমানে ইহরাম কার্ড দৃশ্যমান (air পথে; অন্য পথে এটি রেন্ডার হয় না)
     await expect(panel.getByText(/বিমানে ইহরাম — ঢাকা/)).toBeVisible();
-    await expect(panel.getByRole("button", { name: /তালবিয়াহ/ })).toBeVisible();
+    await expect(panel.getByRole("button", { name: /তালবিয়া/ })).toBeVisible();
     // দম-সতর্কতা (জেদ্দা বিমানবন্দরে ইহরাম)
     await expect(panel.getByText(/দম \(একটি পশু কুরবানি\)/)).toBeVisible();
 

@@ -32,7 +32,7 @@ export function OfflineBadge() {
       title="গাইডের সমস্ত বিষয়বস্তু ডিভাইসে সংরক্ষিত — ইন্টারনেট ছাড়াই কাজ করে।"
       className={cn(
         "flex items-center gap-1 text-[10px] px-1.5 py-1 rounded-md transition-colors select-none",
-        online ? "bg-emerald-500/10 text-emerald-300" : "bg-amber-500/15 text-amber-300"
+        online ? "bg-primary/10 text-primary" : "bg-warning/15 text-warning"
       )}
     >
       {online ? <Wifi className="w-3 h-3" /> : <WifiOff className="w-3 h-3" />}

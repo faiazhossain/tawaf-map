@@ -52,7 +52,7 @@ export function LostGroupHelper() {
     <div className="rounded-xl border border-border/50 bg-muted/30 overflow-hidden">
       {/* শিরোনাম */}
       <div className="flex items-center gap-2 px-3 py-2 border-b border-border/40">
-        <Users className="w-4 h-4 text-teal-400" />
+        <Users className="w-4 h-4 text-primary" />
         <p className="text-xs font-medium text-foreground">দলের সাথে যোগাযোগ</p>
         {hasInfo && !editing && (
           <div className="ml-auto flex items-center gap-1">
@@ -69,7 +69,7 @@ export function LostGroupHelper() {
                 setPhone("");
                 setMeeting("");
               }}
-              className="text-muted-foreground hover:text-rose-400 p-1 rounded hover:bg-muted/60"
+              className="text-muted-foreground hover:text-error p-1 rounded hover:bg-muted/60"
               aria-label="মুছুন"
             >
               <X className="w-3.5 h-3.5" />
@@ -106,7 +106,7 @@ export function LostGroupHelper() {
                 className="w-full text-sm px-2.5 py-1.5 rounded-lg bg-surface/70 border border-border text-foreground placeholder:text-muted-foreground focus:outline-none focus:border-primary"
               />
               {latitude !== null && longitude !== null && (
-                <p className="text-[10px] text-teal-300/80 mt-1 flex items-center gap-1">
+                <p className="text-[10px] text-primary/80 mt-1 flex items-center gap-1">
                   <Navigation className="w-3 h-3" /> সংরক্ষণের সময় আপনার বর্তমান অবস্থানও সাথে
                   থাকবে।
                 </p>
@@ -135,7 +135,7 @@ export function LostGroupHelper() {
             {savedPhone && (
               <a
                 href={`tel:${savedPhone}`}
-                className="flex items-center gap-2 text-sm text-teal-300 hover:text-teal-200"
+                className="flex items-center gap-2 text-sm text-primary hover:text-primary-hover"
               >
                 <Phone className="w-3.5 h-3.5 flex-shrink-0" />
                 <span dir="ltr">{savedPhone}</span>
@@ -146,9 +146,7 @@ export function LostGroupHelper() {
               <p className="flex items-start gap-2 text-xs text-foreground leading-relaxed">
                 <MapPin className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
                 {savedMeeting}
-                {usedGps && (
-                  <span className="text-[10px] text-teal-300/70">(অবস্থান সংরক্ষিত)</span>
-                )}
+                {usedGps && <span className="text-[10px] text-primary/70">(অবস্থান সংরক্ষিত)</span>}
               </p>
             )}
           </div>
@@ -156,7 +154,7 @@ export function LostGroupHelper() {
           /* তথ্য নেই - যোগ করার প্রম্পট */
           <button
             onClick={startEdit}
-            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-teal-300 py-1"
+            className="w-full flex items-center justify-center gap-1.5 text-xs text-muted-foreground hover:text-primary py-1"
           >
             <Plus className="w-3.5 h-3.5" /> দলনেতার ফোন ও মিলনস্থল সংরক্ষণ করুন
           </button>

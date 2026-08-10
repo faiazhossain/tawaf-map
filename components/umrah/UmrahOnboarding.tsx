@@ -14,9 +14,11 @@ import {
   Sparkles,
   PlaneTakeoff,
   Building2,
+  Turtle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
 import { useUmrahGuideStore, miqatIdForTravelPath } from "@/lib/store/umrahGuideStore";
 import { resolveMiqatForTravelPath, getMiqatById } from "@/lib/data/umrah/miqat";
@@ -35,9 +37,10 @@ interface OptionCardProps {
   icon: React.ReactNode;
   title: string;
   description?: string;
+  note?: string;
 }
 
-function OptionCard({ selected, onClick, icon, title, description }: OptionCardProps) {
+function OptionCard({ selected, onClick, icon, title, description, note }: OptionCardProps) {
   return (
     <button
       type="button"
@@ -60,6 +63,9 @@ function OptionCard({ selected, onClick, icon, title, description }: OptionCardP
       <div className="flex-1 min-w-0">
         <p className={cn("text-sm font-medium", selected ? "text-foreground" : "text-foreground")}>
           {title}
+          {note && (
+            <span className="ml-1.5 text-xs font-normal italic text-muted-foreground">{note}</span>
+          )}
         </p>
         {description && (
           <p className="text-xs text-muted-foreground mt-0.5 leading-relaxed">{description}</p>
@@ -75,41 +81,41 @@ const TRAVEL_OPTIONS: { value: TravelPath; icon: React.ReactNode; title: string;
     {
       value: "air-dhaka-jeddah",
       icon: <PlaneTakeoff className="w-5 h-5" />,
-      title: "ঢাকা -> জেদ্দা (বিমানে)",
-      desc: "সবচেয়ে সাধারণ পথ - বিমানেই ইহরাম বাঁধতে হবে",
+      title: "ঢাকা → জেদ্দা (বিমানে)",
+      desc: "সবচেয়ে প্রচলিত যাত্রাপথ। বিমানে মিকাত অতিক্রম করার আগে ইহরাম বাঁধতে হবে।",
     },
     {
       value: "via-madinah",
       icon: <Plane className="w-5 h-5" />,
       title: "মদিনা হয়ে",
-      desc: "মিকাত: যুল-হুলাইফা (আবইয়ার আলী)",
+      desc: "মিকাত: যুল-হুলাইফা (আবিয়ার আলী)",
     },
     {
       value: "already-in-makkah",
       icon: <Building2 className="w-5 h-5" />,
       title: "ইতিমধ্যে মক্কায়",
-      desc: "মিকাত: আত-তানাইম (মসজিদে আয়িশা)",
+      desc: "মিকাত: আত-তানঈম (মসজিদে আয়িশা)",
     },
     {
       value: "already-in-jeddah",
       icon: <MapPin className="w-5 h-5" />,
       title: "ইতিমধ্যে জেদ্দায়",
-      desc: "অবস্থানস্থল থেকেই ইহরাম",
+      desc: "আপনার অবস্থান অনুযায়ী মিকাত ও ইহরামের নির্দেশনা দেখুন।",
     },
     {
       value: "other",
       icon: <MapPin className="w-5 h-5" />,
       title: "অন্যান্য / নিশ্চিত নই",
-      desc: "মিকাত মানচিত্র দেখে নির্বাচন করব",
+      desc: "ম্যাপে আপনার জন্য প্রযোজ্য মিকাত খুঁজে নিন।",
     },
   ];
 
-const MADHHAB_OPTIONS: { value: Madhhab; title: string }[] = [
-  { value: "all", title: "সব মত দেখাও (পরামর্শযোগ্য)" },
-  { value: "hanafi", title: "হানাফী" },
-  { value: "shafii", title: "শাফেয়ী" },
-  { value: "maliki", title: "মালেকী" },
-  { value: "hanbali", title: "হাম্বলী" },
+const MADHHAB_OPTIONS: { value: Madhhab; title: string; note?: string }[] = [
+  { value: "all", title: "সব মত দেখুন", note: "(প্রস্তাবিত)" },
+  { value: "hanafi", title: "হানাফি" },
+  { value: "shafii", title: "শাফেয়ি" },
+  { value: "maliki", title: "মালিকি" },
+  { value: "hanbali", title: "হাম্বলি" },
 ];
 
 export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
@@ -192,7 +198,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
               <h2 id="umrah-onboarding-title" className="text-base font-bold text-foreground">
                 ওমরাহ গাইড
               </h2>
-              <p className="text-[11px] text-primary">আপনার জন্য ব্যক্তিগতকৃত পথ</p>
+              <p className="text-[11px] text-primary">আপনার জন্য ধাপে ধাপে নির্দেশনা</p>
             </div>
           </div>
           {onClose && (
@@ -219,7 +225,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
             ))}
           </div>
           <p className="text-[11px] text-muted-foreground mt-1.5">
-            ধাপ {step + 1} / {totalSteps}
+            ধাপ {toBengaliNumber(step + 1)} / {toBengaliNumber(totalSteps)}
           </p>
         </div>
 
@@ -228,9 +234,10 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ১: লিঙ্গ */}
           {step === 0 && (
             <div className="space-y-2.5">
-              <p className="text-sm font-medium text-foreground mb-1">আপনি কোন লিঙ্গের?</p>
+              <p className="text-sm font-medium text-foreground mb-1">আপনি কি পুরুষ, নাকি নারী?</p>
               <p className="text-xs text-muted-foreground mb-3">
-                এটি প্রস্তুতি, তওয়াফ ও চুল কাটার নিয়ম ঢালাই করবে।
+                আপনার উত্তরের ভিত্তিতে প্রস্তুতি, তওয়াফ এবং চুল কাটার বিষয়ে প্রয়োজনীয় নির্দেশনা
+                দেখানো হবে।
               </p>
               <OptionCard
                 selected={gender === "male"}
@@ -250,9 +257,11 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
           {/* ধাপ ২: যাত্রাপথ */}
           {step === 1 && (
             <div className="space-y-2.5">
-              <p className="text-sm font-medium text-foreground mb-1">আপনি কীভাবে আসছেন?</p>
+              <p className="text-sm font-medium text-foreground mb-1">
+                আপনি কোথা থেকে মক্কায় আসছেন?
+              </p>
               <p className="text-xs text-muted-foreground mb-3">
-                এটি আপনার মিকাত (ইহরামের সীমানা) নির্ধারণ করবে।
+                আপনার যাত্রাপথ অনুযায়ী মিকাত ও ইহরাম সম্পর্কিত প্রয়োজনীয় নির্দেশনা দেখানো হবে।
               </p>
               {TRAVEL_OPTIONS.map((opt) => (
                 <OptionCard
@@ -265,8 +274,8 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                 />
               ))}
               {mapping?.warning && (
-                <div className="mt-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <p className="text-xs text-amber-300 leading-relaxed flex items-start gap-2">
+                <div className="mt-2 p-3 rounded-xl bg-warning/10 border border-warning/30">
+                  <p className="text-xs text-warning leading-relaxed flex items-start gap-2">
                     <Sparkles className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
                     <span>{mapping.warning.bn}</span>
                   </p>
@@ -322,10 +331,13 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 mb-1">
                 <Accessibility className="w-4 h-4 text-primary" />
-                <p className="text-sm font-medium text-foreground">বিশেষ প্রয়োজন (ঐচ্ছিক)</p>
+                <p className="text-sm font-medium text-foreground">
+                  বিশেষ সহায়তা প্রয়োজন? (ঐচ্ছিক)
+                </p>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                এটি গেট ও পথ সুপারিশে সাহায্য করবে। প্রয়োজন না হলে এড়িয়ে যান।
+                আপনার প্রয়োজন অনুযায়ী গেট ও চলার পথের নির্দেশনা আরও উপযোগী করে দেওয়া হবে।
+                প্রয়োজন না থাকলে এই ধাপটি এড়িয়ে যেতে পারেন।
               </p>
               <label
                 className={cn(
@@ -341,7 +353,8 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                   onChange={(e) => setWheelchair(e.target.checked)}
                   className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm text-foreground">হুইলচেয়ার প্রয়োজন</span>
+                <Accessibility className="w-5 h-5 text-primary flex-shrink-0" />
+                <span className="text-sm text-foreground">হুইলচেয়ার ব্যবহার করব</span>
               </label>
               <label
                 className={cn(
@@ -357,7 +370,13 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                   onChange={(e) => setSlowPace(e.target.checked)}
                   className="w-4 h-4 accent-primary"
                 />
-                <span className="text-sm text-foreground">ধীরগতিতে চলতে চাই (বয়স্ক/অসুস্থতা)</span>
+                <Turtle className="w-5 h-5 text-primary flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <span className="text-sm text-foreground block">ধীরে চলার উপযোগী পথ চাই</span>
+                  <span className="text-xs text-muted-foreground mt-0.5 leading-relaxed">
+                    বয়স্ক বা শারীরিকভাবে দুর্বল ব্যক্তিদের জন্য
+                  </span>
+                </div>
               </label>
             </div>
           )}
@@ -367,11 +386,15 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
             <div className="space-y-2.5">
               <div className="flex items-center gap-2 mb-1">
                 <BookOpen className="w-4 h-4 text-primary" />
-                <p className="text-sm font-medium text-foreground">মাযহাব (ঐচ্ছিক)</p>
+                <p className="text-sm font-medium text-foreground">
+                  মাযহাব <span className="font-normal italic text-muted-foreground">(ঐচ্ছিক)</span>
+                </p>
               </div>
               <p className="text-xs text-muted-foreground mb-3">
-                ভুলের ক্ষেত্রে কাফফারার ব্যাখ্যা এ অনুযায়ী ঢালাই হবে। নিশ্চিত না হলে &ldquo;সব
-                মত&rdquo; রাখুন।
+                কোনো ভুল বা প্রয়োজনীয় সংশোধনের ক্ষেত্রে আপনার নির্বাচিত মাযহাব অনুযায়ী নির্দেশনা
+                দেখানো হবে। নিশ্চিত না হলে{" "}
+                <span className="font-medium text-foreground">&ldquo;সব মত&rdquo;</span> নির্বাচন
+                করুন।
               </p>
               {MADHHAB_OPTIONS.map((opt) => (
                 <OptionCard
@@ -380,6 +403,7 @@ export function UmrahOnboarding({ onClose }: { onClose?: () => void }) {
                   onClick={() => setMadhhab(opt.value)}
                   icon={<BookOpen className="w-4 h-4" />}
                   title={opt.title}
+                  note={opt.note}
                 />
               ))}
             </div>

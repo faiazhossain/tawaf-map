@@ -84,9 +84,12 @@ export function FlightIhramCard() {
         {/* ম্যানুয়াল কাউন্টডাউন নির্দেশনা */}
         <div className="p-2.5 rounded-lg bg-muted/50 border border-border/50">
           <p className="text-xs text-foreground leading-relaxed">
-            <span className="font-semibold text-primary">মিকাত পার হওয়ার আগেই ইহরাম বাঁধুন।</span>{" "}
-            বিমান সংস্থাগুলো অবতরণের আনুমানিক ৩০–৪৫ মিনিট আগে ঘোষণা দেয় — সেই সংকেতে নিয়ত স্থির
-            করে ইহরাম বাঁধুন এবং তালবিয়াহ পড়তে শুরু করুন।
+            <span className="font-semibold text-primary">
+              মীকাত অতিক্রম করার আগেই ইহরামের পোশাক পরে প্রস্তুত থাকুন।
+            </span>{" "}
+            বিমানে সাধারণত মীকাতের কাছাকাছি পৌঁছানোর সময় ঘোষণা দেওয়া হয়। তবে শুধু ঘোষণার ওপর
+            নির্ভর না করে ফ্লাইটের তথ্যও অনুসরণ করুন। মীকাত অতিক্রম করার আগেই উমরাহর নিয়ত করুন এবং
+            তালবিয়া পাঠ শুরু করুন।
           </p>
         </div>
 
@@ -98,9 +101,16 @@ export function FlightIhramCard() {
               onClick={() => setShowTalbiyah((v) => !v)}
               className="w-full flex items-center justify-between gap-2 px-2.5 py-2 bg-muted/50 hover:bg-muted transition-colors"
             >
-              <span className="flex items-center gap-2 text-xs font-medium text-cyan-300">
-                <BookOpen className="w-3.5 h-3.5" />
-                তালবিয়াহ (ইহরামের স্মরণবাক্য)
+              <span className="flex min-w-0 items-center gap-2">
+                <BookOpen className="h-3.5 w-3.5 flex-shrink-0 text-primary" />
+                <span className="min-w-0">
+                  <span className="block text-xs font-bold leading-tight text-foreground">
+                    তালবিয়া
+                  </span>
+                  <span className="block text-[11px] leading-tight text-primary">
+                    ইহরামের সময় পাঠ করার দোয়া
+                  </span>
+                </span>
               </span>
               <ChevronDown
                 className={cn(
@@ -130,9 +140,9 @@ export function FlightIhramCard() {
 
         {/* দম-সতর্কতা */}
         {mapping.warning && (
-          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
-            <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
-            <p className="text-[11px] text-amber-200 leading-relaxed">{mapping.warning.bn}</p>
+          <div className="flex items-start gap-2 p-2.5 rounded-lg bg-warning/10 border border-warning/30">
+            <AlertTriangle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
+            <p className="text-[11px] text-warning leading-relaxed">{mapping.warning.bn}</p>
           </div>
         )}
       </div>

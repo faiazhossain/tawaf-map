@@ -34,15 +34,15 @@ export function WheelchairTips({ stepId }: { stepId: string }) {
   if (!tips || tips.length === 0) return null;
 
   return (
-    <div className="rounded-xl border border-cyan-500/30 bg-cyan-500/5 px-3 py-2.5">
+    <div className="rounded-xl border border-primary/30 bg-primary/5 px-3 py-2.5">
       <div className="flex items-center gap-2 mb-1.5">
-        <Accessibility className="w-4 h-4 text-cyan-400" />
-        <p className="text-xs font-medium text-slate-200">হুইলচেয়ার সহায়তা</p>
+        <Accessibility className="w-4 h-4 text-primary" />
+        <p className="text-xs font-medium text-foreground">হুইলচেয়ার সহায়তা</p>
       </div>
       <ul className="space-y-1">
         {tips.map((t, i) => (
-          <li key={i} className="text-xs text-slate-300 leading-relaxed flex gap-1.5">
-            <span className="text-cyan-400 flex-shrink-0">•</span>
+          <li key={i} className="text-xs text-foreground leading-relaxed flex gap-1.5">
+            <span className="text-primary flex-shrink-0">•</span>
             <span>{t.bn}</span>
           </li>
         ))}
@@ -52,7 +52,7 @@ export function WheelchairTips({ stepId }: { stepId: string }) {
           href="https://ziyarago.com/en/places/rental/equipment-rental-wheelchairs-baby-strollers/free-wheelchair-haram-makkah"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300"
+          className="flex items-center gap-1 text-[11px] text-primary hover:text-primary-hover"
         >
           <ExternalLink className="w-3 h-3" /> বিনামূল্যে হুইলচেয়ার
         </a>
@@ -60,7 +60,7 @@ export function WheelchairTips({ stepId }: { stepId: string }) {
           href="https://assist.haramain.com/"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-1 text-[11px] text-cyan-400 hover:text-cyan-300"
+          className="flex items-center gap-1 text-[11px] text-primary hover:text-primary-hover"
         >
           <ExternalLink className="w-3 h-3" /> বৈদ্যুতিক হুইলচেয়ার ভাড়া
         </a>

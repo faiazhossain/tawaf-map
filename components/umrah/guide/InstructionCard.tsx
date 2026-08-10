@@ -18,11 +18,13 @@ export function InstructionCard({
   step,
   counterValue,
   nextStepTitle,
+  nextStepSummary,
   className,
 }: {
   step: UmrahStep;
   counterValue: number;
   nextStepTitle?: string;
+  nextStepSummary?: string;
   className?: string;
 }) {
   const counter = step.counter;
@@ -65,6 +67,11 @@ export function InstructionCard({
           <div className="rounded-2xl border border-border/60 bg-surface/70 p-3">
             <p className="text-[11px] uppercase tracking-wide text-muted-foreground">পরবর্তী ধাপ</p>
             <p className="mt-1 text-sm font-semibold text-foreground">{nextStepTitle}</p>
+            {nextStepSummary ? (
+              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+                {nextStepSummary}
+              </p>
+            ) : null}
           </div>
         ) : null}
       </div>

@@ -10,13 +10,15 @@ import { InstructionCard } from "./InstructionCard";
 import { CircuitControl } from "./CircuitControl";
 import { GuideControls } from "./GuideControls";
 import { GuideStepList } from "./GuideStepList";
-import { GuideExpanded } from "./GuideExpanded";
+import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
 import { RoundDots } from "./RoundDots";
 
 interface TawafGuidePanelProps {
   onOpenChange: (open: boolean) => void;
   onOpenMiqatOverview?: () => void;
   onOpenMistake: () => void;
+  /** পরবর্তী ধাপ হ্যান্ডলার (সাধারণত useGuardedNextStep থেকে)। না দিলে স্টোরের nextStep। */
+  onNext?: () => void;
 }
 
 /**
@@ -27,18 +29,21 @@ export function TawafGuidePanel({
   onOpenChange,
   onOpenMiqatOverview,
   onOpenMistake,
+  onNext,
 }: TawafGuidePanelProps) {
   const step = useUmrahGuideStore(selectCurrentStep);
   const counterValue = useUmrahGuideStore((s) => (step ? selectCounter(s, step.id) : 0));
   const stepIds = useUmrahGuideStore((s) => s.stepIds);
   const currentIndex = useUmrahGuideStore((s) => s.currentIndex);
-  const nextStep = useUmrahGuideStore((s) => s.nextStep);
+  const storeNextStep = useUmrahGuideStore((s) => s.nextStep);
   const prevStep = useUmrahGuideStore((s) => s.prevStep);
+  const handleNext = onNext ?? storeNextStep;
   const steps = useMemo(
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
   const nextStepTitle = steps[currentIndex + 1]?.title.bn;
+  const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
 
   const isLast = currentIndex >= steps.length - 1;
   const counter = step?.counter;
@@ -81,6 +86,7 @@ export function TawafGuidePanel({
                 step={step}
                 counterValue={counterValue}
                 nextStepTitle={nextStepTitle}
+                nextStepSummary={nextStepSummary}
               />
 
               {counter && (
@@ -108,7 +114,7 @@ export function TawafGuidePanel({
                 </Button>
                 <Button
                   size="sm"
-                  onClick={nextStep}
+                  onClick={handleNext}
                   disabled={isLast}
                   className="ml-auto bg-primary hover:bg-primary-hover text-primary-foreground border-0 gap-1"
                 >
@@ -119,7 +125,7 @@ export function TawafGuidePanel({
               <GuideStepList steps={steps} />
 
               <div className="pt-1 border-t border-border/40">
-                <GuideExpanded />
+                <LostGroupHelper />
               </div>
             </>
           ) : (

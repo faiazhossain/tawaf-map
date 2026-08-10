@@ -12,18 +12,16 @@ export const UMRAH_DUAS: Dua[] = [
     id: "talbiyah",
     title: { bn: "তালবিয়াহ (ইহরামের স্মরণবাক্য)", en: "Talbiyah (the chant of ihram)" },
     arabic:
-      "لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ. لَبَّيْكَ إِلَهَ الْحَقِّ.",
+      "لَبَّيْكَ اللَّهُمَّ لَبَّيْكَ، لَبَّيْكَ لَا شَرِيكَ لَكَ لَبَّيْكَ، إِنَّ الْحَمْدَ وَالنِّعْمَةَ لَكَ وَالْمُلْكَ، لَا شَرِيكَ لَكَ",
     transliteration:
-      "Labbayk Allahumma labbayk. Labbayka la sharika laka labbayk. " +
-      "Innal-hamda wan-ni'mata laka wal-mulk, la sharika lak. Labbayka ilahal-haqq.",
+      "Labbayk-Allahumma labbayk, labbayka la sharika laka labbayk, " +
+      "innal-hamda wan-ni'mata laka wal-mulk, la sharika lak.",
     translationBn:
-      "আমি হাজির হয়েছি, হে আল্লাহ! আমি হাজির। আমি হাজির, আপনার কোনো অংশীদার নেই, " +
-      "আমি হাজির। নিশ্চয়ই সমস্ত প্রশংসা, নিয়ামত ও রাজত্ব একমাত্র আপনারই; আপনার কোনো অংশীদার নেই। " +
-      "আমি হাজির, হে সত্যের ইলাহ!",
+      "হে আল্লাহ, আমি হাজির। আমি হাজির। আপনার কোনো শরিক নেই, আমি হাজির। " +
+      "নিশ্চয়ই সমস্ত প্রশংসা, নিয়ামত ও রাজত্ব আপনারই। আপনার কোনো শরিক নেই।",
     translationEn:
       "Here I am, O Allah, here I am. Here I am, You have no partner, here I am. " +
-      "Indeed all praise, grace and sovereignty belong to You. You have no partner. " +
-      "Here I am, O God of Truth.",
+      "Indeed all praise, grace and sovereignty belong to You. You have no partner.",
     whenToRecite: {
       bn: "ইহরাম বাঁধার পর থেকে তওয়াফ শুরুর আগ পর্যন্ত বারবার পড়ুন। পুরুষ উচ্চস্বরে, নারী নিচুস্বরে।",
       en: "Recite frequently after entering ihram until Tawaf begins. Men aloud, women softly.",
@@ -38,17 +36,16 @@ export const UMRAH_DUAS: Dua[] = [
     id: "niyyah-umrah",
     title: { bn: "ওমরাহর নিয়ত", en: "Intention (Niyyah) for Umrah" },
     arabic: "لَبَّيْكَ اللَّهُمَّ بِعُمْرَةٍ",
-    transliteration: "Labbayk Allahumma bi-'Umrah.",
-    translationBn: "আমি ওমরাহর জন্য হাজির হয়েছি, হে আল্লাহ।",
-    translationEn: "Here I am, O Allah, performing Umrah.",
+    transliteration: "Labbayka Allahumma bi-'Umrah",
+    translationBn: "হে আল্লাহ, আমি উমরাহর জন্য হাজির হয়েছি।",
+    translationEn: "O Allah, here I am for Umrah.",
     whenToRecite: {
       bn:
-        "মিকাতে ইহরামের পোশাক পরে ও নামাজ আদায়ের পর, কিবলামুখী হয়ে অন্তরে নিয়ত স্থির করুন " +
-        "এবং এই বাক্য উচ্চারণ করুন। নিয়ত মূলত অন্তরে; এটি উচ্চারণ সুন্নাত।",
+        "নিয়ত মূলত অন্তরের সংকল্প। মীকাতের সমান্তরালে পৌঁছে উমরাহর জন্য ইহরামে প্রবেশ করুন " +
+        "এবং তালবিয়া পাঠ শুরু করুন।",
       en:
-        "At the miqat, after wearing ihram garments and praying, face the Qibla, " +
-        "make the intention in your heart, then say this. The intention is " +
-        "fundamentally of the heart; uttering it is sunnah.",
+        "Intention is fundamentally a resolve of the heart. As you reach the miqat, " +
+        "enter ihram for Umrah and begin reciting the Talbiyah.",
     },
     sourceRefs: ["https://islamqa.info/en/answers/31819", "https://umrah.nusuk.sa/Journey"],
   },

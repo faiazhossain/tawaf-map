@@ -44,6 +44,7 @@
     --success-foreground: 0 0% 100%;
     --info: 200 51% 34%; /* #2A6582 informational / nav only */
     --info-foreground: 0 0% 100%;
+    --warning: 26 90% 37%; /* #B45309 caution/warning — readable amber on light tints (AA) */
 
     /* Reserved accents — use sparingly. Gold = pilgrim marker ONLY. */
     --gold: 46 68% 47%; /* #C9A227 — pilgrim / milestone. Never a CTA. */
@@ -108,6 +109,7 @@
     --success-foreground: 167 24% 7%;
     --info: 196 43% 55%; /* #5BA3BE */
     --info-foreground: 167 24% 7%;
+    --warning: 45 96% 56%; /* #FBBF24 caution/warning on dark */
 
     --gold: 46 67% 54%; /* #D9B53C */
     --gold-foreground: 167 24% 7%;
@@ -127,8 +129,8 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Inter for Latin; Bengali glyphs fall through to Mehdi Ekushey. */
-    font-family: var(--font-inter), var(--font-mehdi-ekushey), system-ui, -apple-system,
+    /* Inter for Latin; Bengali glyphs fall through to Ador Noirrit. */
+    font-family: var(--font-inter), var(--font-ador-noir), system-ui, -apple-system,
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
