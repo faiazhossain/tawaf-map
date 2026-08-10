@@ -5,13 +5,10 @@ import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUmrahGuideStore, selectCurrentStep, selectCounter } from "@/lib/store/umrahGuideStore";
 import { getStepById } from "@/lib/data/umrah/steps";
-import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { InstructionCard } from "./InstructionCard";
-import { CircuitControl } from "./CircuitControl";
 import { GuideControls } from "./GuideControls";
 import { GuideStepList } from "./GuideStepList";
 import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
-import { RoundDots } from "./RoundDots";
 
 interface TawafGuidePanelProps {
   onOpenChange: (open: boolean) => void;
@@ -46,7 +43,6 @@ export function TawafGuidePanel({
   const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
 
   const isLast = currentIndex >= steps.length - 1;
-  const counter = step?.counter;
 
   return (
     <div
@@ -89,18 +85,9 @@ export function TawafGuidePanel({
                 nextStepSummary={nextStepSummary}
               />
 
-              {counter && (
-                <>
-                  <CircuitControl step={step} />
-                  <div className="flex items-center justify-between">
-                    <RoundDots value={counterValue} max={counter.max} />
-                    <span className="text-[11px] text-muted-foreground">
-                      {counter.label.bn} {toBengaliNumber(counterValue)}/
-                      {toBengaliNumber(counter.max)}
-                    </span>
-                  </div>
-                </>
-              )}
+              {/* কাউন্টার এখন ধাপের ভেতরে (GuideStepList > StepDetail) — উপরের
+                  অনুলিপি সরানো হয়েছে। InstructionCard-এর চিপ ও প্রতি-চক্কর টিপ
+                  এখানেই থাকে। */}
 
               <div className="flex items-center gap-2">
                 <Button

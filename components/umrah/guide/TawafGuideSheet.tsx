@@ -13,7 +13,6 @@ import { GuidePeek } from "./GuidePeek";
 import { GuideControls } from "./GuideControls";
 import { GuideStepList } from "./GuideStepList";
 import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
-import { RoundDots } from "./RoundDots";
 import { stageLabel } from "./stage-label";
 
 interface TawafGuideSheetProps {
@@ -111,18 +110,12 @@ function SheetBody({
         nextStepSummary={nextStepSummary}
       />
 
-      {counter && <CircuitControl step={step} />}
+      {/* কম্প্যাক্ট (স্ন্যাপ ১) ভিউতে কাউন্টার উপরে থাকে — এখানে কোনো ধাপ-তালিকা নেই।
+          প্রসারিত ভিউতে কাউন্টার ধাপের ভেতরে (StepDetail) চলে যায়, তাই এই অনুলিপি লুকানো হয়। */}
+      {counter && !isExpanded && <CircuitControl step={step} />}
 
       {isExpanded ? (
         <>
-          {counter && (
-            <div className="flex items-center justify-between">
-              <RoundDots value={counterValue} max={counter.max} />
-              <span className="text-[11px] text-muted-foreground">
-                {counter.label.bn} {toBengaliNumber(counterValue)}/{toBengaliNumber(counter.max)}
-              </span>
-            </div>
-          )}
           <GuideStepList steps={steps} />
           <div className="pt-1 border-t border-border/40">
             <LostGroupHelper />

@@ -24,6 +24,8 @@ import { WheelchairTips } from "@/components/umrah/WheelchairTips";
 import { PragmaticReminders } from "@/components/umrah/PragmaticReminders";
 import { DuaAudioPlayer } from "@/components/umrah/DuaAudioPlayer";
 import { MarkdownText } from "@/components/umrah/guide/MarkdownText";
+import { CircuitControl } from "@/components/umrah/guide/CircuitControl";
+import { RoundDots } from "@/components/umrah/guide/RoundDots";
 import { MiqatInfoButton } from "@/components/umrah/MiqatInfoButton";
 import type { UmrahStep } from "@/types/umrah";
 
@@ -105,13 +107,18 @@ function StepDetail({ step, counterValue }: { step: UmrahStep; counterValue: num
         </div>
       </div>
 
-      {/* কাউন্টার অবস্থা */}
+      {/* চক্কর/পাক কাউন্টার — ধাপের ভেতরেই গণনা করুন, উপরে স্ক্রল করতে হবে না।
+          কাউন্টার-ম্যাক্স ধাপে এটিই একমাত্র ইন্টারঅ্যাকটিভ কাউন্টার; শীট/প্যানেলের
+          উপরের অনুলিপি সরানো হয়েছে নকল এড়াতে। */}
       {counter ? (
-        <div className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2">
-          <span className="text-[11px] text-muted-foreground">{counter.label.bn}</span>
-          <span className="text-xs font-semibold text-primary">
-            {toBengaliNumber(counterValue)}/{toBengaliNumber(counter.max)}
-          </span>
+        <div className="space-y-2">
+          <CircuitControl step={step} />
+          <div className="flex items-center justify-between">
+            <RoundDots value={counterValue} max={counter.max} />
+            <span className="text-[11px] text-muted-foreground">
+              {counter.label.bn} {toBengaliNumber(counterValue)}/{toBengaliNumber(counter.max)}
+            </span>
+          </div>
         </div>
       ) : null}
 
