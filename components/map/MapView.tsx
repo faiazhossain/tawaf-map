@@ -7,6 +7,13 @@ import { useTawafCamera } from "@/lib/hooks/useTawafCamera";
 import { useRitualDrawAnimation } from "@/lib/hooks/useRitualDrawAnimation";
 import { useDirectionArrows } from "@/lib/hooks/useDirectionArrows";
 import {
+  MODEL_LAYER_ID,
+  MODEL_ORIGIN,
+  MODEL_URL,
+  MODEL_CENTER,
+  MODEL_CONFIG,
+} from "@/lib/map/model-config";
+import {
   useMapStore,
   useLocationStore,
   useGateStore,
@@ -73,6 +80,7 @@ interface MapViewProps {
   touristCity?: "makkah" | "madinah" | null;
   showUserLocation?: boolean;
   showTerrain?: boolean;
+  show3DModel?: boolean;
   showUmrah?: boolean;
   showMiqatOverview?: boolean;
   onGateClick?: (gateId: string) => void;
@@ -128,6 +136,7 @@ export function MapView({
   touristCity = "makkah",
   showUserLocation = true,
   showTerrain = false,
+  show3DModel = false,
   showUmrah = false,
   showMiqatOverview = false,
   onGateClick,
@@ -141,6 +150,12 @@ export function MapView({
   const [mapLoaded, setMapLoaded] = useState(false);
   // map instance-এর জন্য reactive state যাতে useTawafCamera পুনরায় রান করে
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
+
+  // ৩ডি মডেল লোডের অবস্থা — GLB (২৩১MB) স্ট্রিম হওয়ার সময় progress overlay দেখাতে
+  const [modelLoadState, setModelLoadState] = useState<"idle" | "loading" | "ready" | "error">(
+    "idle"
+  );
+  const [modelLoadProgress, setModelLoadProgress] = useState(0);
 
   // গাইডেড ক্যামেরা নিয়ন্ত্রক - programmatic মুভ ও user-gesture শনাক্তকরণ
   const { programmaticFlyTo, programmaticEaseTo, programmaticFitBounds } =
@@ -257,6 +272,9 @@ export function MapView({
       pitch,
       minZoom: 6,
       maxZoom: 20,
+      // Allow steeper pitch for the 3D-model view (default max is 60, which
+      // leaves no headroom when we want a dramatic low-angle of the mosque).
+      maxPitch: 75,
       // OSM-derived tiles require attribution. Barikoi adds its own attribution
       // via the style; the AttributionControl shows the active source attributions.
       attributionControl: { compact: true },
@@ -386,6 +404,70 @@ export function MapView({
       programmaticEaseTo({ pitch: 0, duration: 1000 });
     }
   }, [mapLoaded, showTerrain, programmaticEaseTo]);
+
+  // 3D Masjid model: lazy-load + add the custom three.js layer when toggled on;
+  // remove it and ease flat when toggled off. three.js is dynamic-imported so
+  // it stays out of the SSR bundle and only loads when the user opts in.
+  useEffect(() => {
+    if (!mapLoaded || !mapRef.current) return;
+    const map = mapRef.current;
+
+    if (!show3DModel) {
+      // OFF: remove the layer (maplibre calls its onRemove -> dispose) and
+      // ease the camera back to flat.
+      if (map.getLayer(MODEL_LAYER_ID)) map.removeLayer(MODEL_LAYER_ID);
+      setModelLoadState("idle");
+      setModelLoadProgress(0);
+      programmaticEaseTo({ pitch: 0, duration: 1000 });
+      return;
+    }
+
+    // ON: dynamic-import the factory, add the custom layer, fly to the Kaaba.
+    let cancelled = false;
+    setModelLoadState("loading");
+    setModelLoadProgress(0);
+
+    (async () => {
+      const { createModelLayer } = await import("@/lib/map/three-model-layer");
+      if (cancelled || !mapRef.current) return;
+      // Idempotent guard for StrictMode's dev double-invoke and rapid toggles.
+      if (mapRef.current.getLayer(MODEL_LAYER_ID)) return;
+
+      const layer = createModelLayer({
+        id: MODEL_LAYER_ID,
+        url: MODEL_URL,
+        origin: MODEL_ORIGIN,
+        altitudeMeters: MODEL_CONFIG.altitudeMeters,
+        rotateX: MODEL_CONFIG.rotateX,
+        rotateY: MODEL_CONFIG.rotateY,
+        rotateZ: MODEL_CONFIG.rotateZ,
+        scaleMultiplier: MODEL_CONFIG.scaleMultiplier,
+        center: MODEL_CENTER,
+        offsetEastMeters: MODEL_CONFIG.offsetEastMeters,
+        offsetNorthMeters: MODEL_CONFIG.offsetNorthMeters,
+        onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
+        onLoadOK: () => {
+          setModelLoadState("ready");
+          setModelLoadProgress(1);
+        },
+        onLoadError: (err) => {
+          console.error("3D model failed to load:", err);
+          setModelLoadState("error");
+        },
+      });
+      mapRef.current.addLayer(layer);
+      programmaticFlyTo({
+        center: MODEL_ORIGIN,
+        zoom: 16.5,
+        pitch: 60,
+        duration: 1500,
+      });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [mapLoaded, show3DModel, programmaticFlyTo, programmaticEaseTo]);
 
   // Add/update gate markers
   useEffect(() => {
@@ -975,6 +1057,50 @@ export function MapView({
             onClick={handleRecenter}
             className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
           />
+        )}
+        {show3DModel && (modelLoadState === "loading" || modelLoadState === "error") && (
+          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[40] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface/90 backdrop-blur-xl border border-border/50 shadow-xl">
+            {modelLoadState === "loading" && (
+              <>
+                <svg
+                  className="w-4 h-4 animate-spin text-primary shrink-0"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden="true"
+                >
+                  <circle
+                    className="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    strokeWidth="4"
+                  />
+                  <path
+                    className="opacity-90"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                  />
+                </svg>
+                <span className="text-sm text-foreground whitespace-nowrap">
+                  ৩ডি মডেল লোড হচ্ছে {Math.round(modelLoadProgress * 100)}%
+                </span>
+                <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className="h-full bg-primary transition-[width] duration-200 ease-out"
+                    style={{
+                      width: `${Math.round(modelLoadProgress * 100)}%`,
+                    }}
+                  />
+                </div>
+              </>
+            )}
+            {modelLoadState === "error" && (
+              <span className="text-sm text-foreground whitespace-nowrap">
+                মডেল লোডে সমস্যা — আবার চেষ্টা করুন
+              </span>
+            )}
+          </div>
         )}
       </div>
     </MapInstanceProvider>

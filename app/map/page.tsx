@@ -24,7 +24,7 @@ import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Hotel, MapPin, Mountain, Building2, X, DoorOpen, Moon } from "lucide-react";
+import { Hotel, MapPin, Mountain, Building2, Box, X, DoorOpen, Moon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -75,6 +75,7 @@ export default function MapPage() {
   const [showGates, setShowGates] = useState(false);
   const [showHotels, setShowHotels] = useState(false);
   const [showTerrain, setShowTerrain] = useState(false);
+  const [show3DModel, setShow3DModel] = useState(false);
   const [showTouristPlaces, setShowTouristPlaces] = useState(false);
   const [showTouristList, setShowTouristList] = useState(false);
   const [showUmrahOnboarding, setShowUmrahOnboarding] = useState(false);
@@ -312,6 +313,22 @@ export default function MapPage() {
               </span>
             </Button>
             <Button
+              variant={show3DModel ? "default" : "outline"}
+              size={show3DModel ? "sm" : "icon"}
+              onClick={() => setShow3DModel((prev) => !prev)}
+              className={
+                show3DModel
+                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
+                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
+              }
+              title="৩ডি মডেল"
+            >
+              <Box className="w-4 h-4" />
+              <span className="hidden sm:inline whitespace-nowrap">
+                {show3DModel ? "On" : "3D"}
+              </span>
+            </Button>
+            <Button
               variant={showGates ? "default" : "outline"}
               size={showGates ? "sm" : "icon"}
               onClick={handleToggleGates}
@@ -340,6 +357,7 @@ export default function MapPage() {
           touristCity={selectedTouristCity}
           showUserLocation
           showTerrain={showTerrain}
+          show3DModel={show3DModel}
           showUmrah={umrahOnboarded && showUmrahGuide}
           showMiqatOverview={umrahOnboarded && showMiqatOverview}
           onGateClick={handleGateClick}
