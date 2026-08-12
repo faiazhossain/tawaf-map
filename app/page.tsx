@@ -160,8 +160,8 @@ export default function HomePage() {
               উমরাহ শুরু করতে প্রস্তুত?
             </h2>
             <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
-              ধাপে ধাপে পথ অনুসরণ করুন, প্রতিটি নির্দেশনা বুঝে নিন এবং পুরো উমরাহ জুড়ে সহজেই আপনার
-              অবস্থান ধরে রাখুন।
+              ধাপে ধাপে নির্দেশনা অনুসরণ করুন, প্রতিটি ধাপে কী করতে হবে তা জেনে নিন এবং পুরো উমরাহর
+              পথে সহজেই দিকনির্দেশনা পেতে থাকুন।
             </p>
             <div className="mt-8 flex justify-center">
               <Link href="/map">
