@@ -1,13 +1,14 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { ChevronRight, ChevronLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useUmrahGuideStore, selectCurrentStep, selectCounter } from "@/lib/store/umrahGuideStore";
 import { getStepById } from "@/lib/data/umrah/steps";
 import { InstructionCard } from "./InstructionCard";
 import { GuideControls } from "./GuideControls";
-import { GuideStepList } from "./GuideStepList";
+import { StepPagination } from "./StepPagination";
+import { StepDetail } from "./StepDetail";
 import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
 
 interface TawafGuidePanelProps {
@@ -19,8 +20,8 @@ interface TawafGuidePanelProps {
 }
 
 /**
- * ডেস্কটপ গাইডেড প্যানেল - ডানদিকে সরু ভাসমান প্যানেল। হিরো নির্দেশ ওপরে, নিচে
- * সম্পূর্ণ বিস্তারিত স্ক্রলযোগ্য। বটম শীট নেই - সব ধাপ একসাথে দৃশ্যমান।
+ * ডেস্কটপ গাইডেড প্যানেল - ডানদিকে সরু ভাসমান প্যানেল। উপরে পেজিনেশন ও হিরো নির্দেশ,
+ * নিচে শুধু বর্তমান ধাপের সম্পূর্ণ বিস্তারিত (এক ধাপ এক সময়ে), স্ক্রলযোগ্য।
  */
 export function TawafGuidePanel({
   onOpenChange,
@@ -43,6 +44,12 @@ export function TawafGuidePanel({
   const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
 
   const isLast = currentIndex >= steps.length - 1;
+
+  // ধাপ বদলালে স্ক্রলযোগ্য অংশের শীর্ষে ফিরে যাও — নতুন ধাপ পড়া শুরু সবার উপর থেকে।
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [currentIndex]);
 
   return (
     <div
@@ -69,7 +76,10 @@ export function TawafGuidePanel({
           </button>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-surface scrollbar-thumb-border">
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto px-4 py-4 space-y-4 scrollbar-thin scrollbar-track-surface scrollbar-thumb-border"
+        >
           <GuideControls
             steps={steps}
             onOpenMiqatOverview={onOpenMiqatOverview}
@@ -78,6 +88,8 @@ export function TawafGuidePanel({
 
           {step ? (
             <>
+              <StepPagination steps={steps} />
+
               <InstructionCard
                 step={step}
                 counterValue={counterValue}
@@ -85,10 +97,16 @@ export function TawafGuidePanel({
                 nextStepSummary={nextStepSummary}
               />
 
-              {/* কাউন্টার এখন ধাপের ভেতরে (GuideStepList > StepDetail) — উপরের
-                  অনুলিপি সরানো হয়েছে। InstructionCard-এর চিপ ও প্রতি-চক্কর টিপ
-                  এখানেই থাকে। */}
+              {/* কাউন্টার ধাপের ভেতরে (StepDetail > CircuitControl) থাকে;
+                  InstructionCard-এর চিপ ও প্রতি-চক্কর টিপ উপরে দৃশ্যমান। */}
 
+              <StepDetail step={step} counterValue={counterValue} />
+
+              <div className="pt-1 border-t border-border/40">
+                <LostGroupHelper />
+              </div>
+
+              {/* নেভিগেশন নিচে — ধাপের তথ্য পড়ার পর এগিয়ে যাওয়ার সুস্পষ্ট অ্যাকশন। */}
               <div className="flex items-center gap-2">
                 <Button
                   variant="outline"
@@ -107,12 +125,6 @@ export function TawafGuidePanel({
                 >
                   পরবর্তী ধাপ <ChevronRight className="w-4 h-4" />
                 </Button>
-              </div>
-
-              <GuideStepList steps={steps} />
-
-              <div className="pt-1 border-t border-border/40">
-                <LostGroupHelper />
               </div>
             </>
           ) : (

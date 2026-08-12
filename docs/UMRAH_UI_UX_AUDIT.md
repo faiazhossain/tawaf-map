@@ -399,7 +399,7 @@ Centralize in `components/ui/` + tokens. Every component consumes tokens — no 
 - **Route color states:** active line `--map-route`, completed `--map-route-completed`, upcoming `--map-route-upcoming` (register the arcs).
 - **Pilgrim marker = gold** (`--map-pilgrim`), the only persistent gold on the map; tracer line `--map-route`.
 - **Completion moment** (keep, unify): ring flash `--primary → --gold → --primary`; the just-completed dot `round-complete` bounce; `ProgressRing` fill advance; instruction crossfade. One choreography, not three.
-- **Flow guard:** `nextStep` should not advance past an incomplete counter step without confirmation; wire `findNextIncompleteIndex` as a "পরবর্তী বাকি ধাপ" action.
+- **Flow guard:** `nextStep` should not advance past an incomplete counter step without confirmation; wire `findNextIncompleteIndex` as a "পরবর্তী অসম্পন্ন ধাপ" action.
 - **LandmarkHint:** auto-hide when no relevant anchor is within range (currently always-on during rituals); remember dismissal per session.
 
 ---
@@ -437,7 +437,7 @@ Centralize in `components/ui/` + tokens. Every component consumes tokens — no 
 - [x] **Phase 2** — Global layout + typography _(done: Bengali/Arabic/Inter fonts + lang=bn, ThemeProvider/toggle with no-flash script, global type base + token scrollbars, BottomSheet exit-animation fix + reduced-motion guard + token migration, map-page shell + 6 header toggles unified to primary, info panels + Umrah guide/helper/controls chrome migrated to tokens; primary-CTA contrast fixed; type-check clean, 152 tests pass, build green, light+dark verified via screenshots)_
 - [x] **Phase 3** — Homepage _(done: hero + live map preview + HowItWorks + TawafRounds + LandmarkExplorer + ExperiencePreview; Bengali-first; reveal-on-scroll)_
 - [x] **Phase 4** — Map UI _(done: env-var API key, attributionControl enabled, custom MapControls wired to live map via MapInstanceContext + 44px targets, overlay palette migrated to MAP_COLORS tokens — route blue→emerald, ritual teal→emerald, user-location→gold, tourist pins→neutral landmark; marker a11y (role/tabindex/aria-label/Enter-Space); dead styles.ts + GateMarker/HotelMarker/TouristPlaceMarker removed; map canvas role=application)_
-- [x] **Phase 5** — Tawaf experience _(done: unified CircuitProgress (CircuitDots + CircuitRing) replacing the 3 inconsistent widgets; token-based colors (map-route-completed/primary/map-route-upcoming); nextStep completion gate; goToNextIncomplete action wired as "পরবর্তী বাকি ধাপ" button; LandmarkHint auto-hide when no anchor within range; Bengali leak "takbir"→"তাকবীর" fixed)_
+- [x] **Phase 5** — Tawaf experience _(done: unified CircuitProgress (CircuitDots + CircuitRing) replacing the 3 inconsistent widgets; token-based colors (map-route-completed/primary/map-route-upcoming); nextStep completion gate; goToNextIncomplete action wired as "পরবর্তী অসম্পন্ন ধাপ" button; LandmarkHint auto-hide when no anchor within range; Bengali leak "takbir"→"তাকবীর" fixed)_
 - [x] **Phase 6** — Step-by-step Umrah _(done: formatDistance/formatWalkingTime Bengali-first (digits + units); TouristPlaceInfoPanel fully translated + color drift unified to tokens; GuideStepList visual hierarchy via tokens (completed quiet/primary-soft, current dominant/primary, upcoming muted))_
 - [x] **Phase 7** — Mobile responsiveness _(done: UmrahStepList sm:→md: so 640–768px tablets keep the sheet; TawafGuidePanel dvh + safe-area insets; GuideControls buttons bumped to h-8/h-10 targets; jump-to-incomplete button h-10)_
 - [x] **Phase 8** — Animations _(done: useDirectionArrows unbounded RAF → throttled 50ms setInterval (~4× less main-thread work); chevron teal→emerald; shared ProgressBar primitive replacing duplicated markup in GuideControls + GuidePeek)_
@@ -512,7 +512,7 @@ Phased, non-destructive. Each phase ships independently and keeps the app workin
                        ↓
                   WHAT TO DO        →  instruction card, crossfade, aria-live
                        ↓
-                  WHAT'S NEXT       →  "পরবর্তী বাকি ধাপ", gated progression
+                  WHAT'S NEXT       →  "পরবর্তী অসম্পন্ন ধাপ", gated progression
 ```
 
 The pilgrim should never have to ask "what do I do now?" The hierarchy above must be answerable at a glance, in daylight, one-handed, on a 360px screen.

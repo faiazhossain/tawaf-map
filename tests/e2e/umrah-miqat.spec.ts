@@ -17,17 +17,17 @@ test.describe("Umrah Miqat Overview", () => {
   test("বিমান পথে ফ্লাইট কার্ড ও মিকাত সারসংক্ষেপ মানচিত্র কাজ করে", async ({ page }) => {
     await page.goto("/map", { waitUntil: "networkidle" });
 
-    // অনবোর্ডিং: পুরুষ, ঢাকা -> জেদ্দা
+    // অনবোর্ডিং: পুরুষ, ঢাকা → জেদ্দা
     await page.getByRole("button", { name: /ওমরাহ/ }).first().click();
     await page.getByRole("button", { name: "পুরুষ" }).click();
     await page.getByRole("button", { name: "পরবর্তী" }).click();
-    await page.getByRole("button", { name: /ঢাকা -> জেদ্দা/ }).click();
+    await page.getByRole("button", { name: /ঢাকা → জেদ্দা/ }).click();
     await page.getByRole("button", { name: "পরবর্তী" }).click();
     await page.getByRole("button", { name: "পরবর্তী" }).click();
     await page.getByRole("button", { name: /গাইড শুরু করুন/ }).click();
 
     const panel = page.getByTestId("umrah-step-list-desktop");
-    await expect(panel.getByText("আপনার ওমরাহ যাত্রা")).toBeVisible({ timeout: 5000 });
+    await expect(panel.getByText("ধাপ ১ / ৯")).toBeVisible({ timeout: 5000 });
 
     // প্রস্তুতি ধাপে বিমানে ইহরাম কার্ড দৃশ্যমান (air পথে; অন্য পথে এটি রেন্ডার হয় না)
     await expect(panel.getByText(/বিমানে ইহরাম — ঢাকা/)).toBeVisible();

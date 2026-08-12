@@ -11,7 +11,8 @@ import { InstructionCard } from "./InstructionCard";
 import { CircuitControl } from "./CircuitControl";
 import { GuidePeek } from "./GuidePeek";
 import { GuideControls } from "./GuideControls";
-import { GuideStepList } from "./GuideStepList";
+import { StepPagination } from "./StepPagination";
+import { StepDetail } from "./StepDetail";
 import { LostGroupHelper } from "@/components/umrah/LostGroupHelper";
 import { stageLabel } from "./stage-label";
 
@@ -25,9 +26,9 @@ interface TawafGuideSheetProps {
 }
 
 /**
- * মোবাইল গাইডেড শীট - তিন স্ন্যাপ অবস্থা: peek (এক লাইন), normal (হিরো নির্দেশ +
- * কাউন্টার + পরবর্তী), expanded (সম্পূর্ণ বিস্তারিত + ধাপের তালিকা)। ব্যাকড্রপ ছাড়া, যাতে
- * মানচিত্র সবসময় দৃশ্যমান থাকে। বাংলা-প্রথম, টিল থিম।
+ * মোবাইল গাইডেড শীট - তিন স্ন্যাপ অবস্থা: peek (এক লাইন), normal (পেজিনেশন + হিরো
+ * নির্দেশ + কাউন্টার + পরবর্তী), expanded (পেজিনেশন + শুধু বর্তমান ধাপের সম্পূর্ণ বিস্তারিত)।
+ * ব্যাকড্রপ ছাড়া, যাতে মানচিত্র সবসময় দৃশ্যমান থাকে। বাংলা-প্রথম, টিল থিম।
  */
 export function TawafGuideSheet({
   open,
@@ -103,6 +104,8 @@ function SheetBody({
         onOpenMistake={onOpenMistake}
       />
 
+      <StepPagination steps={steps} />
+
       <InstructionCard
         step={step}
         counterValue={counterValue}
@@ -110,13 +113,13 @@ function SheetBody({
         nextStepSummary={nextStepSummary}
       />
 
-      {/* কম্প্যাক্ট (স্ন্যাপ ১) ভিউতে কাউন্টার উপরে থাকে — এখানে কোনো ধাপ-তালিকা নেই।
-          প্রসারিত ভিউতে কাউন্টার ধাপের ভেতরে (StepDetail) চলে যায়, তাই এই অনুলিপি লুকানো হয়। */}
+      {/* কম্প্যাক্ট (স্ন্যাপ ১) ভিউতে কাউন্টার উপরে থাকে। প্রসারিত ভিউতে কাউন্টার ধাপের
+          ভেতরে (StepDetail) চলে যায়, তাই এই অনুলিপি লুকানো হয়। */}
       {counter && !isExpanded && <CircuitControl step={step} />}
 
       {isExpanded ? (
         <>
-          <GuideStepList steps={steps} />
+          <StepDetail step={step} counterValue={counterValue} />
           <div className="pt-1 border-t border-border/40">
             <LostGroupHelper />
           </div>
@@ -147,7 +150,7 @@ function SheetBody({
             variant="outline"
             className="w-full justify-center gap-1 border-border bg-muted/60 text-foreground hover:bg-muted"
           >
-            <ChevronsUp className="w-4 h-4" /> বিস্তারিত ও ধাপের তালিকা
+            <ChevronsUp className="w-4 h-4" /> বিস্তারিত
           </Button>
           <Button
             onClick={nextStepAction}

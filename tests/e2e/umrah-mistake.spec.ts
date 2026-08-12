@@ -6,7 +6,7 @@ test("ভুল সহায়ক ফ্লো কাজ করে", async ({ p
   await page.getByRole("button", { name: /ওমরাহ/ }).first().click();
   await page.getByRole("button", { name: "পুরুষ" }).click();
   await page.getByRole("button", { name: "পরবর্তী" }).click();
-  await page.getByRole("button", { name: /ঢাকা -> জেদ্দা/ }).click();
+  await page.getByRole("button", { name: /ঢাকা → জেদ্দা/ }).click();
   await page.getByRole("button", { name: "পরবর্তী" }).click();
   await page.getByRole("button", { name: "পরবর্তী" }).click();
   await page.getByRole("button", { name: /গাইড শুরু করুন/ }).click();
