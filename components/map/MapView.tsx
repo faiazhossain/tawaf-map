@@ -10,9 +10,13 @@ import {
   MODEL_LAYER_ID,
   MODEL_ORIGIN,
   MODEL_URL,
-  MODEL_CENTER,
-  MODEL_CONFIG,
+  buildInitialModelTransform,
+  BASEMAP_3D_HIDDEN_LAYERS,
 } from "@/lib/map/model-config";
+// NOTE: the dev tuning tooling (ModelTuner + model-transform-storage) is kept for
+// aligning FUTURE models but is DISABLED — the 3D layer always renders the baked
+// defaults in lib/map/model-config.ts. Re-enable only while tuning (see the 3D
+// effect note below for what to restore).
 import {
   useMapStore,
   useLocationStore,
@@ -270,6 +274,10 @@ export function MapView({
       zoom,
       bearing,
       pitch,
+      // Create the WebGL context with MSAA antialiasing so the custom 3D-model
+      // layer (and vector lines) render without jagged edges. Matches the
+      // official maplibre-gl "Add a 3D model using three.js" example.
+      antialias: true,
       minZoom: 6,
       maxZoom: 20,
       // Allow steeper pitch for the 3D-model view (default max is 60, which
@@ -407,10 +415,39 @@ export function MapView({
 
   // 3D Masjid model: lazy-load + add the custom three.js layer when toggled on;
   // remove it and ease flat when toggled off. three.js is dynamic-imported so
-  // it stays out of the SSR bundle and only loads when the user opts in.
+  // it stays out of the SSR bundle and only loads when the user opts in. While
+  // on, the basemap building layers are hidden so the model stands alone.
+  //
+  // HOW TO WORK ON A FUTURE MODEL
+  // -----------------------------
+  // Default is the baked constants in lib/map/model-config.ts; the layer renders
+  // them every time (the dev tuner is DISABLED). To re-align a new / re-exported
+  // GLB, re-enable the dev tuner (ModelTuner + model-transform-storage): restore
+  // their imports, keep the modelTransform state, set `initial:` to
+  // `loadTunedModelTransform() ?? buildInitialModelTransform()`, re-add
+  // setModelTransform(handle.transform) and re-mount the render block at the
+  // bottom. Adjust live, click "Copy config", paste into model-config.ts, then
+  // disable the tuner again (it must not ship).
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
+
+    // Hide/show the competing basemap building layers in sync with the model.
+    // Do this regardless of the async GLB load so the basemap isn't cluttered
+    // the moment the toggle flips. Idempotent per layer.
+    const setBuildingLayersVisibility = (visible: boolean) => {
+      for (const id of BASEMAP_3D_HIDDEN_LAYERS) {
+        if (map.getLayer(id)) {
+          try {
+            map.setLayoutProperty(id, "visibility", visible ? "visible" : "none");
+          } catch {
+            // Layer exists but has no layout.visibility (e.g. already removed) —
+            // ignore and move on.
+          }
+        }
+      }
+    };
+    setBuildingLayersVisibility(show3DModel);
 
     if (!show3DModel) {
       // OFF: remove the layer (maplibre calls its onRemove -> dispose) and
@@ -433,18 +470,11 @@ export function MapView({
       // Idempotent guard for StrictMode's dev double-invoke and rapid toggles.
       if (mapRef.current.getLayer(MODEL_LAYER_ID)) return;
 
-      const layer = createModelLayer({
+      const handle = createModelLayer({
         id: MODEL_LAYER_ID,
         url: MODEL_URL,
-        origin: MODEL_ORIGIN,
-        altitudeMeters: MODEL_CONFIG.altitudeMeters,
-        rotateX: MODEL_CONFIG.rotateX,
-        rotateY: MODEL_CONFIG.rotateY,
-        rotateZ: MODEL_CONFIG.rotateZ,
-        scaleMultiplier: MODEL_CONFIG.scaleMultiplier,
-        center: MODEL_CENTER,
-        offsetEastMeters: MODEL_CONFIG.offsetEastMeters,
-        offsetNorthMeters: MODEL_CONFIG.offsetNorthMeters,
+        // Baked config only — see the "HOW TO WORK ON A FUTURE MODEL" note above.
+        initial: buildInitialModelTransform(),
         onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
         onLoadOK: () => {
           setModelLoadState("ready");
@@ -455,7 +485,17 @@ export function MapView({
           setModelLoadState("error");
         },
       });
-      mapRef.current.addLayer(layer);
+      // Insert the 3D model just below the POI/label symbols so POIs, road
+      // names, place labels etc. render ON TOP of the model. Anchor = the last
+      // layer of the hidden building group (building-metro, index ~92 in the
+      // Barikoi style); everything after it (housenumbers, POI icons, labels)
+      // stays above. The model does NOT cover the other POIs.
+      if (mapRef.current.getLayer("building-metro")) {
+        mapRef.current.addLayer(handle.layer, "building-metro");
+      } else {
+        // Fallback if a future style omits that layer — insert above everything.
+        mapRef.current.addLayer(handle.layer);
+      }
       programmaticFlyTo({
         center: MODEL_ORIGIN,
         zoom: 16.5,
@@ -1102,6 +1142,17 @@ export function MapView({
             )}
           </div>
         )}
+        {/* DEV-ONLY live tuner for aligning future 3D models. Intentionally
+            disabled — the 3D layer renders the baked defaults in model-config.ts
+            and BASEMAP_3D_HIDDEN_LAYERS hides the basemap buildings. To re-align
+            a new model, restore the `ModelTuner` import, keep the modelTransform
+            state + initial from loadTunedModelTransform(), and un-comment:
+        {show3DModel && modelTransform && process.env.NODE_ENV !== "production" && (
+          <ModelTuner
+            transform={modelTransform}
+            onRepaint={() => mapRef.current?.triggerRepaint()}
+          />
+        )} */}
       </div>
     </MapInstanceProvider>
   );

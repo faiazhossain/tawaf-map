@@ -1,9 +1,16 @@
 // Custom MapLibre layer that renders a GLB 3D model (e.g. Masjid Al-Haram) at a
 // fixed lng/lat, sharing MapLibre's WebGL context with three.js.
 //
-// Implements maplibre-gl 4.7.1's CustomLayerInterface. The `render(gl, matrix)`
-// signature receives the projection matrix as a mat4 directly (the v4 API), NOT
-// the v6 `args.defaultProjectionData.mainMatrix` form.
+// Mirrors the structure of maplibre-gl's official "Add a 3D model using three.js"
+// example, adapted for two things: (1) we're on maplibre-gl 4.7.1, whose
+// `render(gl, matrix)` signature passes the projection matrix directly (the v4
+// API, not v6's `args.defaultProjectionData.mainMatrix`); (2) our GLB is
+// non-georeferenced — its origin is the bbox CENTER, not the base — so we add a
+// recenter + base offset that the example's georeferenced model does not need.
+//
+// The transform (origin, rotation, scale, offsets) lives in a MUTABLE object
+// returned alongside the layer. Mutate its fields and call map.triggerRepaint()
+// to update the model live — no re-download. This powers the dev tuning widget.
 //
 // This module is dynamically imported from inside a client useEffect (see
 // components/map/MapView.tsx) so three.js stays out of the SSR bundle and only
@@ -13,32 +20,34 @@ import { MercatorCoordinate } from "maplibre-gl";
 import type { Map as MapLibreMap, CustomLayerInterface } from "maplibre-gl";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 
-export interface ModelLayerOptions {
+/** Live-tunable transform. Mutate fields, then call map.triggerRepaint(). */
+export interface ModelTransform {
+  originLng: number;
+  originLat: number;
+  altitudeMeters: number;
+  rotateX: number;
+  rotateY: number;
+  rotateZ: number;
+  scaleMultiplier: number;
+  offsetEastMeters: number;
+  offsetNorthMeters: number;
+  /** Fixed model-space recenter point (bbox center). Not tuned live. */
+  center: [number, number, number];
+}
+
+export interface ModelLayerHandle {
+  layer: CustomLayerInterface;
+  /** Mutate fields then call map.triggerRepaint() to see the change. */
+  transform: ModelTransform;
+}
+
+export interface CreateModelLayerOptions {
   id: string;
   url: string;
-  /** Origin [lng, lat] where the model's local origin is placed. */
-  origin: [number, number];
-  /** Altitude in meters at the origin (lifts the model off the ground). */
-  altitudeMeters?: number;
-  /** Radians; Math.PI / 2 tilts a standard Y-up export upright. */
-  rotateX?: number;
-  rotateY?: number;
-  /** Radians; heading alignment with true north. */
-  rotateZ?: number;
-  /** Pure visual scale factor; 1 assumes the model is authored in meters. */
-  scaleMultiplier?: number;
-  /**
-   * Model-space point to recenter on (e.g. the bbox center). The model is
-   * shifted so this point lands at `origin`, which matters when the model's
-   * local origin is not its geometric center. Omit to place the local origin.
-   */
-  center?: [number, number, number];
-  /** Nudge the placed model east (+) / west (-) in meters. */
-  offsetEastMeters?: number;
-  /** Nudge the placed model north (+) / south (-) in meters. */
-  offsetNorthMeters?: number;
+  initial: ModelTransform;
   /** Fired before the GLB fetch begins. */
   onLoadStart?: () => void;
   /** Fired with loaded/total bytes (drives the progress bar for large GLBs). */
@@ -51,57 +60,29 @@ export interface ModelLayerOptions {
 
 /**
  * Build a CustomLayerInterface that renders a GLB model georeferenced to the
- * map. Returns a fresh layer each call (own scene/renderer/dispose state) so
- * toggle on/off/on cycles never leak WebGL resources.
+ * map. Returns a fresh layer + mutable transform each call (own
+ * scene/renderer/dispose state) so toggle on/off/on cycles never leak WebGL
+ * resources.
  */
-export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface {
-  const {
-    id,
-    url,
-    origin,
-    altitudeMeters = 0,
-    rotateX = Math.PI / 2,
-    rotateY = 0,
-    rotateZ = 0,
-    scaleMultiplier = 1,
-    center,
-    offsetEastMeters = 0,
-    offsetNorthMeters = 0,
-    onLoadStart,
-    onLoadProgress,
-    onLoadOK,
-    onLoadError,
-  } = opts;
-
-  // Georeference: convert the origin to Web Mercator and derive the per-meter
-  // scale at this latitude. Computed once since origin/altitude are fixed.
-  const mercatorOrigin = MercatorCoordinate.fromLngLat([origin[0], origin[1]], altitudeMeters);
-  const meterInMercator = mercatorOrigin.meterInMercatorCoordinateUnits();
-  const scale = meterInMercator * scaleMultiplier;
-  // Final placement in Web Mercator space, including any manual east/north
-  // nudge (north is -Y in Web Mercator, hence the sign flip).
-  const translateX = mercatorOrigin.x + offsetEastMeters * meterInMercator;
-  const translateY = mercatorOrigin.y - offsetNorthMeters * meterInMercator;
-  const translateZ = mercatorOrigin.z;
-  // Recenter the model so `center` (e.g. its bbox center) lands at the origin,
-  // applied in local model space before rotation so heading spins around the
-  // center rather than an off-center local origin.
-  const recenter = center
-    ? new THREE.Matrix4().makeTranslation(-center[0], -center[1], -center[2])
-    : null;
+export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandle {
+  // The mutable transform object — render() reads from this every frame.
+  const transform: ModelTransform = { ...opts.initial };
 
   // Populated in onAdd; cleared in onRemove.
-  let map: MapLibreMap;
+  let map!: MapLibreMap;
   let renderer: THREE.WebGLRenderer;
   let scene: THREE.Scene;
   let camera: THREE.Camera;
   let modelRoot: THREE.Group | null = null;
+  // Bounding-box corners (local space) used to lift the model's base onto the
+  // ground each frame so it never sinks into the terrain/map.
+  let baseCorners: THREE.Vector3[] | null = null;
   let envRenderTarget: THREE.WebGLRenderTarget | null = null;
   // Guards a GLB that finishes downloading after the layer was removed.
   let disposed = false;
 
   const layer: CustomLayerInterface = {
-    id,
+    id: opts.id,
     type: "custom",
     renderingMode: "3d",
 
@@ -143,10 +124,13 @@ export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface 
       // MapLibre three.js example).
       camera = new THREE.Camera();
 
-      onLoadStart?.();
+      opts.onLoadStart?.();
       const loader = new GLTFLoader();
+      const dracoLoader = new DRACOLoader();
+      dracoLoader.setDecoderPath("/draco/");
+      loader.setDRACOLoader(dracoLoader);
       loader.load(
-        url,
+        opts.url,
         (gltf) => {
           // Layer may have been removed while the (large) download was in flight.
           if (disposed) {
@@ -155,18 +139,37 @@ export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface 
           }
           modelRoot = gltf.scene;
           scene.add(modelRoot);
-          onLoadOK?.();
-          // One-shot repaint so the model appears without waiting for the next
-          // map-triggered repaint. Do NOT call triggerRepaint inside render().
+          // Capture the model's local bounding box so render() can lift its
+          // lowest point onto the ground (keeps it from sinking into the
+          // terrain/map as you zoom or change rotation).
+          const box = new THREE.Box3().setFromObject(modelRoot);
+          if (!box.isEmpty()) {
+            const { min, max } = box;
+            const center = box.getCenter(new THREE.Vector3());
+            transform.center = [center.x, center.y, center.z];
+            baseCorners = [
+              [min.x, min.y, min.z],
+              [min.x, min.y, max.z],
+              [min.x, max.y, min.z],
+              [min.x, max.y, max.z],
+              [max.x, min.y, min.z],
+              [max.x, min.y, max.z],
+              [max.x, max.y, min.z],
+              [max.x, max.y, max.z],
+            ].map((c) => new THREE.Vector3(c[0], c[1], c[2]));
+          }
+          opts.onLoadOK?.();
+          // One-shot repaint so the model appears immediately on load; render()
+          // also calls triggerRepaint() each frame to keep the layer in sync.
           map.triggerRepaint();
         },
         (event) => {
           if (event.lengthComputable) {
-            onLoadProgress?.(event.loaded, event.total);
+            opts.onLoadProgress?.(event.loaded, event.total);
           }
         },
         (err) => {
-          onLoadError?.(err);
+          opts.onLoadError?.(err);
         }
       );
     },
@@ -174,25 +177,58 @@ export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface 
     render(_gl, matrix) {
       if (!renderer || !scene || !camera) return;
 
-      // Rotation matrices for each axis.
-      const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), rotateX);
-      const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), rotateY);
-      const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), rotateZ);
+      // Read the (possibly mutated) transform every frame for live tuning.
+      const t = transform;
+      const meterInMercator = MercatorCoordinate.fromLngLat(
+        [t.originLng, t.originLat],
+        0
+      ).meterInMercatorCoordinateUnits();
+      const scale = meterInMercator * t.scaleMultiplier;
+      const originXY = MercatorCoordinate.fromLngLat([t.originLng, t.originLat], 0);
+      // Final horizontal placement in Web Mercator space, including any manual
+      // east/north nudge (north is -Y in Web Mercator, hence the sign flip).
+      const translateX = originXY.x + t.offsetEastMeters * meterInMercator;
+      const translateY = originXY.y - t.offsetNorthMeters * meterInMercator;
 
-      // Model matrix: translate(origin) . scale(s, -s, s) . rotX . rotY . rotZ
-      // [ . recenter ]. The Y scale is negated to reconcile three.js (Y-up)
-      // with Web Mercator (Y increases downward) — the standard MapLibre
-      // convention. `recenter` (if set) shifts the model in local space so its
-      // bbox center lands at the origin.
-      const modelMatrix = new THREE.Matrix4()
-        .makeTranslation(translateX, translateY, translateZ)
+      // Rotate around the model's own bbox center instead of around the scene
+      // origin. The pivot is derived from the loaded geometry so the model spins
+      // around its actual center point.
+      const recenter = new THREE.Matrix4().makeTranslation(
+        -t.center[0],
+        -t.center[1],
+        -t.center[2]
+      );
+      const rotationX = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(1, 0, 0), t.rotateX);
+      const rotationY = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 1, 0), t.rotateY);
+      const rotationZ = new THREE.Matrix4().makeRotationAxis(new THREE.Vector3(0, 0, 1), t.rotateZ);
+      const modelSpace = new THREE.Matrix4()
         .scale(new THREE.Vector3(scale, -scale, scale))
         .multiply(rotationX)
         .multiply(rotationY)
-        .multiply(rotationZ);
-      if (recenter) {
-        modelMatrix.multiply(recenter);
+        .multiply(rotationZ)
+        .multiply(recenter);
+
+      // Base offset: place the model's lowest bbox point ON the chosen ground
+      // altitude. Our GLB is non-georeferenced (origin = bbox CENTER, not the
+      // base), so unlike the official example — whose georeferenced model sits
+      // base-down at z=0 — we lift the lowest point to `altitudeMeters` each
+      // frame so it stays grounded as scale/rotation change during tuning.
+      const groundZ = MercatorCoordinate.fromLngLat([t.originLng, t.originLat], t.altitudeMeters).z;
+      let lowestRelZ = 0;
+      if (baseCorners) {
+        let min = Infinity;
+        for (const corner of baseCorners) {
+          const z = corner.clone().applyMatrix4(modelSpace).z;
+          if (z < min) min = z;
+        }
+        lowestRelZ = min;
       }
+      const translateZ = groundZ - lowestRelZ;
+
+      // Model matrix: translate(placement) . R.
+      const modelMatrix = new THREE.Matrix4()
+        .makeTranslation(translateX, translateY, translateZ)
+        .multiply(modelSpace);
 
       // Combine the map's projection matrix with the model matrix.
       const projection = new THREE.Matrix4().fromArray(matrix).multiply(modelMatrix);
@@ -202,6 +238,12 @@ export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface 
       // cached state is stale before rendering. Required for a clean composite.
       renderer.resetState();
       renderer.render(scene, camera);
+
+      // Keep the custom layer in sync each frame, matching the official
+      // maplibre-gl three.js example. This requests the next repaint so the
+      // model re-renders even when the map is otherwise idle; the trade-off is
+      // continuous repainting while the 3D layer is on.
+      map.triggerRepaint();
     },
 
     onRemove() {
@@ -220,7 +262,7 @@ export function createModelLayer(opts: ModelLayerOptions): CustomLayerInterface 
     },
   };
 
-  return layer;
+  return { layer, transform };
 }
 
 /** Walk a subtree and free GPU-backed geometry / materials / textures. */
