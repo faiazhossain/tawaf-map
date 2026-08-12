@@ -81,7 +81,7 @@ const notoNaskhArabic = Noto_Naskh_Arabic({
 });
 
 export const metadata: Metadata = {
-  title: "TawafMap — তওয়াফ গাইড ও মক্কা-মদিনা ম্যাপ",
+  title: "TawafMap (Beta) — তওয়াফ গাইড ও মক্কা-মদিনা ম্যাপ",
   description:
     "হজ ও ওমরাহ যাত্রীদের জন্য সহজ ম্যাপ গাইড — তওয়াফের প্রতিটি চক্কর, প্রতিটি ধাপ স্পষ্টভাবে দেখুন।",
   applicationName: "TawafMap",

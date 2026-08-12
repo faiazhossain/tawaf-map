@@ -6,6 +6,7 @@ import Image from "next/image";
 import { Menu, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { BetaBadge } from "@/components/ui/beta-badge";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -41,6 +42,7 @@ export function HomeHeader() {
           <span className="text-base font-semibold tracking-tight text-foreground">
             Tawaf<span className="text-primary">Map</span>
           </span>
+          <BetaBadge className="-translate-y-1.5 self-start" />
         </Link>
 
         <div className="hidden items-center gap-7 lg:flex">

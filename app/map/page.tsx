@@ -10,6 +10,7 @@ import {
   TouristPlacesList,
 } from "@/components/map";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
+import { BetaBadge } from "@/components/ui/beta-badge";
 import { useGateProximity } from "@/lib/hooks";
 import {
   useGateStore,
@@ -244,7 +245,10 @@ export default function MapPage() {
               <Image src="/icons/Tawafmap.webp" alt="TawafMap Logo" width={42} height={42} />
             </div>
             <div className="hidden sm:block">
-              <h1 className="text-lg font-bold text-foreground">TawafMap</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="text-lg font-bold text-foreground">TawafMap</h1>
+                <BetaBadge />
+              </div>
               <p className="text-xs text-primary">মক্কা-মদিনায় হারাবেন না</p>
             </div>
           </Link>
