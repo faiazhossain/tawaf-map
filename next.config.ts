@@ -1,10 +1,12 @@
 import type { NextConfig } from "next";
 
-// Upstream host for large binary assets (e.g. the Masjid Al-Haram GLB) that
-// live on a LAN asset server without CORS headers. Server-side only — must NOT
-// be prefixed with NEXT_PUBLIC_. The browser fetches the same-origin proxy path
-// (/models/<file>) and Next streams the response through, avoiding CORS.
-const MODEL_UPSTREAM_URL = process.env.MODEL_UPSTREAM_URL ?? "http://192.168.1.200:8000";
+// Upstream host for large binary assets (e.g. the Masjid Al-Haram GLB).
+// Server-side only — must NOT be prefixed with NEXT_PUBLIC_. The browser
+// fetches the same-origin proxy path (/models/<file>) and Next streams the
+// response through, avoiding CORS issues.
+const MODEL_UPSTREAM_URL =
+  process.env.MODEL_UPSTREAM_URL ??
+  "https://raw.githubusercontent.com/golamrabbii/3d-models/refs/heads/main";
 
 const nextConfig: NextConfig = {
   reactStrictMode: true,

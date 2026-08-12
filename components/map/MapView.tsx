@@ -486,7 +486,10 @@ export function MapView({
         }
       }
     };
-    setBuildingLayersVisibility(show3DModel);
+    const syncBuildingLayerVisibility = () => setBuildingLayersVisibility(!show3DModel);
+
+    setBuildingLayersVisibility(!show3DModel);
+    map.on("styledata", syncBuildingLayerVisibility);
 
     if (!show3DModel) {
       // OFF: remove the layer (maplibre calls its onRemove -> dispose) and
@@ -495,13 +498,59 @@ export function MapView({
       setModelLoadState("idle");
       setModelLoadProgress(0);
       programmaticEaseTo({ pitch: 0, duration: 1000 });
-      return;
     }
 
     // ON: dynamic-import the factory, add the custom layer, fly to the Kaaba.
     let cancelled = false;
-    setModelLoadState("loading");
-    setModelLoadProgress(0);
+    if (show3DModel) {
+      setModelLoadState("loading");
+      setModelLoadProgress(0);
+
+      (async () => {
+        const { createModelLayer } = await import("@/lib/map/three-model-layer");
+        if (cancelled || !mapRef.current) return;
+        // Idempotent guard for StrictMode's dev double-invoke and rapid toggles.
+        if (mapRef.current.getLayer(MODEL_LAYER_ID)) return;
+
+        const handle = createModelLayer({
+          id: MODEL_LAYER_ID,
+          url: MODEL_URL,
+          // Baked config only — see the "HOW TO WORK ON A FUTURE MODEL" note above.
+          initial: buildInitialModelTransform(),
+          onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
+          onLoadOK: () => {
+            setModelLoadState("ready");
+            setModelLoadProgress(1);
+          },
+          onLoadError: (err) => {
+            console.error("3D model failed to load:", err);
+            setModelLoadState("error");
+          },
+        });
+        // Insert the 3D model just below the POI/label symbols so POIs, road
+        // names, place labels etc. render ON TOP of the model. Anchor = the last
+        // layer of the hidden building group (building-metro, index ~92 in the
+        // Barikoi style); everything after it (housenumbers, POI icons, labels)
+        // stays above. The model does NOT cover the other POIs.
+        if (mapRef.current.getLayer("building-metro")) {
+          mapRef.current.addLayer(handle.layer, "building-metro");
+        } else {
+          // Fallback if a future style omits that layer — insert above everything.
+          mapRef.current.addLayer(handle.layer);
+        }
+        programmaticFlyTo({
+          center: MODEL_ORIGIN,
+          zoom: 16.5,
+          pitch: 60,
+          duration: 1500,
+        });
+      })();
+    }
+
+    return () => {
+      map.off("styledata", syncBuildingLayerVisibility);
+      cancelled = true;
+    };
 
     (async () => {
       const { createModelLayer } = await import("@/lib/map/three-model-layer");
