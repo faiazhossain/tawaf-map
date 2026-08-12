@@ -563,6 +563,10 @@ export const SAI_PROGRESS_SOURCE = "umrah-sai-progress";
 export const TAWAF_DRAW_SOURCE = "umrah-tawaf-draw";
 export const SAI_DRAW_SOURCE = "umrah-sai-draw";
 
+// ----- মিকাত সীমানা রূপরেখা (ihram ধাপের ভূমিকা অ্যানিমেশন) সোর্স/লেয়ার আইডি -----
+export const MIQAT_DRAW_SOURCE = "umrah-miqat-draw";
+export const MIQAT_DRAW_LAYER = "umrah-miqat-draw-line";
+
 /** খালি FeatureCollection (অঙ্কন সোর্সের প্রাথমিক/পরিষ্কার অবস্থা)। */
 export const EMPTY_FEATURE_COLLECTION = {
   type: "FeatureCollection" as const,
@@ -575,6 +579,13 @@ export const drawLineLayerPaint = {
   "line-width": 6,
   "line-opacity": 0.95,
   "line-blur": 1,
+} as const;
+
+/** মিকাত সীমানা রূপরেখার emerald রেখা - ihram ধাপের ভূমিকায় ঘড়ির বিপরীতে আঁকা হয়। */
+export const miqatBoundaryLinePaint = {
+  "line-color": MAP_COLORS.route,
+  "line-width": 3,
+  "line-opacity": 0.9,
 } as const;
 
 /**

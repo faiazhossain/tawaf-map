@@ -5,6 +5,7 @@ import maplibregl, { Map as MapLibreMap, LngLatBoundsLike, Marker } from "maplib
 import "maplibre-gl/dist/maplibre-gl.css";
 import { useTawafCamera } from "@/lib/hooks/useTawafCamera";
 import { useRitualDrawAnimation } from "@/lib/hooks/useRitualDrawAnimation";
+import { useMiqatBoundaryAnimation } from "@/lib/hooks/useMiqatBoundaryAnimation";
 import { useDirectionArrows } from "@/lib/hooks/useDirectionArrows";
 import {
   MODEL_LAYER_ID,
@@ -35,7 +36,12 @@ import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { getStepById } from "@/lib/data/umrah/steps";
 import { getAnchorById } from "@/lib/data/umrah/anchors";
 import { isStepComplete } from "@/lib/data/umrah/sequence";
-import { MIQAT_POINTS, resolveMiqatForTravelPath, miqatRingBounds } from "@/lib/data/umrah/miqat";
+import {
+  MIQAT_POINTS,
+  resolveMiqatForTravelPath,
+  miqatRingBounds,
+  miqatRingOutline,
+} from "@/lib/data/umrah/miqat";
 import {
   UMRAH_OVERLAY_SOURCE,
   UMRAH_SACRED_SOURCE,
@@ -47,6 +53,7 @@ import {
   SAI_CORRIDOR_LAYER,
   TAWAF_DRAW_SOURCE,
   SAI_DRAW_SOURCE,
+  MIQAT_DRAW_SOURCE,
   createRitualOverlayGeoJSON,
   createSacredPointsGeoJSON,
   getTawafCircleCoords,
@@ -261,6 +268,38 @@ export function MapView({
     count: activeStage === "tawaf" ? 10 : activeStage === "sai" ? 7 : 0,
     closed: activeStage === "tawaf",
   });
+
+  // ----- মিকাত সীমানা রূপরেখার ভূমিকা অ্যানিমেশন (ihram ধাপে, প্রতি সেশনে একবার) -----
+  const miqatIntroActive = showUmrah && mapLoaded && !showMiqatOverview && activeStage === "ihram";
+  const miqatRingCoords = useMemo(() => miqatRingOutline(), []);
+  const miqatIntroPrevCameraRef = useRef<{ center: [number, number]; zoom: number } | null>(null);
+  useMiqatBoundaryAnimation(mapInstance, {
+    show: showUmrah && mapLoaded,
+    active: miqatIntroActive,
+    sourceId: MIQAT_DRAW_SOURCE,
+    ringCoords: miqatRingCoords,
+    beforeLayerId: "building-metro",
+    onComplete: () => {
+      // ভূমিকা শেষে আগের ক্যামেরায় ফিরে যাওয়া।
+      const prev = miqatIntroPrevCameraRef.current;
+      if (prev) programmaticFlyTo({ center: prev.center, zoom: prev.zoom, duration: 1200 });
+    },
+  });
+  // ihram ধাপে পৌঁছালে পুরো মিকাত রিং ফ্রেমে আনা, যাতে রূপরেখা অঙ্কন দৃশ্যমান হয়।
+  useEffect(() => {
+    if (!mapRef.current || !miqatIntroActive) return;
+    const m = mapRef.current;
+    miqatIntroPrevCameraRef.current = {
+      center: [m.getCenter().lng, m.getCenter().lat],
+      zoom: m.getZoom(),
+    };
+    programmaticFitBounds(miqatRingBounds(0), {
+      padding: { top: 60, bottom: 60, left: 60, right: 60 },
+      duration: 1000,
+    });
+    // miqatIntroActive ছাড়া অন্য deps নয় — ধাপে প্রবেশে একবারই ফ্রেম করা।
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [miqatIntroActive]);
 
   // Initialize map
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -970,6 +1009,8 @@ export function MapView({
     if (!activeId) return;
     const step = getStepById(activeId);
     if (!step?.anchors?.length) return;
+    // ihram ধাপে মিকাত সীমানা ভূমিকা অ্যানিমেশন নিজ ক্যামেরা নিয়ন্ত্রণ করে।
+    if (step.stage === "ihram") return;
     const anchor = getAnchorById(step.anchors[0]);
     if (!anchor) return;
 

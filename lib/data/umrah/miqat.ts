@@ -1,4 +1,5 @@
 import type { MiqatPoint, TravelPathMiqat, TravelPath, LocalizedString } from "@/types/umrah";
+import { bearing } from "@/lib/map/umrah-overlay";
 
 /**
  * মিকাত পয়েন্টসমূহ - ইহরাম বাঁধার সীমানা
@@ -20,7 +21,7 @@ export const MIQAT_POINTS: MiqatPoint[] = [
       bn: "মদিনা হয়ে আসা তীর্থযাত্রীদের জন্য",
       en: "Those coming via Madinah",
     },
-    location: { coordinates: [39.8717, 24.4486] },
+    location: { coordinates: [39.54300444108871, 24.413589376512416] },
     sourceRefs: [
       "https://hajjumrahplanner.com/miqat/",
       "https://bakkahtransport.com/blog/miqat-points/",
@@ -39,7 +40,7 @@ export const MIQAT_POINTS: MiqatPoint[] = [
       bn: "মিশর, শাম ও উত্তর/পশ্চিম আফ্রিকা থেকে আসা তীর্থযাত্রীদের জন্য",
       en: "Egypt, Sham, North/West Africa",
     },
-    location: { coordinates: [38.994, 22.193] },
+    location: { coordinates: [39.14667851767999, 22.70478850562265] },
     sourceRefs: ["https://hajjumrahplanner.com/miqat/", "https://en.wikipedia.org/wiki/Miqat"],
   },
   {
@@ -55,7 +56,7 @@ export const MIQAT_POINTS: MiqatPoint[] = [
       bn: "নাজদ ও তায়েফ থেকে আসা তীর্থযাত্রীদের জন্য",
       en: "Najd and Ta'if",
     },
-    location: { coordinates: [40.184, 21.681] },
+    location: { coordinates: [40.42766392219625, 21.632757168125607] },
     sourceRefs: [
       "https://hajjumrahplanner.com/miqat/",
       "https://bakkahtransport.com/blog/miqat-points/",
@@ -74,7 +75,7 @@ export const MIQAT_POINTS: MiqatPoint[] = [
       bn: "ইয়েমেন ও দক্ষিণ অঞ্চল থেকে আসা তীর্থযাত্রীদের জন্য",
       en: "Yemen and southern regions",
     },
-    location: { coordinates: [39.964, 21.086] },
+    location: { coordinates: [39.87132929884464, 20.517393627092968] },
     sourceRefs: ["https://hajjumrahplanner.com/miqat/", "https://en.wikipedia.org/wiki/Miqat"],
   },
   {
@@ -90,7 +91,7 @@ export const MIQAT_POINTS: MiqatPoint[] = [
       bn: "ইরাক, ইরান ও উত্তর-পূর্ব থেকে আসা তীর্থযাত্রীদের জন্য",
       en: "Iraq, Iran, and northeast",
     },
-    location: { coordinates: [40.425, 21.775] },
+    location: { coordinates: [40.42551386002873, 21.929963007656795] },
     sourceRefs: [
       "https://hajjumrahplanner.com/miqat/",
       "https://bakkahtransport.com/blog/miqat-points/",
@@ -263,6 +264,32 @@ export function miqatRingBounds(padding = 0.2): LatLngBounds {
     [Math.min(...lngs) - padding, Math.min(...lats) - padding],
     [Math.max(...lngs) + padding, Math.max(...lats) + padding],
   ];
+}
+
+/** কাবা কেন্দ্র — মিকাত রিং বাছাইয়ের ভিত্তি (umrah-overlay.ts-এর KAABA_CENTER-এর সাথে সঙগত)। */
+const MIQAT_RING_CENTER: [number, number] = [39.8262, 21.4225];
+
+/** বাইরের রিং থেকে বাদ — তানাইম একটি 'হিল' পয়েন্ট, বাইরের মিকাত সীমানার অংশ নয়। */
+const MIQAT_RING_EXCLUDED = new Set(["taneem"]);
+
+/**
+ * বাইরের মিকাত পয়েন্টগুলো ঘিরে একটি বদ্ধ রিং (প্রথম === শেষ)। কাবা থেকে প্রতিটি
+ * পয়েন্টের দিক (bearing) অনুযায়ী ঘড়ির বিপরীত দিকে (counter-clockwise) বাছাই করা হয়েছে।
+ *
+ * স্থানাঙ্কগুলো আনুমানিক — এটি একটি রূপরেখা/স্কিমেটিক রিং, প্রকৃত প্রশাসনিক সীমানা নয়।
+ * বিশুদ্ধ ফাংশন, MapLibre নির্ভরতা ছাড়াই পরীক্ষাযোগ্য।
+ */
+export function miqatRingOutline(): number[][] {
+  const outer = MIQAT_POINTS.filter((p) => !MIQAT_RING_EXCLUDED.has(p.id));
+  // bearing কমে = ঘড়ির বিপরীত দিকে; তাই নিচের দিকে (descending) বাছাই।
+  const sorted = [...outer].sort(
+    (a, b) =>
+      bearing(MIQAT_RING_CENTER, b.location.coordinates as [number, number]) -
+      bearing(MIQAT_RING_CENTER, a.location.coordinates as [number, number])
+  );
+  const ring = sorted.map((p) => p.location.coordinates as [number, number]);
+  ring.push(ring[0]); // বদ্ধ রিং
+  return ring;
 }
 
 export interface MiqatInfoReference {
