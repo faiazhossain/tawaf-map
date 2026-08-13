@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
-import { ChevronRight, ChevronLeft, ChevronsUp } from "lucide-react";
+import { ChevronRight, ChevronLeft, ChevronsUp, ChevronsDown } from "lucide-react";
 import { BottomSheet, useBottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { useUmrahGuideStore, selectCurrentStep, selectCounter } from "@/lib/store/umrahGuideStore";
@@ -150,7 +150,7 @@ function SheetBody({
             variant="outline"
             className="w-full justify-center gap-1 border-border bg-muted/60 text-foreground hover:bg-muted"
           >
-            <ChevronsUp className="w-4 h-4" /> বিস্তারিত
+            <ChevronsDown className="w-4 h-4" /> বিস্তারিত
           </Button>
           <Button
             onClick={nextStepAction}

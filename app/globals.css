@@ -168,6 +168,15 @@
     background-color: hsl(var(--muted-foreground) / 0.7);
   }
 
+  /* Utility: hide native scrollbars while keeping scrolling functional */
+  .hide-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none; /* Safari and Chrome */
+  }
+
   /* Custom scrollbar for the tourist places panel — token-driven, theme-aware */
   .scrollbar-tourist {
     scrollbar-width: thin;

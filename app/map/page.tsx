@@ -25,7 +25,18 @@ import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Hotel, MapPin, Mountain, Building2, Box, X, DoorOpen, Moon } from "lucide-react";
+import {
+  Hotel,
+  MapPin,
+  Mountain,
+  Building2,
+  Box,
+  X,
+  DoorOpen,
+  Moon,
+  ChevronLeft,
+  ChevronRight,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -119,6 +130,14 @@ export default function MapPage() {
   // ফলে ট্যাব পরিবর্তনের পর গাইড ক্যামেরা জুম (যেমন তওয়াফে ১৮) অপরিবর্তিত থাকে।
   const nearbyGatesRef = useRef(nearbyGates);
   nearbyGatesRef.current = nearbyGates;
+
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+  const scrollToolbar = (dir: number) => {
+    const el = toolbarRef.current;
+    if (!el) return;
+    const amount = Math.round(el.clientWidth * 0.6) || 160;
+    el.scrollBy({ left: dir * amount, behavior: "smooth" });
+  };
 
   const handleGateClick = useCallback(
     (gateId: string) => {
@@ -236,13 +255,19 @@ export default function MapPage() {
   }
 
   return (
-    <main className="flex flex-col h-dvh bg-background">
+    <main className="flex flex-col h-screen w-screen overflow-hidden bg-background">
       {/* Header */}
       <header className="relative px-4 py-3 bg-surface border-b border-border z-10">
-        <div className="flex items-center justify-between max-w-screen-2xl mx-auto">
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="p-1.5 rounded-xl shadow-lg">
-              <Image src="/icons/Tawafmap.webp" alt="TawafMap Logo" width={42} height={42} />
+        <div className="flex flex-row items-center justify-between gap-3 max-w-screen-2xl mx-auto">
+          <Link href="/" className="flex items-center gap-3 group shrink-0">
+            <div className="p-1 sm:p-1.5 rounded-xl shadow-lg">
+              <Image
+                src="/icons/Tawafmap.webp"
+                alt="TawafMap Logo"
+                width={42}
+                height={42}
+                className="w-8 h-8 sm:w-10 sm:h-10"
+              />
             </div>
             <div className="hidden sm:block">
               <div className="flex items-center gap-2">
@@ -253,101 +278,117 @@ export default function MapPage() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2 sm:gap-3">
-            <ThemeToggle />
-            <UserLocation />
-            <Button
-              variant={showUmrahGuide ? "default" : "outline"}
-              size={showUmrahGuide ? "sm" : "icon"}
-              onClick={handleToggleUmrah}
-              className={
-                showUmrahGuide || showUmrahOnboarding
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg shadow-primary/30 ring-2 ring-primary/25"
-                  : "border-primary/60 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary hover:text-primary min-w-[4.5rem] px-3 sm:px-4 shadow-sm"
-              }
-            >
-              <Moon className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {umrahOnboarded ? (showUmrahGuide ? "চলছে" : "ওমরাহ") : "ওমরাহ গাইড"}
-              </span>
-            </Button>
-            <Button
-              variant={showHotels ? "default" : "outline"}
-              size={showHotels ? "sm" : "icon"}
-              onClick={handleToggleHotels}
-              className={
-                showHotels
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
-              }
-            >
-              <Hotel className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {showHotels ? "On" : "Hotels"}
-              </span>
-            </Button>
-            <Button
-              variant={showTouristPlaces ? "default" : "outline"}
-              size={showTouristPlaces ? "sm" : "icon"}
-              onClick={handleToggleTouristPlaces}
-              className={
-                showTouristPlaces
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
-              }
-            >
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {showTouristPlaces ? "Historical On" : "Historical"}
-              </span>
-            </Button>
-            <Button
-              variant={showTerrain ? "default" : "outline"}
-              size={showTerrain ? "sm" : "icon"}
-              onClick={() => setShowTerrain((prev) => !prev)}
-              className={
-                showTerrain
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
-              }
-            >
-              <Mountain className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {showTerrain ? "On" : "Terrain"}
-              </span>
-            </Button>
-            <Button
-              variant={show3DModel ? "default" : "outline"}
-              size={show3DModel ? "sm" : "icon"}
-              onClick={() => setShow3DModel((prev) => !prev)}
-              className={
-                show3DModel
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
-              }
-              title="৩ডি মডেল"
-            >
-              <Box className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {show3DModel ? "On" : "3D"}
-              </span>
-            </Button>
-            <Button
-              variant={showGates ? "default" : "outline"}
-              size={showGates ? "sm" : "icon"}
-              onClick={handleToggleGates}
-              className={
-                showGates
-                  ? "bg-primary text-primary-foreground border-0 shadow-lg"
-                  : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground min-w-[4.5rem] px-3 sm:px-4"
-              }
-            >
-              <DoorOpen className="w-4 h-4" />
-              <span className="hidden sm:inline whitespace-nowrap">
-                {showGates ? "On" : "Gates"}
-              </span>
-            </Button>
-            <GateSelector />
+          <div className="relative w-full">
+            <div ref={toolbarRef} className="overflow-x-auto py-1 hide-scrollbar">
+              <div className="flex items-center gap-2 min-w-max sm:gap-3">
+                <ThemeToggle />
+                <UserLocation />
+                <Button
+                  variant={showUmrahGuide ? "default" : "outline"}
+                  size={showUmrahGuide ? "sm" : "icon"}
+                  onClick={handleToggleUmrah}
+                  className={
+                    showUmrahGuide || showUmrahOnboarding
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg shadow-primary/30 ring-2 ring-primary/25 text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-primary/60 bg-primary/10 text-primary hover:bg-primary/20 hover:border-primary hover:text-primary text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                >
+                  <Moon className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">
+                    {umrahOnboarded ? (showUmrahGuide ? "চলছে" : "ওমরাহ") : "ওমরাহ"}
+                  </span>
+                </Button>
+                <Button
+                  variant={showHotels ? "default" : "outline"}
+                  size={showHotels ? "sm" : "icon"}
+                  onClick={handleToggleHotels}
+                  className={
+                    showHotels
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                >
+                  <Hotel className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">{showHotels ? "On" : "Hotels"}</span>
+                </Button>
+                <Button
+                  variant={showTouristPlaces ? "default" : "outline"}
+                  size={showTouristPlaces ? "sm" : "icon"}
+                  onClick={handleToggleTouristPlaces}
+                  className={
+                    showTouristPlaces
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                >
+                  <Building2 className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">
+                    {showTouristPlaces ? "Hist On" : "Hist"}
+                  </span>
+                </Button>
+                <Button
+                  variant={showTerrain ? "default" : "outline"}
+                  size={showTerrain ? "sm" : "icon"}
+                  onClick={() => setShowTerrain((prev) => !prev)}
+                  className={
+                    showTerrain
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                >
+                  <Mountain className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">{showTerrain ? "On" : "Terr"}</span>
+                </Button>
+                <Button
+                  variant={show3DModel ? "default" : "outline"}
+                  size={show3DModel ? "sm" : "icon"}
+                  onClick={() => setShow3DModel((prev) => !prev)}
+                  className={
+                    show3DModel
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                  title="৩ডি মডেল"
+                >
+                  <Box className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
+                </Button>
+                <Button
+                  variant={showGates ? "default" : "outline"}
+                  size={showGates ? "sm" : "icon"}
+                  onClick={handleToggleGates}
+                  className={
+                    showGates
+                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                  }
+                >
+                  <DoorOpen className="hidden sm:inline-block w-4 h-4" />
+                  <span className="inline whitespace-nowrap">{showGates ? "On" : "Gates"}</span>
+                </Button>
+                <GateSelector />
+              </div>
+            </div>
+
+            {/* Mobile chevrons for scrolling the toolbar */}
+            <div className="absolute inset-y-0 flex items-center sm:hidden" style={{ left: -12 }}>
+              <button
+                aria-label="Scroll toolbar left"
+                onClick={() => scrollToolbar(-1)}
+                className="p-2 bg-surface/90 text-foreground rounded-full shadow-md"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+            </div>
+            <div className="absolute inset-y-0 flex items-center sm:hidden" style={{ right: 32 }}>
+              <button
+                aria-label="Scroll toolbar right"
+                onClick={() => scrollToolbar(1)}
+                className="p-2 bg-surface/90 text-foreground rounded-full shadow-md"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
         </div>
       </header>
