@@ -10,6 +10,7 @@ import {
   TouristPlacesList,
 } from "@/components/map";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
+import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { BetaBadge } from "@/components/ui/beta-badge";
 import { useGateProximity } from "@/lib/hooks";
 import {
@@ -469,6 +470,9 @@ export default function MapPage() {
 
         {/* Debug Location Panel */}
         {!hasActivePanel && <DebugLocationPanel />}
+
+        {/* GPS simulator badge (dev/test harness, only renders while active) */}
+        <GpsSimBadge />
 
         {/* Nearby Gates Panel */}
         {hasLocation && nearestGate && !hasActivePanel && (
