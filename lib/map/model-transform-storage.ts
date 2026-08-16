@@ -3,27 +3,48 @@
 // 3D toggle and page reloads, so tuning work isn't lost before you "Copy config"
 // and bake the values into model-config.ts.
 //
-// The storage key embeds a signature of the compiled-in defaults: whenever
-// MODEL_ORIGIN / MODEL_CONFIG / MODEL_CENTER change, the key changes and the
-// previously saved transform is ignored automatically (no manual cache-busting).
+// Each model ("masjid" | "clock-tower") stores under its own key. The key embeds
+// a signature of that model's compiled-in defaults: whenever its constants in
+// model-config.ts change, the key changes and the previously saved transform is
+// ignored automatically (no manual cache-busting).
 //
 // Dev-only by design: every helper no-ops in production and when localStorage
 // is unavailable, so production always renders the baked defaults.
 
 import type { ModelTransform } from "./three-model-layer";
-import { MODEL_CENTER, MODEL_CONFIG, MODEL_ORIGIN } from "./model-config";
+import {
+  MODEL_CENTER,
+  MODEL_CONFIG,
+  MODEL_ORIGIN,
+  CLOCK_TOWER_CENTER,
+  CLOCK_TOWER_CONFIG,
+  CLOCK_TOWER_ORIGIN,
+  type ModelTunables,
+} from "./model-config";
+
+export type TunableModelKey = "masjid" | "clock-tower";
 
 const STORAGE_PREFIX = "tawaf:model-transform";
 
-// Serialize the baked defaults into the key. Any edit to the constants produces
-// a new key, which naturally discards stale saved tuning.
-const DEFAULTS_SIGNATURE = JSON.stringify({
-  origin: MODEL_ORIGIN,
-  config: MODEL_CONFIG,
-  center: MODEL_CENTER,
-});
+const DEFAULTS_BY_MODEL: Record<
+  TunableModelKey,
+  { origin: [number, number]; config: ModelTunables; center: [number, number, number] }
+> = {
+  masjid: { origin: MODEL_ORIGIN, config: MODEL_CONFIG, center: MODEL_CENTER },
+  "clock-tower": {
+    origin: CLOCK_TOWER_ORIGIN,
+    config: CLOCK_TOWER_CONFIG,
+    center: CLOCK_TOWER_CENTER,
+  },
+};
 
-const STORAGE_KEY = `${STORAGE_PREFIX}:${DEFAULTS_SIGNATURE}`;
+function storageKey(model: TunableModelKey): string {
+  const defaults = DEFAULTS_BY_MODEL[model];
+  // Serialize the baked defaults into the key. Any edit to the constants
+  // produces a new key, which naturally discards stale saved tuning.
+  const signature = JSON.stringify(defaults);
+  return `${STORAGE_PREFIX}:${model}:${signature}`;
+}
 
 function isStorageAvailable(): boolean {
   return (
@@ -34,13 +55,13 @@ function isStorageAvailable(): boolean {
 }
 
 /**
- * Read a previously tuned transform, or null when none is saved, the defaults
- * changed, or we're in production / a non-browser context.
+ * Read a previously tuned transform for the model, or null when none is saved,
+ * the defaults changed, or we're in production / a non-browser context.
  */
-export function loadTunedModelTransform(): ModelTransform | null {
+export function loadTunedModelTransform(model: TunableModelKey): ModelTransform | null {
   if (!isStorageAvailable()) return null;
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
+    const raw = window.localStorage.getItem(storageKey(model));
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<ModelTransform>;
     // Guard against a corrupt / partial entry crashing the layer downstream.
@@ -78,13 +99,13 @@ export function loadTunedModelTransform(): ModelTransform | null {
 }
 
 /**
- * Persist the current transform so tuning survives the 3D toggle and reloads.
- * Silently no-ops in production or when storage is unavailable.
+ * Persist the model's current transform so tuning survives the 3D toggle and
+ * reloads. Silently no-ops in production or when storage is unavailable.
  */
-export function saveTunedModelTransform(transform: ModelTransform): void {
+export function saveTunedModelTransform(model: TunableModelKey, transform: ModelTransform): void {
   if (!isStorageAvailable()) return;
   try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(transform));
+    window.localStorage.setItem(storageKey(model), JSON.stringify(transform));
   } catch {
     // Quota exceeded / private mode — ignore; tuning just won't persist.
   }

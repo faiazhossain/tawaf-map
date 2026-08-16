@@ -11,13 +11,27 @@ import {
   MODEL_LAYER_ID,
   MODEL_ORIGIN,
   MODEL_URL,
+  CLOCK_TOWER_LAYER_ID,
+  CLOCK_TOWER_URL,
+  PREFETCHABLE_MODEL_URLS,
   buildInitialModelTransform,
+  buildInitialClockTowerTransform,
   BASEMAP_3D_HIDDEN_LAYERS,
 } from "@/lib/map/model-config";
-// NOTE: the dev tuning tooling (ModelTuner + model-transform-storage) is kept for
-// aligning FUTURE models but is DISABLED — the 3D layer always renders the baked
-// defaults in lib/map/model-config.ts. Re-enable only while tuning (see the 3D
-// effect note below for what to restore).
+// Model loading policy (Cache Storage bytes + connection-gated prefetch).
+// three.js-free module, safe to import statically.
+import {
+  fetchModelBytes,
+  prefetchModel,
+  pruneDeprecatedModelCaches,
+  whenIdle,
+} from "@/lib/map/model-manager";
+import type { ModelLayerHandle } from "@/lib/map/three-model-layer";
+// NOTE: the dev tuning tooling (ModelTuner + model-transform-storage) is kept
+// for aligning FUTURE models but is DISABLED — both 3D layers render the baked
+// defaults in lib/map/model-config.ts (the clock tower was aligned with the
+// tuner and its final values are baked in). Re-enable only while tuning (see
+// the 3D effect note below for what to restore).
 import {
   useMapStore,
   useLocationStore,
@@ -162,11 +176,42 @@ export function MapView({
   // map instance-এর জন্য reactive state যাতে useTawafCamera পুনরায় রান করে
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
 
-  // ৩ডি মডেল লোডের অবস্থা — GLB (২৩১MB) স্ট্রিম হওয়ার সময় progress overlay দেখাতে
+  // ৩ডি মডেল লোডের অবস্থা — বড় GLB (~৬৩MB মসজিদ) স্ট্রিম হওয়ার সময় progress overlay দেখাতে
   const [modelLoadState, setModelLoadState] = useState<"idle" | "loading" | "ready" | "error">(
     "idle"
   );
   const [modelLoadProgress, setModelLoadProgress] = useState(0);
+
+  // Cached instant-restore-এ loading অবস্থা মাত্র এক-দুই ফ্রেম থাকে — overlay
+  // যেন এক বার্ষার মতো ফ্ল্যাশ না করে, তাই 350ms পরেই সেটি দেখানো শুরু হয়।
+  const [overlayDelayElapsed, setOverlayDelayElapsed] = useState(false);
+  useEffect(() => {
+    if (modelLoadState !== "loading") {
+      setOverlayDelayElapsed(false);
+      return;
+    }
+    const id = window.setTimeout(() => setOverlayDelayElapsed(true), 350);
+    return () => window.clearTimeout(id);
+  }, [modelLoadState]);
+
+  // ৩ডি লেয়ার হ্যান্ডেল — প্রথম টগলে একবারই তৈরি হয়। এরপর "3D" বাটন শুধু
+  // visibility ফ্লিপ করে (handle.setActive), লেয়ার remove হয় না — তাই টগলের
+  // প্রতিবার নতুন ডাউনলোড/পার্স/GPU রিবিল্ড খরচ হয় না।
+  const modelHandlesRef = useRef<{
+    masjid: ModelLayerHandle | null;
+    tower: ModelLayerHandle | null;
+  }>({ masjid: null, tower: null });
+  const modelsBootingRef = useRef(false);
+  // Async তৈরি শেষ হওয়ার মুহূর্তে সাম্প্রতিক টগল-অবস্থা জানতে (দ্রুত টগলে ভুল
+  // করে মডেল ফ্ল্যাশ হওয়া এড়াতে)।
+  const show3DModelRef = useRef(false);
+
+  // এই সেশনে মসজিদ মডেলের প্রথম লোডের ফলাফল। টগল অফ→অন-এ লেয়ার remove/add
+  // হয় না (শুধু visibility flip), তাই onLoadOK/onLoadError দ্বিতীয়বার ফায়ার
+  // করে না — এই ref ছাড়া দ্বিতীয় টগল-অন-এ overlay "লোড হচ্ছে 0%"-এ চিরকাল
+  // আটকে থাকত। unmount-এ ref-ও রিসেট হয়, তখন instance cache থেকে আবার
+  // onLoadOK ফায়ার হয়ে এটি ভরে যায়।
+  const modelLoadOutcomeRef = useRef<"ready" | "error" | null>(null);
 
   // গাইডেড ক্যামেরা নিয়ন্ত্রক - programmatic মুভ ও user-gesture শনাক্তকরণ
   const { programmaticFlyTo, programmaticEaseTo, programmaticFitBounds } =
@@ -452,24 +497,29 @@ export function MapView({
     }
   }, [mapLoaded, showTerrain, programmaticEaseTo]);
 
-  // 3D Masjid model: lazy-load + add the custom three.js layer when toggled on;
-  // remove it and ease flat when toggled off. three.js is dynamic-imported so
-  // it stays out of the SSR bundle and only loads when the user opts in. While
-  // on, the basemap building layers are hidden so the model stands alone.
+  // 3D models: the Masjid + clock tower custom three.js layers. Layers are
+  // CREATED ONCE on the first toggle-on (bytes cached in Cache Storage, parsed
+  // instances cached in three-model-layer), and from then on the 3D button only
+  // flips visibility via handle.setActive — the production toggle semantic. No
+  // re-download, re-parse or GPU rebuild per toggle. three.js is
+  // dynamic-imported so it stays out of the SSR bundle and only loads when the
+  // user opts in. While on, the basemap building layers are hidden so the
+  // models stand alone.
   //
-  // HOW TO WORK ON A FUTURE MODEL
-  // -----------------------------
-  // Default is the baked constants in lib/map/model-config.ts; the layer renders
-  // them every time (the dev tuner is DISABLED). To re-align a new / re-exported
-  // GLB, re-enable the dev tuner (ModelTuner + model-transform-storage): restore
-  // their imports, keep the modelTransform state, set `initial:` to
-  // `loadTunedModelTransform() ?? buildInitialModelTransform()`, re-add
-  // setModelTransform(handle.transform) and re-mount the render block at the
-  // bottom. Adjust live, click "Copy config", paste into model-config.ts, then
-  // disable the tuner again (it must not ship).
+  // ALIGNING A MODEL (both are aligned; nothing to do right now)
+  // ------------------------------------------------------------
+  // Defaults are the baked constants in lib/map/model-config.ts; both layers
+  // render them every time (the dev tuner is DISABLED). To re-align a model or
+  // tune a future GLB, re-mount the dev tuner at the bottom of this component:
+  // pass the model's buildInitial*Transform / a formatConfig that emits its
+  // constant names, keep a transform state fed from handle.transform, and set
+  // the layer's `initial:` to loadTunedModelTransform(<model>) ?? the builder.
+  // Adjust live, click "Copy config", paste into model-config.ts, then remove
+  // the tuner again (it must not ship).
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
+    show3DModelRef.current = show3DModel;
 
     // Hide/show the competing basemap building layers in sync with the model.
     // Do this regardless of the async GLB load so the basemap isn't cluttered
@@ -486,103 +536,117 @@ export function MapView({
         }
       }
     };
-    const syncBuildingLayerVisibility = () => setBuildingLayersVisibility(!show3DModel);
+    const syncBuildingLayerVisibility = () => setBuildingLayersVisibility(!show3DModelRef.current);
 
     setBuildingLayersVisibility(!show3DModel);
     map.on("styledata", syncBuildingLayerVisibility);
 
+    // Create both layers if they don't exist yet (first toggle, or a remount
+    // after navigation — the parsed-instance cache makes that instant).
+    // Guarded by a booting flag so rapid toggles never double-create.
+    const ensure3DLayers = async () => {
+      if (modelsBootingRef.current) return;
+      modelsBootingRef.current = true;
+      try {
+        const [{ createModelLayer }, { prepareClockTower }] = await Promise.all([
+          import("@/lib/map/three-model-layer"),
+          import("@/lib/map/clock-tower"),
+        ]);
+        const currentMap = mapRef.current;
+        if (!currentMap) return;
+
+        // Helper so both models insert at the same spot: just below the POI/label
+        // symbols so POIs, road names, place labels etc. render ON TOP. Anchor =
+        // the last layer of the hidden building group (building-metro, index ~92
+        // in the Barikoi style); everything after it stays above.
+        const addBelowLabels = (layer: maplibregl.CustomLayerInterface) => {
+          if (currentMap.getLayer("building-metro")) {
+            currentMap.addLayer(layer, "building-metro");
+          } else {
+            // Fallback if a future style omits that layer — insert above everything.
+            currentMap.addLayer(layer);
+          }
+        };
+
+        // Idempotent guards for StrictMode's dev double-invoke and rapid toggles.
+        if (!modelHandlesRef.current.masjid && !currentMap.getLayer(MODEL_LAYER_ID)) {
+          const handle = createModelLayer({
+            id: MODEL_LAYER_ID,
+            url: MODEL_URL,
+            cacheKey: MODEL_LAYER_ID,
+            // Baked config only — the Masjid is already aligned.
+            initial: buildInitialModelTransform(),
+            onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
+            onLoadOK: () => {
+              modelLoadOutcomeRef.current = "ready";
+              setModelLoadState("ready");
+              setModelLoadProgress(1);
+            },
+            onLoadError: (err) => {
+              console.error("3D model failed to load:", err);
+              modelLoadOutcomeRef.current = "error";
+              setModelLoadState("error");
+            },
+          });
+          addBelowLabels(handle.layer);
+          modelHandlesRef.current.masjid = handle;
+        }
+
+        // Clock tower beside the mosque — baked config only (aligned with the
+        // dev tuner; final values live in model-config.ts).
+        if (!modelHandlesRef.current.tower && !currentMap.getLayer(CLOCK_TOWER_LAYER_ID)) {
+          const towerHandle = createModelLayer({
+            id: CLOCK_TOWER_LAYER_ID,
+            url: CLOCK_TOWER_URL,
+            cacheKey: CLOCK_TOWER_LAYER_ID,
+            initial: buildInitialClockTowerTransform(),
+            // The tower's flat Lambert materials need the brighter ambient the
+            // standalone prototype was tuned with.
+            lighting: { ambient: 2.0, directional: 0.55 },
+            onModelReady: prepareClockTower,
+            // The tower is a bonus beside the mosque — log failures instead of
+            // hijacking the masjid-driven progress overlay.
+            onLoadError: (err) => console.error("Clock tower model failed to load:", err),
+          });
+          addBelowLabels(towerHandle.layer);
+          modelHandlesRef.current.tower = towerHandle;
+        }
+      } finally {
+        modelsBootingRef.current = false;
+      }
+    };
+
     if (!show3DModel) {
-      // OFF: remove the layer (maplibre calls its onRemove -> dispose) and
-      // ease the camera back to flat.
-      if (map.getLayer(MODEL_LAYER_ID)) map.removeLayer(MODEL_LAYER_ID);
+      // OFF: hide both models (they stay cached for instant re-activation) and
+      // ease the camera back to flat. The layers are NOT removed.
+      modelHandlesRef.current.masjid?.setActive(false);
+      modelHandlesRef.current.tower?.setActive(false);
       setModelLoadState("idle");
       setModelLoadProgress(0);
       programmaticEaseTo({ pitch: 0, duration: 1000 });
+      return () => {
+        map.off("styledata", syncBuildingLayerVisibility);
+      };
     }
 
-    // ON: dynamic-import the factory, add the custom layer, fly to the Kaaba.
-    let cancelled = false;
-    if (show3DModel) {
-      setModelLoadState("loading");
-      setModelLoadProgress(0);
+    // ON: create if needed (instant when cached), then reveal. Already loaded
+    // (or failed) this session → apply that outcome directly: the layers are
+    // NOT re-added on toggle, so no onLoadOK/onLoadError will fire again to
+    // clear a "loading" state — without this the overlay would sit at 0%
+    // forever while the model happily renders.
+    const outcome = modelLoadOutcomeRef.current;
+    setModelLoadState(outcome ?? "loading");
+    setModelLoadProgress(outcome === "ready" ? 1 : 0);
 
-      (async () => {
-        const { createModelLayer } = await import("@/lib/map/three-model-layer");
-        if (cancelled || !mapRef.current) return;
-        // Idempotent guard for StrictMode's dev double-invoke and rapid toggles.
-        if (mapRef.current.getLayer(MODEL_LAYER_ID)) return;
-
-        const handle = createModelLayer({
-          id: MODEL_LAYER_ID,
-          url: MODEL_URL,
-          // Baked config only — see the "HOW TO WORK ON A FUTURE MODEL" note above.
-          initial: buildInitialModelTransform(),
-          onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
-          onLoadOK: () => {
-            setModelLoadState("ready");
-            setModelLoadProgress(1);
-          },
-          onLoadError: (err) => {
-            console.error("3D model failed to load:", err);
-            setModelLoadState("error");
-          },
-        });
-        // Insert the 3D model just below the POI/label symbols so POIs, road
-        // names, place labels etc. render ON TOP of the model. Anchor = the last
-        // layer of the hidden building group (building-metro, index ~92 in the
-        // Barikoi style); everything after it (housenumbers, POI icons, labels)
-        // stays above. The model does NOT cover the other POIs.
-        if (mapRef.current.getLayer("building-metro")) {
-          mapRef.current.addLayer(handle.layer, "building-metro");
-        } else {
-          // Fallback if a future style omits that layer — insert above everything.
-          mapRef.current.addLayer(handle.layer);
-        }
-        programmaticFlyTo({
-          center: MODEL_ORIGIN,
-          zoom: 16.5,
-          pitch: 60,
-          duration: 1500,
-        });
-      })();
-    }
-
-    return () => {
-      map.off("styledata", syncBuildingLayerVisibility);
-      cancelled = true;
-    };
-
-    (async () => {
-      const { createModelLayer } = await import("@/lib/map/three-model-layer");
-      if (cancelled || !mapRef.current) return;
-      // Idempotent guard for StrictMode's dev double-invoke and rapid toggles.
-      if (mapRef.current.getLayer(MODEL_LAYER_ID)) return;
-
-      const handle = createModelLayer({
-        id: MODEL_LAYER_ID,
-        url: MODEL_URL,
-        // Baked config only — see the "HOW TO WORK ON A FUTURE MODEL" note above.
-        initial: buildInitialModelTransform(),
-        onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
-        onLoadOK: () => {
-          setModelLoadState("ready");
-          setModelLoadProgress(1);
-        },
-        onLoadError: (err) => {
-          console.error("3D model failed to load:", err);
-          setModelLoadState("error");
-        },
-      });
-      // Insert the 3D model just below the POI/label symbols so POIs, road
-      // names, place labels etc. render ON TOP of the model. Anchor = the last
-      // layer of the hidden building group (building-metro, index ~92 in the
-      // Barikoi style); everything after it (housenumbers, POI icons, labels)
-      // stays above. The model does NOT cover the other POIs.
-      if (mapRef.current.getLayer("building-metro")) {
-        mapRef.current.addLayer(handle.layer, "building-metro");
-      } else {
-        // Fallback if a future style omits that layer — insert above everything.
-        mapRef.current.addLayer(handle.layer);
+    void ensure3DLayers().then(() => {
+      modelHandlesRef.current.masjid?.setActive(true);
+      modelHandlesRef.current.tower?.setActive(true);
+      // If the user toggled OFF while the first load was still booting, respect
+      // the latest state instead of flashing the models on.
+      if (!show3DModelRef.current) {
+        modelHandlesRef.current.masjid?.setActive(false);
+        modelHandlesRef.current.tower?.setActive(false);
+        return;
       }
       programmaticFlyTo({
         center: MODEL_ORIGIN,
@@ -590,12 +654,28 @@ export function MapView({
         pitch: 60,
         duration: 1500,
       });
-    })();
+    });
 
     return () => {
-      cancelled = true;
+      map.off("styledata", syncBuildingLayerVisibility);
     };
   }, [mapLoaded, show3DModel, programmaticFlyTo, programmaticEaseTo]);
+
+  // ----- ৩ডি মডেল ব্যাকগ্রাউন্ড প্রি-ফেচ -----
+  // ম্যাপ স্থির হওয়ার পর idle-এ শুধু সস্তা মডেলগুলো নামানো হয় (PREFETCHABLE_
+  // MODEL_URLS — ~63MB মসজিদ GLB এখনো অনেক ভারী, তাই নয়), সেটাও সংযোগ
+  // অনুমতি দিলে (Data Saver / 2G-3G বাদ)। ফলে "3D" চাপার আগেই ক্লক টাওয়ার
+  // প্রস্তুত থাকে; মসজিদটি বাটন স্পর্শের সাথে-সাথে (intent preload, page.tsx)
+  // নামতে শুরু করে।
+  useEffect(() => {
+    if (!mapLoaded) return;
+    whenIdle(() => {
+      pruneDeprecatedModelCaches();
+      for (const url of PREFETCHABLE_MODEL_URLS) {
+        void prefetchModel(url);
+      }
+    });
+  }, [mapLoaded]);
 
   // Add/update gate markers
   useEffect(() => {
@@ -1188,58 +1268,68 @@ export function MapView({
             className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
           />
         )}
-        {show3DModel && (modelLoadState === "loading" || modelLoadState === "error") && (
-          <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[40] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface/90 backdrop-blur-xl border border-border/50 shadow-xl">
-            {modelLoadState === "loading" && (
-              <>
-                <svg
-                  className="w-4 h-4 animate-spin text-primary shrink-0"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  />
-                  <path
-                    className="opacity-90"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                  />
-                </svg>
+        {show3DModel &&
+          ((modelLoadState === "loading" && overlayDelayElapsed) || modelLoadState === "error") && (
+            <div className="absolute top-16 left-1/2 -translate-x-1/2 z-[40] flex items-center gap-3 px-4 py-2.5 rounded-xl bg-surface/90 backdrop-blur-xl border border-border/50 shadow-xl">
+              {modelLoadState === "loading" && (
+                <>
+                  <svg
+                    className="w-4 h-4 animate-spin text-primary shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    aria-hidden="true"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    />
+                    <path
+                      className="opacity-90"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    />
+                  </svg>
+                  <span className="text-sm text-foreground whitespace-nowrap">
+                    {/* ডাউনলোড ১০০%-এর পরেও ৬৩MB Draco পার্সে কয়েক সেকেন্ড লাগে —
+                      তখন "প্রস্তুত হচ্ছে" দেখানো হয়, "লোড হচ্ছে ১০০%" ঝুলে থাকে না। */}
+                    {modelLoadProgress >= 1
+                      ? "৩ডি মডেল প্রস্তুত হচ্ছে…"
+                      : `৩ডি মডেল লোড হচ্ছে ${Math.round(modelLoadProgress * 100)}%`}
+                  </span>
+                  <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
+                    <div
+                      className="h-full bg-primary transition-[width] duration-200 ease-out"
+                      style={{
+                        width: `${Math.round(modelLoadProgress * 100)}%`,
+                      }}
+                    />
+                  </div>
+                </>
+              )}
+              {modelLoadState === "error" && (
                 <span className="text-sm text-foreground whitespace-nowrap">
-                  ৩ডি মডেল লোড হচ্ছে {Math.round(modelLoadProgress * 100)}%
+                  মডেল লোডে সমস্যা — আবার চেষ্টা করুন
                 </span>
-                <div className="w-20 h-1.5 rounded-full bg-muted overflow-hidden">
-                  <div
-                    className="h-full bg-primary transition-[width] duration-200 ease-out"
-                    style={{
-                      width: `${Math.round(modelLoadProgress * 100)}%`,
-                    }}
-                  />
-                </div>
-              </>
-            )}
-            {modelLoadState === "error" && (
-              <span className="text-sm text-foreground whitespace-nowrap">
-                মডেল লোডে সমস্যা — আবার চেষ্টা করুন
-              </span>
-            )}
-          </div>
-        )}
-        {/* DEV-ONLY live tuner for aligning future 3D models. Intentionally
-            disabled — the 3D layer renders the baked defaults in model-config.ts
-            and BASEMAP_3D_HIDDEN_LAYERS hides the basemap buildings. To re-align
-            a new model, restore the `ModelTuner` import, keep the modelTransform
-            state + initial from loadTunedModelTransform(), and un-comment:
-        {show3DModel && modelTransform && process.env.NODE_ENV !== "production" && (
+              )}
+            </div>
+          )}
+        {/* DEV-ONLY live tuner for aligning 3D models. Intentionally disabled —
+            both layers render the baked defaults in model-config.ts and
+            BASEMAP_3D_HIDDEN_LAYERS hides the basemap buildings. To re-align,
+            restore the ModelTuner import + a transform state fed from the
+            layer's handle.transform, and un-comment (clock tower shown as the
+            example; pass the matching buildInitial/formatConfig per model):
+        {show3DModel && clockTowerTransform && process.env.NODE_ENV !== "production" && (
           <ModelTuner
-            transform={modelTransform}
+            title="Clock Tower Tuner"
+            transform={clockTowerTransform}
+            buildInitial={buildInitialClockTowerTransform}
+            formatConfig={formatClockTowerConfig}
+            onChange={(t) => saveTunedModelTransform("clock-tower", t)}
             onRepaint={() => mapRef.current?.triggerRepaint()}
           />
         )} */}

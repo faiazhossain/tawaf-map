@@ -1,12 +1,26 @@
-// Custom MapLibre layer that renders a GLB 3D model (e.g. Masjid Al-Haram) at a
-// fixed lng/lat, sharing MapLibre's WebGL context with three.js.
+// Custom MapLibre layer that renders a GLB 3D model (Masjid Al-Haram, the
+// Makkah clock tower) at a fixed lng/lat, sharing MapLibre's WebGL context
+// with three.js.
 //
 // Mirrors the structure of maplibre-gl's official "Add a 3D model using three.js"
-// example, adapted for two things: (1) we're on maplibre-gl 4.7.1, whose
-// `render(gl, matrix)` signature passes the projection matrix directly (the v4
-// API, not v6's `args.defaultProjectionData.mainMatrix`); (2) our GLB is
-// non-georeferenced — its origin is the bbox CENTER, not the base — so we add a
-// recenter + base offset that the example's georeferenced model does not need.
+// example, adapted for: (1) maplibre-gl 4.7.1's `render(gl, matrix)` signature
+// (the v4 API, not v6's `args.defaultProjectionData.mainMatrix`); (2) our GLBs
+// are non-georeferenced — origin is the bbox CENTER, not the base — so we add a
+// recenter + base offset that the example's georeferenced model does not need;
+// (3) production-grade model lifecycle, mirroring how map services treat
+// landmark models:
+//
+//   - PARSED-INSTANCE CACHE: with a `cacheKey`, the downloaded GLB is parsed
+//     and prepared ONCE per page load. Removing the layer (or the whole map)
+//     only detaches it; re-adding re-attaches the cached instance instantly —
+//     no network, no parse. Bytes additionally live in Cache Storage via
+//     lib/map/model-manager.ts, so the NEXT session skips the download too.
+//   - TOGGLE = VISIBILITY: `handle.setActive(false)` hides the model (stops
+//     its runtime timers, draws nothing) without freeing GPU resources.
+//   - ON-DEMAND REPAINTS: render() no longer requests the next frame. Map
+//     interactions repaint naturally; animations (the tower's clock hands)
+//     request repaints from their tick via the onModelReady repaint hook. A
+//     static scene costs zero idle frames.
 //
 // The transform (origin, rotation, scale, offsets) lives in a MUTABLE object
 // returned alongside the layer. Mutate its fields and call map.triggerRepaint()
@@ -20,8 +34,10 @@ import { MercatorCoordinate } from "maplibre-gl";
 import type { Map as MapLibreMap, CustomLayerInterface } from "maplibre-gl";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
+import type { GLTF } from "three/examples/jsm/loaders/GLTFLoader.js";
 import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { fetchModelBytes } from "./model-manager";
 
 /** Live-tunable transform. Mutate fields, then call map.triggerRepaint(). */
 export interface ModelTransform {
@@ -38,24 +54,85 @@ export interface ModelTransform {
   center: [number, number, number];
 }
 
+/** Startable/stopable runtime attached to a model by onModelReady. */
+export interface ModelRuntime {
+  /** Called when the layer becomes visible (also on cached re-attach). */
+  start: () => void;
+  /** Called when the layer is hidden or removed while cached. */
+  stop: () => void;
+  /** Called only when the instance is really discarded (uncached path). */
+  dispose: () => void;
+}
+
+/** A parsed + prepared model, kept alive for instant re-attachment. */
+interface ModelInstance {
+  root: THREE.Object3D;
+  center: [number, number, number];
+  baseCorners: THREE.Vector3[] | null;
+  runtime: ModelRuntime | null;
+}
+
+// cacheKey -> parsed instance. Module-level so it survives layer/map teardown
+// (React StrictMode remounts, page navigation) — only a full page reload clears
+// it. Two hero models is a bounded, intentional GPU/RAM budget.
+const instanceCache = new Map<string, ModelInstance>();
+
 export interface ModelLayerHandle {
   layer: CustomLayerInterface;
   /** Mutate fields then call map.triggerRepaint() to see the change. */
   transform: ModelTransform;
+  /**
+   * Show/hide without unloading. Hiding keeps the parsed model + GPU resources
+   * for instant re-activation and stops runtime timers (animations) while
+   * hidden. This is the production toggle semantic: the 3D button flips
+   * visibility; it does not pay a reload cost each way.
+   */
+  setActive: (active: boolean) => void;
 }
 
 export interface CreateModelLayerOptions {
   id: string;
   url: string;
   initial: ModelTransform;
-  /** Fired before the GLB fetch begins. */
+  /**
+   * Enable the parsed-instance cache under this key (use the layer id).
+   * Without it, the old behavior applies: full dispose on layer removal.
+   */
+  cacheKey?: string;
+  /** Fired before the GLB fetch begins (not fired on cache restore). */
   onLoadStart?: () => void;
   /** Fired with loaded/total bytes (drives the progress bar for large GLBs). */
   onLoadProgress?: (loaded: number, total: number) => void;
-  /** Fired when the model is parsed and added to the scene. */
+  /** Fired when the model is parsed and added to the scene (or restored). */
   onLoadOK?: () => void;
   /** Fired if the GLB fails to load or parse. */
   onLoadError?: (err: unknown) => void;
+  /**
+   * Per-model prep right after the GLB is first parsed (swap materials,
+   * attach runtime animation, etc). Runs ONCE per cacheKey — on cached
+   * re-attach it is not called again. `hooks.repaint` requests a map repaint
+   * (for animation ticks); return a ModelRuntime so timers start/stop with
+   * visibility.
+   */
+  onModelReady?: (root: THREE.Object3D, hooks: { repaint: () => void }) => ModelRuntime | void;
+  /**
+   * Light intensities for this layer's own scene. Defaults match the original
+   * Masjid tuning; models prepped to flat materials (e.g. the clock tower's
+   * Lambert swap) may want brighter ambient.
+   */
+  lighting?: { ambient: number; directional: number };
+}
+
+/** Promise wrapper around GLTFLoader.parse for in-memory GLB bytes. */
+function parseGLB(loader: GLTFLoader, bytes: ArrayBuffer): Promise<GLTF> {
+  return new Promise((resolve, reject) => {
+    loader.parse(
+      bytes,
+      "",
+      (gltf) => resolve(gltf),
+      (err) => reject(err)
+    );
+  });
 }
 
 /**
@@ -68,16 +145,23 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
   // The mutable transform object — render() reads from this every frame.
   const transform: ModelTransform = { ...opts.initial };
 
+  // Visibility flag behind handle.setActive — render() draws nothing (and
+  // requests no repaints) while inactive.
+  let active = true;
+
   // Populated in onAdd; cleared in onRemove.
   let map!: MapLibreMap;
   let renderer: THREE.WebGLRenderer;
   let scene: THREE.Scene;
   let camera: THREE.Camera;
-  let modelRoot: THREE.Group | null = null;
+  let modelRoot: THREE.Object3D | null = null;
   // Bounding-box corners (local space) used to lift the model's base onto the
   // ground each frame so it never sinks into the terrain/map.
   let baseCorners: THREE.Vector3[] | null = null;
   let envRenderTarget: THREE.WebGLRenderTarget | null = null;
+  // Runtime (clock hands etc) of the attached instance; start/stop with
+  // visibility, dispose only on the uncached discard path.
+  let currentRuntime: ModelRuntime | null = null;
   // Guards a GLB that finishes downloading after the layer was removed.
   let disposed = false;
 
@@ -112,8 +196,9 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
       pmremGenerator.dispose();
 
       // A directional light adds a sun-like highlight on top of the env map.
-      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
-      const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+      const { ambient, directional } = opts.lighting ?? { ambient: 0.4, directional: 0.8 };
+      scene.add(new THREE.AmbientLight(0xffffff, ambient));
+      const directionalLight = new THREE.DirectionalLight(0xffffff, directional);
       // Y is negated below for mercator alignment; mirror the light so shadows
       // read consistently with the model's flipped coordinate space.
       directionalLight.position.set(1, -1, 1).normalize();
@@ -124,30 +209,55 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
       // MapLibre three.js example).
       camera = new THREE.Camera();
 
+      // Attach a parsed instance to this layer's scene. Called both for cache
+      // restores (instant) and fresh loads.
+      const attach = (inst: ModelInstance) => {
+        modelRoot = inst.root;
+        transform.center = [inst.center[0], inst.center[1], inst.center[2]];
+        baseCorners = inst.baseCorners;
+        currentRuntime = inst.runtime;
+        scene.add(modelRoot);
+        if (active) currentRuntime?.start();
+        opts.onLoadOK?.();
+        // One-shot repaint so the model appears immediately.
+        map.triggerRepaint();
+      };
+
+      // Cache restore: the GLB was already parsed + prepared this session.
+      const cached = opts.cacheKey ? instanceCache.get(opts.cacheKey) : undefined;
+      if (cached) {
+        attach(cached);
+        return;
+      }
+
+      // Fresh load: bytes (Cache Storage -> network, deduped with any
+      // prefetch in flight) -> parse -> prep -> measure -> cache -> attach.
       opts.onLoadStart?.();
       const loader = new GLTFLoader();
       const dracoLoader = new DRACOLoader();
       dracoLoader.setDecoderPath("/draco/");
       loader.setDRACOLoader(dracoLoader);
-      loader.load(
-        opts.url,
-        (gltf) => {
-          // Layer may have been removed while the (large) download was in flight.
-          if (disposed) {
-            disposeObject3D(gltf.scene);
-            return;
-          }
-          modelRoot = gltf.scene;
-          scene.add(modelRoot);
+
+      fetchModelBytes(opts.url, (loaded, total) => opts.onLoadProgress?.(loaded, total))
+        .then((bytes) => parseGLB(loader, bytes))
+        .then((gltf) => {
+          const root = gltf.scene;
+          const runtime =
+            opts.onModelReady?.(root, { repaint: () => map.triggerRepaint() }) ?? null;
+
           // Capture the model's local bounding box so render() can lift its
           // lowest point onto the ground (keeps it from sinking into the
-          // terrain/map as you zoom or change rotation).
-          const box = new THREE.Box3().setFromObject(modelRoot);
+          // terrain/map as you zoom or change rotation). Computed AFTER
+          // onModelReady so the baked center in model-config.ts stays
+          // comparable to the raw GLB's own bbox.
+          const box = new THREE.Box3().setFromObject(root);
+          let center: [number, number, number] = [...transform.center];
+          let corners: THREE.Vector3[] | null = null;
           if (!box.isEmpty()) {
+            const c = box.getCenter(new THREE.Vector3());
+            center = [c.x, c.y, c.z];
             const { min, max } = box;
-            const center = box.getCenter(new THREE.Vector3());
-            transform.center = [center.x, center.y, center.z];
-            baseCorners = [
+            corners = [
               [min.x, min.y, min.z],
               [min.x, min.y, max.z],
               [min.x, max.y, min.z],
@@ -156,26 +266,31 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
               [max.x, min.y, max.z],
               [max.x, max.y, min.z],
               [max.x, max.y, max.z],
-            ].map((c) => new THREE.Vector3(c[0], c[1], c[2]));
+            ].map((p) => new THREE.Vector3(p[0], p[1], p[2]));
           }
-          opts.onLoadOK?.();
-          // One-shot repaint so the model appears immediately on load; render()
-          // also calls triggerRepaint() each frame to keep the layer in sync.
-          map.triggerRepaint();
-        },
-        (event) => {
-          if (event.lengthComputable) {
-            opts.onLoadProgress?.(event.loaded, event.total);
+
+          const inst: ModelInstance = { root, center, baseCorners: corners, runtime };
+          if (opts.cacheKey) instanceCache.set(opts.cacheKey, inst);
+
+          // Layer may have been removed while the (large) download was in
+          // flight — keep the parsed instance cached for the next toggle, just
+          // don't attach or run its timers.
+          if (disposed) {
+            inst.runtime?.stop();
+            return;
           }
-        },
-        (err) => {
+          attach(inst);
+        })
+        .catch((err) => {
           opts.onLoadError?.(err);
-        }
-      );
+        });
     },
 
     render(_gl, matrix) {
       if (!renderer || !scene || !camera) return;
+      // Hidden (3D toggled off): draw nothing and request no repaints. The
+      // toggle is a visibility flip, not a teardown — see handle.setActive.
+      if (!active) return;
 
       // Read the (possibly mutated) transform every frame for live tuning.
       const t = transform;
@@ -209,7 +324,7 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
         .multiply(recenter);
 
       // Base offset: place the model's lowest bbox point ON the chosen ground
-      // altitude. Our GLB is non-georeferenced (origin = bbox CENTER, not the
+      // altitude. Our GLBs are non-georeferenced (origin = bbox CENTER, not the
       // base), so unlike the official example — whose georeferenced model sits
       // base-down at z=0 — we lift the lowest point to `altitudeMeters` each
       // frame so it stays grounded as scale/rotation change during tuning.
@@ -239,20 +354,29 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
       renderer.resetState();
       renderer.render(scene, camera);
 
-      // Keep the custom layer in sync each frame, matching the official
-      // maplibre-gl three.js example. This requests the next repaint so the
-      // model re-renders even when the map is otherwise idle; the trade-off is
-      // continuous repainting while the 3D layer is on.
-      map.triggerRepaint();
+      // NOTE: no self-requested repaint here (unlike the official example).
+      // Repaints are on-demand: camera/style changes come from MapLibre, the
+      // clock hands tick requests repaints via the onModelReady repaint hook,
+      // and load/toggle fire one-shot repaints. A static scene idles at zero
+      // custom frames instead of repainting at 60fps.
     },
 
     onRemove() {
       disposed = true;
-      if (modelRoot) {
+      currentRuntime?.stop();
+      const inst = opts.cacheKey ? instanceCache.get(opts.cacheKey) : undefined;
+      if (inst) {
+        // Cached: detach only. Parsed model + GPU resources stay alive for
+        // instant re-activation; freed on full page reload.
+        scene.remove(inst.root);
+      } else if (modelRoot) {
+        // Uncached path (no cacheKey): free the runtime and GPU resources as
+        // before.
+        currentRuntime?.dispose();
         disposeObject3D(modelRoot);
         scene.remove(modelRoot);
-        modelRoot = null;
       }
+      modelRoot = null;
       envRenderTarget?.dispose();
       envRenderTarget = null;
       renderer.dispose();
@@ -262,7 +386,22 @@ export function createModelLayer(opts: CreateModelLayerOptions): ModelLayerHandl
     },
   };
 
-  return { layer, transform };
+  return {
+    layer,
+    transform,
+    setActive: (next: boolean) => {
+      if (active === next) return;
+      active = next;
+      if (next) {
+        currentRuntime?.start();
+      } else {
+        currentRuntime?.stop();
+      }
+      // One repaint to draw the new state (or clear the model from the frame
+      // when hiding). Guarded: setActive may be called before onAdd.
+      if (map) map.triggerRepaint();
+    },
+  };
 }
 
 /** Walk a subtree and free GPU-backed geometry / materials / textures. */

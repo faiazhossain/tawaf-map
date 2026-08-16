@@ -1,9 +1,10 @@
 import type { NextConfig } from "next";
 
-// Upstream host for large binary assets (e.g. the Masjid Al-Haram GLB).
-// Server-side only — must NOT be prefixed with NEXT_PUBLIC_. The browser
-// fetches the same-origin proxy path (/models/<file>) and Next streams the
-// response through, avoiding CORS issues.
+// Upstream host for large binary assets proxied through /models/<file>
+// (currently only the clock tower GLB — the Masjid GLB is fetched directly
+// from GitHub raw, which is CORS-enabled). Server-side only — must NOT be
+// prefixed with NEXT_PUBLIC_. Next streams the response through without
+// buffering it in memory.
 const MODEL_UPSTREAM_URL =
   process.env.MODEL_UPSTREAM_URL ??
   "https://raw.githubusercontent.com/golamrabbii/3d-models/refs/heads/main";
@@ -14,9 +15,9 @@ const nextConfig: NextConfig = {
   output: "standalone",
 
   // Proxy large model assets through the Next origin so the client can fetch
-  // them same-origin (the LAN asset server sends no CORS headers). `rewrites`
-  // streams the response without buffering, so a 231MB GLB is not held in
-  // memory. For production, point MODEL_UPSTREAM_URL at a CORS-enabled CDN.
+  // them same-origin. `rewrites` streams the response without buffering, so
+  // large GLBs are not held in memory. For production, point
+  // MODEL_UPSTREAM_URL at a CORS-enabled CDN.
   async rewrites() {
     return [
       {

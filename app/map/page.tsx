@@ -21,6 +21,8 @@ import {
   useUmrahGuideStore,
 } from "@/lib/store";
 import { HARAM_GATES } from "@/lib/data/gates";
+import { INTENT_PRELOAD_MODEL_URLS } from "@/lib/map/model-config";
+import { fetchModelBytes } from "@/lib/map/model-manager";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
@@ -104,6 +106,15 @@ export default function MapPage() {
       setShowUmrahGuide((prev) => !prev);
     }
   };
+
+  // "3D" বাটনে আঙুল/মাউস/ফোকাস পড়ামাত্রই মডেল ডাউনলোড শুরু (intent preload)।
+  // ক্লিকের ১-২ সেকেন্ড আগের এই হেড-স্টার্টই 3D চালু করার অপেক্ষা প্রায় মুছে
+  // দেয়; ক্যাশে থাকলে কিছুই নামে না। ব্যর্থতা নীরব — ক্লিকে আবার চেষ্টা হবে।
+  const handle3DIntent = useCallback(() => {
+    for (const url of INTENT_PRELOAD_MODEL_URLS) {
+      void fetchModelBytes(url).catch(() => {});
+    }
+  }, []);
 
   // মিকাত সারসংক্ষেপ মানচিত্র খোলা/বন্ধ (স্টোর মোড সিঙ্ক্রোনাইজ; ধাপ-তালিকার সাথে পরস্পরবিরোধী)
   const handleOpenMiqatOverview = () => {
@@ -343,6 +354,9 @@ export default function MapPage() {
                   variant={show3DModel ? "default" : "outline"}
                   size={show3DModel ? "sm" : "icon"}
                   onClick={() => setShow3DModel((prev) => !prev)}
+                  onPointerEnter={handle3DIntent}
+                  onTouchStart={handle3DIntent}
+                  onFocus={handle3DIntent}
                   className={
                     show3DModel
                       ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"

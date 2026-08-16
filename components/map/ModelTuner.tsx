@@ -1,16 +1,16 @@
 "use client";
 
-// DEV-ONLY live tuning widget for the 3D Masjid model. Mutates the layer's
-// shared transform object directly and triggers a map repaint on each change,
-// so the model updates instantly without re-loading the 231MB GLB. Once the
-// alignment looks right, click "Copy config" and paste the values into
-// lib/map/model-config.ts.
+// DEV-ONLY live tuning widget for 3D models. Mutates the layer's shared
+// transform object directly and triggers a map repaint on each change, so the
+// model updates instantly without re-loading its GLB. Parameterized per model
+// (buildInitial / formatConfig / title), so one widget tunes any GLB.
 //
-// DISABLED — kept for aligning FUTURE models. The 3D layer currently renders the
-// baked defaults in lib/map/model-config.ts; this widget is not imported by
-// MapView.tsx. To use it on a new model, restore the import + render block and
-// feed it the `handle.transform` from createModelLayer (see MapView.tsx's
-// "HOW TO WORK ON A FUTURE MODEL" note).
+// DISABLED — kept for aligning FUTURE models. Both 3D layers (Masjid + clock
+// tower) render the baked defaults in lib/map/model-config.ts; the clock tower
+// was aligned with this widget and its final values are baked in. To use it on
+// the next model, mount it in MapView.tsx (see the commented render block at
+// the bottom of that component) and feed it the handle.transform from
+// createModelLayer.
 
 import { useState } from "react";
 import type { ModelTransform } from "@/lib/map/three-model-layer";
@@ -21,6 +21,14 @@ interface ModelTunerProps {
   transform: ModelTransform;
   /** Call after mutating to trigger a map repaint. */
   onRepaint: () => void;
+  /** Notified with the full transform after each change/reset (persistence). */
+  onChange?: (transform: ModelTransform) => void;
+  /** Panel heading. */
+  title?: string;
+  /** "Reset" target — the model's baked defaults from model-config.ts. */
+  buildInitial?: () => ModelTransform;
+  /** "Copy config" output — emit the model's own constant names. */
+  formatConfig?: (transform: ModelTransform) => string;
   className?: string;
 }
 
@@ -61,7 +69,32 @@ function Slider({ label, value, min, max, step, display, onChange }: SliderProps
   );
 }
 
-export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerProps) {
+/** Default "Copy config" output — the Masjid constants (kept for reference). */
+function formatMasjidConfig(v: ModelTransform): string {
+  return [
+    `export const MODEL_ORIGIN: [number, number] = [${v.originLng.toFixed(7)}, ${v.originLat.toFixed(7)}];`,
+    "",
+    "export const MODEL_CONFIG = {",
+    `  altitudeMeters: ${v.altitudeMeters},`,
+    `  rotateX: ${v.rotateX.toFixed(4)},`,
+    `  rotateY: ${v.rotateY.toFixed(4)},`,
+    `  rotateZ: ${v.rotateZ.toFixed(4)},`,
+    `  scaleMultiplier: ${v.scaleMultiplier.toFixed(4)},`,
+    `  offsetEastMeters: ${v.offsetEastMeters},`,
+    `  offsetNorthMeters: ${v.offsetNorthMeters},`,
+    "} as const;",
+  ].join("\n");
+}
+
+export function ModelTuner({
+  transform,
+  onRepaint,
+  onChange,
+  title = "3D Tuner",
+  buildInitial = buildInitialModelTransform,
+  formatConfig = formatMasjidConfig,
+  className = "",
+}: ModelTunerProps) {
   // Local mirror drives the controlled inputs; the live transform drives the map.
   const [v, setV] = useState<ModelTransform>({ ...transform });
   const [copied, setCopied] = useState(false);
@@ -70,29 +103,19 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
     setV((prev) => ({ ...prev, [key]: value }) as ModelTransform);
     transform[key] = value;
     onRepaint();
+    onChange?.({ ...transform });
   }
 
   function handleReset() {
-    const fresh = buildInitialModelTransform();
+    const fresh = buildInitial();
     Object.assign(transform, fresh);
     setV({ ...transform });
     onRepaint();
+    onChange?.({ ...transform });
   }
 
   async function handleCopy() {
-    const text = [
-      `export const MODEL_ORIGIN: [number, number] = [${v.originLng.toFixed(7)}, ${v.originLat.toFixed(7)}];`,
-      "",
-      "export const MODEL_CONFIG = {",
-      `  altitudeMeters: ${v.altitudeMeters},`,
-      `  rotateX: ${v.rotateX.toFixed(4)},`,
-      `  rotateY: ${v.rotateY.toFixed(4)},`,
-      `  rotateZ: ${v.rotateZ.toFixed(4)},`,
-      `  scaleMultiplier: ${v.scaleMultiplier.toFixed(4)},`,
-      `  offsetEastMeters: ${v.offsetEastMeters},`,
-      `  offsetNorthMeters: ${v.offsetNorthMeters},`,
-      "} as const;",
-    ].join("\n");
+    const text = formatConfig(v);
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -108,7 +131,7 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
     >
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          3D Tuner
+          {title}
           <span className="ml-1.5 rounded bg-amber-500/20 text-amber-600 px-1 py-0.5 text-[10px]">
             dev
           </span>
@@ -139,8 +162,8 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
           <Slider
             label="Longitude"
             value={v.originLng}
-            min={39.81}
-            max={39.83}
+            min={39.815}
+            max={39.84}
             step={0.000001}
             display={v.originLng.toFixed(6)}
             onChange={(val) => update("originLng", val)}
@@ -148,8 +171,8 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
           <Slider
             label="Latitude"
             value={v.originLat}
-            min={21.418}
-            max={21.427}
+            min={21.405}
+            max={21.435}
             step={0.000001}
             display={v.originLat.toFixed(6)}
             onChange={(val) => update("originLat", val)}
@@ -166,8 +189,8 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
           <Slider
             label="Offset East (m)"
             value={v.offsetEastMeters}
-            min={-300}
-            max={300}
+            min={-400}
+            max={400}
             step={1}
             display={`${v.offsetEastMeters} m`}
             onChange={(val) => update("offsetEastMeters", val)}
@@ -175,8 +198,8 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
           <Slider
             label="Offset North (m)"
             value={v.offsetNorthMeters}
-            min={-300}
-            max={300}
+            min={-400}
+            max={400}
             step={1}
             display={`${v.offsetNorthMeters} m`}
             onChange={(val) => update("offsetNorthMeters", val)}
@@ -219,7 +242,7 @@ export function ModelTuner({ transform, onRepaint, className = "" }: ModelTunerP
           <Slider
             label="Scale multiplier"
             value={v.scaleMultiplier}
-            min={0.1}
+            min={0.05}
             max={3}
             step={0.001}
             display={`${v.scaleMultiplier.toFixed(3)}x`}
