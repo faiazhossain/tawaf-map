@@ -63,9 +63,9 @@ export const DEFAULT_FACES: ClockFace[] = [
 ];
 
 export const DEFAULT_LOOK: ClockHandsLook = {
-  hour: "#3a3a3a",
-  minute: "#3a3a3a",
-  second: "#3a3a3a",
+  hour: "#000000",
+  minute: "#000000",
+  second: "#000000",
   pin: "#c9a227",
   metal: 0.35,
   rough: 0.45,
