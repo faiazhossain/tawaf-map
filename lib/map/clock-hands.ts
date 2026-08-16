@@ -1,7 +1,7 @@
 // Real-time clock hands for the Makkah Clock Tower GLB, ported from the
 // standalone prototype (clockHands.js at the repo root). Adds a moving
 // hour/minute/second hand set to each of the tower's clock faces and hides the
-// GLB's own static hands. Requires the "Makkah_Clock__Frame&Anbrila" node; if
+// GLB's own static hands. Requires the "Makkah_Clock__Frame&Anbrala" node; if
 // the model is re-exported without it, attachRealtimeClockHands throws and the
 // caller (lib/map/clock-tower.ts) degrades to a static tower.
 
@@ -71,7 +71,10 @@ export const DEFAULT_LOOK: ClockHandsLook = {
   rough: 0.45,
 };
 
-export const FRAME_NAME = "Makkah_Clock__Frame&Anbrila";
+// Byte-identical to the node inside the shipped clock_tower_compress.glb.
+// A mismatch here hides the GLB's own hands and then throws, leaving the
+// faces empty (pinned by tests/unit/clock-hands.test.ts).
+export const FRAME_NAME = "Makkah_Clock__Frame&Anbrala";
 
 const HIDE_NAMES = new Set(["HourHand", "MinuteHand", "SecondHand", "Plane.001"]);
 
