@@ -12,7 +12,7 @@ import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
-import { useGateProximity, useMediaQuery } from "@/lib/hooks";
+import { useGateProximity, useGeolocation, useMediaQuery } from "@/lib/hooks";
 import {
   useGateStore,
   useHotelStore,
@@ -121,6 +121,18 @@ function MenuToggleRow({
 
 export default function MapPage() {
   const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
+  // GPS ওয়াচ পেজ লেভেলে — মোবাইলে UserLocation এখন হ্যামবার্গার মেনুর ভেতরে
+  // শুধু মেনু খোলা থাকলে মাউন্ট হয়; ওয়াচ ওখানে থাকলে মেনু বন্ধ মানেই জিপিএস
+  // বন্ধ (ইউজার ডট/কাছাকাছি প্যানেল/ডেমো-ওয়ার্ল্ড সব চুপচাপ মরে যেত)।
+  const {
+    latitude: userLat,
+    longitude: userLng,
+    accuracy: userAccuracy,
+    error: userError,
+    loading: userLoading,
+    permission: userPermission,
+    requestLocation,
+  } = useGeolocation();
   const { setGate, setGateDistance, clearGate } = useGateStore();
   const { selectedHotel, setSelectedHotel, clearSelectedHotel } = useHotelStore();
   const { activeRoute } = useRouteStore();
@@ -196,7 +208,11 @@ export default function MapPage() {
   // ডেমো মোডে বোতামটি লুকানো।
   const [demoWorldActive, setDemoWorldActive] = useState(false);
   useEffect(() => {
-    setDemoWorldActive(isDemoWorldActive());
+    const active = isDemoWorldActive();
+    setDemoWorldActive(active);
+    // ডেমো মোডে গেট লেয়ার ডিফল্টেই চালু — এরিনায় সরানো ডেটা এক নজরে দেখা যায়,
+    // আর কাছাকাছি গেট প্যানেলের সাথে মানচিত্রও সঙ্গে সঙ্গে মিলে যায়।
+    if (active) setShowGates(true);
   }, []);
 
   // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
@@ -207,8 +223,9 @@ export default function MapPage() {
 
   // মোবাইল হেডার: লোগো বামে, ডানে শুধু ওমরাহ + মোড + হ্যামবার্গার; বাকি সব
   // টুলবার আইটেম হ্যামবার্গার মেনুর ভেতরে। ডেস্কটপে (>=sm) আগের মতো অনুভূমিক
-  // টুলবার। শর্তভিত্তিক রেন্ডার ব্যবহার করা হয়েছে যাতে UserLocation-এর মতো
-  // stateful আইটেম দুইবার মাউন্ট না হয় (ডুপ্লিকেট GPS সাবস্ক্রিপশন এড়াতে)।
+  // টুলবার। প্রতিটি লেআউটে প্রতিটি আইটেম একবারই মাউন্ট হয়; GPS ওয়াচ এজন্যই
+  // কম্পোনেন্টের বাইরে পেজ লেভেলে (উপরে) — মেনুর ভেতরের UserLocation এখন নিছক
+  // ইন্ডিকেটর, তাই মেনু বন্ধ থাকলেও ওয়াচ চালু থাকে।
   // SSR/হাইড্রেশন ম্যাচ রাখতে হুক প্রথম রেন্ডারে false দেয়, তাই সার্ভার ও
   // প্রথম ক্লায়েন্ট রেন্ডার মোবাইল লেআউট দেখায়।
   const isDesktop = useMediaQuery("(min-width: 640px)");
@@ -334,7 +351,17 @@ export default function MapPage() {
   // আইটেম একবারই মাউন্ট হয়। লেয়ার টগলগুলো আলাদা: ডেস্কটপে Button, মোবাইল
   // মেনুতে MenuToggleRow।
   const themeToggle = <ThemeToggle />;
-  const userLocationItem = <UserLocation />;
+  const userLocationItem = (
+    <UserLocation
+      latitude={userLat}
+      longitude={userLng}
+      accuracy={userAccuracy}
+      error={userError}
+      loading={userLoading}
+      permission={userPermission}
+      onRequestLocation={requestLocation}
+    />
+  );
   const umrahButton = (
     <Button
       variant={showUmrahGuide ? "default" : "outline"}
@@ -482,9 +509,10 @@ export default function MapPage() {
 
         {/* মোবাইল হ্যামবার্গার মেনু: মানচিত্রের উপর ওভারলে — মানচিত্রের মাপ
             অপরিবর্তিত থাকে, তাই ক্যানভাস রিসাইজ লাগে না। লেয়ার টগল উল্লম্ব
-            তালিকা হিসেবে, নিচে গেট সার্চ ও লোকেশন। */}
+            তালিকা হিসেবে, নিচে গেট সার্চ ও লোকেশন। z-[60] দরকার — ডেমো/সিম
+            ব্যাজ (z-[45]) মেনুর প্রথম সারিগুলোর ওপর বসে ট্যাপ খেয়ে ফেলত। */}
         {!isDesktop && toolbarMenuOpen && (
-          <div className="absolute inset-x-0 top-full z-20 border-b border-border bg-surface/95 shadow-lg backdrop-blur-md">
+          <div className="absolute inset-x-0 top-full z-[60] border-b border-border bg-surface/95 shadow-lg backdrop-blur-md">
             <div className="mx-auto max-w-screen-2xl max-h-[70vh] overflow-y-auto px-3 py-1.5">
               <div className="divide-y divide-border">
                 <MenuToggleRow

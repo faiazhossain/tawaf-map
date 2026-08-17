@@ -1,25 +1,36 @@
 "use client";
 
-import { useGeolocation } from "@/lib/hooks";
 import { Button } from "@/components/ui/button";
 import { Navigation, NavigationOff } from "lucide-react";
 
-interface UserLocationProps {
-  onRequestLocation?: () => void;
+export interface UserLocationProps {
+  latitude: number | null;
+  longitude: number | null;
+  accuracy: number | null;
+  error: string | null;
+  loading: boolean;
+  permission: "granted" | "denied" | "prompt" | "unknown";
+  onRequestLocation: () => void;
 }
 
-export function UserLocation({ onRequestLocation }: UserLocationProps) {
-  const { latitude, longitude, accuracy, error, loading, permission, requestLocation } =
-    useGeolocation();
-
-  const handleRequestLocation = () => {
-    if (onRequestLocation) {
-      onRequestLocation();
-    } else {
-      requestLocation();
-    }
-  };
-
+/**
+ * লোকেশন স্ট্যাটাস ইন্ডিকেটর — সম্পূর্ণ প্রেজেন্টেশনাল।
+ *
+ * GPS ওয়াচের মালিকানা এই কম্পোনেন্টে নেই (আগে ছিল): মোবাইলে এটি হ্যামবার্গার
+ * মেনুর ভেতরে শুধু মেনু খোলা থাকলে মাউন্ট হয়, ফলে মেনু বন্ধ থাকলে ওয়াচটি
+ * বন্ধ হয়ে যেত — ইউজার ডট, কাছাকাছি গেট প্যানেল, ডেমো-ওয়ার্ল্ড সবই নীরবে
+ * অকেজো হতো। এখন useGeolocation() পেজ লেভেলে একবারই চলে; এই কম্পোনেন্ট
+ * শুধু স্টোরের অবস্থা দেখায় ও রিকোয়েস্ট ফরোয়ার্ড করে।
+ */
+export function UserLocation({
+  latitude,
+  longitude,
+  accuracy,
+  error,
+  loading,
+  permission,
+  onRequestLocation,
+}: UserLocationProps) {
   if (loading) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-surface/90 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg">
@@ -70,7 +81,7 @@ export function UserLocation({ onRequestLocation }: UserLocationProps) {
 
   return (
     <Button
-      onClick={handleRequestLocation}
+      onClick={onRequestLocation}
       variant="outline"
       size="sm"
       className="gap-2 border-border bg-surface/50 hover:bg-muted text-foreground hover:text-foreground"
