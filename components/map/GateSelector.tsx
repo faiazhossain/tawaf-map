@@ -41,6 +41,7 @@ export function GateSelector() {
       <Button
         onClick={() => setIsOpen(!isOpen)}
         variant="outline"
+        aria-label="গেট খুঁজুন"
         className={cn(
           "gap-2 transition-all duration-200",
           "border-border bg-surface/50 hover:bg-muted text-foreground hover:text-foreground",
