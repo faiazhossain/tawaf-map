@@ -4,8 +4,8 @@ import { InfoPopover } from "@/components/umrah/InfoPopover";
 import { MIQAT_INFO } from "@/lib/data/umrah/miqat";
 
 /**
- * "মীকাত কী?" তথ্য বোতাম — "মীকাত" লেখার পাশে বসানো হয়; হোভার/ট্যাপে
- * মীকাতের ধারণা, সহজ সংজ্ঞা, উদাহরণ ও রেফারেন্স দেখায়।
+ * "মীকাত কী?" তথ্য বোতাম — টেক্সট-চিপ আকারে ধাপের বিস্তারিতে নিজ সারিতে বসে;
+ * হোভার/ট্যাপে মীকাতের ধারণা, সহজ সংজ্ঞা, উদাহরণ ও রেফারেন্স দেখায়।
  */
 export function MiqatInfoButton({ className }: { className?: string }) {
   return (

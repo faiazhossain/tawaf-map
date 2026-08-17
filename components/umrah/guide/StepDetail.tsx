@@ -75,11 +75,15 @@ export function StepDetail({ step, counterValue }: { step: UmrahStep; counterVal
 
   return (
     <div className="space-y-3 rounded-2xl border border-border/50 bg-surface/70 p-3.5 text-left">
-      {/* সম্পূর্ণ সারসংক্ষেপ */}
-      <p className="text-[13px] leading-relaxed text-foreground">
-        {step.summary.bn}
-        {step.id === "ihram-miqat" && <MiqatInfoButton className="ml-1" />}
-      </p>
+      {/* সম্পূর্ণ সারসংক্ষেপ — কেবল কাউন্টার ধাপে; হিরো কার্ড তখন প্রতি-চক্কর টিপ
+          দেখায়, তাই ধাপের সারসংক্ষেপ এখানেই দৃশ্যমান। কাউন্টারহীন ধাপে হিরো কার্ডই
+          সারসংক্ষেপ দেখায়, এখানে পুনরাবৃত্তি হয় না। */}
+      {counter ? (
+        <p className="text-[13px] leading-relaxed text-foreground">{step.summary.bn}</p>
+      ) : null}
+
+      {/* মীকাত তথ্য বোতাম (মিকাতে ইহরাম ধাপে) */}
+      {step.id === "ihram-miqat" ? <MiqatInfoButton /> : null}
 
       {/* বিমানে ইহরাম কার্ড (প্রস্তুতি ও মিকাতে ইহরাম ধাপে) */}
       {(step.id === "prep" || step.id === "ihram-miqat") && <FlightIhramCard />}

@@ -40,9 +40,6 @@ export function TawafGuidePanel({
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
-  const nextStepTitle = steps[currentIndex + 1]?.title.bn;
-  const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
-
   const isLast = currentIndex >= steps.length - 1;
 
   // ধাপ বদলালে স্ক্রলযোগ্য অংশের শীর্ষে ফিরে যাও — নতুন ধাপ পড়া শুরু সবার উপর থেকে।
@@ -90,12 +87,7 @@ export function TawafGuidePanel({
             <>
               <StepPagination steps={steps} />
 
-              <InstructionCard
-                step={step}
-                counterValue={counterValue}
-                nextStepTitle={nextStepTitle}
-                nextStepSummary={nextStepSummary}
-              />
+              <InstructionCard step={step} counterValue={counterValue} />
 
               {/* কাউন্টার ধাপের ভেতরে (StepDetail > CircuitControl) থাকে;
                   InstructionCard-এর চিপ ও প্রতি-চক্কর টিপ উপরে দৃশ্যমান। */}

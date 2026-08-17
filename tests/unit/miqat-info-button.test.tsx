@@ -8,7 +8,9 @@ describe("MiqatInfoButton", () => {
   it("তথ্য বোতাম রেন্ডার করে এবং প্রাথমিকভাবে বিস্তারিত লুকায়", () => {
     render(<MiqatInfoButton />);
 
+    // বোতামে দৃশ্যমান লেখা "মীকাত কী?" (শুধু আইকন নয়)
     expect(screen.getByRole("button", { name: "মীকাত কী?" })).toBeTruthy();
+    expect(screen.getByText("মীকাত কী?")).toBeTruthy();
     expect(screen.queryByText(MIQAT_INFO.intro)).toBeNull();
     expect(screen.queryByText(/বুখারি ১৫২৪/)).toBeNull();
   });

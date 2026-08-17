@@ -79,9 +79,6 @@ function SheetBody({
     () => stepIds.map((id) => getStepById(id)).filter((s): s is NonNullable<typeof s> => !!s),
     [stepIds]
   );
-  const nextStepTitle = steps[currentIndex + 1]?.title.bn;
-  const nextStepSummary = steps[currentIndex + 1]?.summary.bn;
-
   if (!step) {
     return (
       <div className="px-4 py-8 text-center text-sm text-muted-foreground">
@@ -110,12 +107,7 @@ function SheetBody({
 
       <StepPagination steps={steps} />
 
-      <InstructionCard
-        step={step}
-        counterValue={counterValue}
-        nextStepTitle={nextStepTitle}
-        nextStepSummary={nextStepSummary}
-      />
+      <InstructionCard step={step} counterValue={counterValue} />
 
       {/* কম্প্যাক্ট (স্ন্যাপ ১) ভিউতে কাউন্টার উপরে থাকে। প্রসারিত ভিউতে কাউন্টার ধাপের
           ভেতরে (StepDetail) চলে যায়, তাই এই অনুলিপি লুকানো হয়। */}

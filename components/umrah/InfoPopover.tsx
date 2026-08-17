@@ -2,16 +2,14 @@
 
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface InfoPopoverProps {
-  /** স্ক্রিন রিডারের জন্য বোতামের নাম — পপওভার কী ব্যাখ্যা করে তা বলে। */
+  /** বোতামের দৃশ্যমান লেখা — পপওভার কী ব্যাখ্যা করে তা বলে। */
   label: string;
   /** পপওভারের ভেতরের বিষয়বস্তু। */
   children: ReactNode;
   className?: string;
-  iconClassName?: string;
 }
 
 const POPOVER_WIDTH = 320;
@@ -20,7 +18,7 @@ const POPOVER_GAP = 8;
 const VIEWPORT_PAD = 12;
 
 /**
- * ছোট "তথ্য" (i) বোতাম যা হোভার/ফোকাস বা ক্লিকে একটি portaled পপওভার দেখায়।
+ * ছোট টেক্সট-চিপ বোতাম যা হোভার/ফোকাস বা ক্লিকে একটি portaled পপওভার দেখায়।
  *
  * পপওভারটি document.body-তে portal করা হয়, ফলে overflow-clip হওয়া কন্টেইনার
  * (স্ক্রল এরিয়া, বটম শীট) থেকেও নির্বিঘ্নে দেখা যায়; অ্যাঙ্কর বোতামের সাপেক্ষে
@@ -33,7 +31,7 @@ const VIEWPORT_PAD = 12;
  * suppressFocusOpen ফ্ল্যাগ mousedown-এ সেট হয়, যাতে ক্লিকের ঠিক আগের focus
  * ইভেন্ট পূর্বরূপ না খুলে ক্লিককে টগল করতে দেয়।
  */
-export function InfoPopover({ label, children, className, iconClassName }: InfoPopoverProps) {
+export function InfoPopover({ label, children, className }: InfoPopoverProps) {
   const [hovered, setHovered] = useState(false);
   const [pinned, setPinned] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -143,7 +141,6 @@ export function InfoPopover({ label, children, className, iconClassName }: InfoP
       <button
         ref={buttonRef}
         type="button"
-        aria-label={label}
         aria-haspopup="dialog"
         aria-expanded={open}
         aria-controls={tipId}
@@ -164,11 +161,11 @@ export function InfoPopover({ label, children, className, iconClassName }: InfoP
           setPinned((prev) => !prev);
         }}
         className={cn(
-          "inline-flex shrink-0 items-center justify-center rounded-full p-0.5 align-middle text-muted-foreground transition-colors hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+          "inline-flex shrink-0 items-center rounded-full border border-primary/30 bg-primary/5 px-2.5 py-1 align-middle text-[11px] font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
           className
         )}
       >
-        <Info className={cn("h-3.5 w-3.5", iconClassName)} aria-hidden="true" />
+        {label}
       </button>
       {mounted && open && coords
         ? createPortal(
