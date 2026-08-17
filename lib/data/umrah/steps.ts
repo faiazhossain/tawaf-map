@@ -19,8 +19,8 @@ export const UMRAH_STEPS: UmrahStep[] = [
     order: 1,
     title: { bn: "ইহরামের প্রস্তুতি", en: "Preparation" },
     summary: {
-      bn: "উমরাহর যাত্রা সহজ করতে বিমানে ওঠার আগেই ইহরামের প্রস্তুতি সম্পন্ন করে নিন। তবে ইহরামে প্রবেশ করবেন আপনার মীকাত অতিক্রম করার সময়—তার আগে নয়, পরে নয়।",
-      en: "Complete your ihram preparations before boarding. But enter ihram as you cross your miqat — not before, not after.",
+      bn: "উমরাহর যাত্রা সহজ করতে বিমানে ওঠার আগেই ইহরামের প্রস্তুতি—গোসল ও ইহরামের কাপড় পরা—সম্পন্ন করে নিন।",
+      en: "Complete the ihram preparations — ghusl and wearing the ihram garments — before boarding.",
     },
     gender: "all",
     whatToDo: {
@@ -79,8 +79,8 @@ export const UMRAH_STEPS: UmrahStep[] = [
     order: 2,
     title: { bn: "মীকাতে ইহরামে প্রবেশ করুন", en: "Ihram at the Miqat" },
     summary: {
-      bn: "আপনার নির্ধারিত মীকাত অতিক্রম করার আগে নিয়ত করে ইহরামে প্রবেশ করুন এবং তালবিয়া পাঠ করুন।",
-      en: "Make the intention and recite the Talbiyah. Assuming ihram at the correct miqat is critical.",
+      bn: "মীকাতের সমান্তরালে পৌঁছানোর সময় ইহরামের নিয়ত করে তালবিয়া শুরু করুন। বিমানের গতি বেশি হওয়ায় মীকাতের সামান্য আগেই ইহরামে প্রবেশ করাও জায়েয, যাতে মীকাত অতিক্রম না হয়ে যায়।",
+      en: "Make the ihram intention and begin the Talbiyah as you reach the point parallel to your miqat. Because the plane travels fast, entering ihram slightly before the miqat is also permissible, so the miqat is not crossed without ihram.",
     },
     gender: "all",
     whatToDo: {
@@ -169,12 +169,12 @@ export const UMRAH_STEPS: UmrahStep[] = [
         "* **ডান পা আগে দিয়ে প্রবেশ করুন** এবং প্রবেশের দোয়া পড়ুন (নিচের 'দোয়া ও স্মরণবাক্য' দেখুন)।\n" +
         "* **তাহিয়্যাতুল মসজিদ:** সাধারণভাবে মসজিদে প্রবেশ করে বসার আগে দুই রাকাআত পড়া সুন্নাহ। তবে উমরাহর তওয়াফের জন্য মসজিদুল হারামে প্রবেশ করলে **তওয়াফই তাহিয়্যাতুল মসজিদ হিসেবে যথেষ্ট** — তাই আলাদাভাবে দুই রাকাআত পড়া আবশ্যক নয়।\n" +
         "* **তালবিয়া পড়তে থাকুন** এবং তওয়াফ শুরু করার প্রস্তুতি নিন।\n" +
-        "* **তওয়াফ শুরু করার সময়** তালবিয়া বন্ধ করে হাজরে আসওয়াদের সমান্তরাল স্থান থেকে তওয়াফ শুরু করুন।",
+        "* **তওয়াফ শুরু করার সময়** তালবিয়া বন্ধ করে দিন (তওয়াফ শুরুর নিয়ম পরের ধাপে)।",
       en:
         "* **Enter with your right foot first** and recite the entry supplication (see 'Duas & adhkar' below).\n" +
         "* **Tahiyyatul Masjid:** it is normally sunnah to pray two rak'ahs before sitting in any mosque. However, when entering Masjid al-Haram for Umrah's Tawaf, **the Tawaf itself suffices as Tahiyyatul Masjid** — so a separate two rak'ahs is not required.\n" +
         "* **Keep reciting the Talbiyah** and prepare to begin Tawaf.\n" +
-        "* **When starting Tawaf**, stop the Talbiyah and begin at the point aligned with the Black Stone (Hajr al-Aswad).",
+        "* **When Tawaf begins**, stop the Talbiyah (how to begin the Tawaf is in the next step).",
     },
     isCompleteWhen: "manual",
     sourceRefs: [
@@ -436,12 +436,8 @@ export const UMRAH_STEPS: UmrahStep[] = [
         "• Once the hair is cut, all ihram prohibitions lift and Umrah is complete.",
     },
     rules: {
-      bn:
-        "পুরুষের জন্য মুণ্ডন (হালক) উত্তম। নারীর জন্য শুধু ছাঁটাই (তাকসির) - এটিই তাদের ওমরাহ " +
-        "সমাপ্তির উপায়। ভুলে গেলে কোনো শাস্তি ছাড়াই এখন চুল কেটে নিন।",
-      en:
-        "For men, shaving (halq) is preferred. For women, only trimming (taqsir) - this completes " +
-        "their Umrah. If forgotten, cut the hair now with no penalty.",
+      bn: "চুল না কাটা পর্যন্ত ইহরাম থেকে মুক্তি নেই। ভুলে গিয়ে থাকলে কোনো শাস্তি (দম) ছাড়াই এখনই চুল কেটে নিন।",
+      en: "There is no exit from ihram until the hair is cut. If you forgot, cut it now — no penalty (dam) is due.",
     },
     commonMistakes: ["forgot-halq-taqsir"],
     isCompleteWhen: "manual",
