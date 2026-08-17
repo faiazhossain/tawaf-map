@@ -1,4 +1,4 @@
-import { test, expect } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 /**
  * ওমরাহ গাইড ফ্লো - e2e স্মোক টেস্ট
@@ -6,6 +6,9 @@ import { test, expect } from "@playwright/test";
  */
 test.describe("Umrah Guide", () => {
   test.beforeEach(async ({ page }) => {
+    // এই ডেস্ক্রাইবের টেস্টগুলো umrah-step-list-desktop (ভাসমান প্যানেল) ধরে
+    // চলে - মোবাইল প্রজেক্টে প্যানেল রেন্ডারই হয় না (শীট দেখায়), তাই স্কিপ।
+    test.skip(test.info().project.name === "Mobile Chrome", "ডেস্কটপ প্যানেল প্রয়োজন");
     // প্রতিটি টেস্টে পরিষ্কার অবস্থা নিশ্চিত করতে সংরক্ষণ মুছুন
     await page.addInitScript(() => {
       window.localStorage.removeItem("umrah-guide-storage");
@@ -103,5 +106,116 @@ test.describe("Umrah Guide", () => {
     await expect(
       panel.getByRole("tab", { name: /মীকাতে ইহরামে প্রবেশ করুন/, selected: true })
     ).toBeVisible();
+  });
+});
+
+/** মোবাইল অনবোর্ডিং: পুরুষ, ঢাকা→জেদ্দা, অ্যাক্সেসিবিলিটি স্কিপ, গাইড শুরু। */
+async function startMobileGuide(page: Page) {
+  await page.goto("/map");
+  await page.getByRole("button", { name: /ওমরাহ/ }).first().click();
+  await page.getByRole("button", { name: "পুরুষ" }).click();
+  await page.getByRole("button", { name: "পরবর্তী" }).click();
+  await page.getByRole("button", { name: /ঢাকা → জেদ্দা/ }).click();
+  await page.getByRole("button", { name: "পরবর্তী" }).click();
+  await page.getByRole("button", { name: "পরবর্তী" }).click();
+  await page.getByRole("button", { name: /গাইড শুরু করুন/ }).click();
+}
+
+/** গাইড শীটটি অন্য ডায়ালগ থেকে আলাদা করে চেনায় - মোবাইল শীট aria-modal="true",
+ *  ডেস্কটপ প্যানেল aria-modal="false" (DOM-এ থাকে কিন্তু লুকানো)। ধাপ-গণনা টেক্সট
+ *  দিয়ে ফিল্টার; \d শুধু ASCII মেলায়, বাংলা সংখ্যার (১-৯) জন্য [০-৯] দরকার। */
+function guideSheetLocator(page: Page) {
+  return page.locator('[role="dialog"][aria-modal="true"]').filter({ hasText: /ধাপ [০-৯] \/ ৯/ });
+}
+
+async function sheetHeight(page: Page): Promise<number> {
+  const box = await guideSheetLocator(page).boundingBox();
+  return box?.height ?? 0;
+}
+
+/**
+ * মোবাইল শীট কোরিওগ্রাফি - বিস্তারিত (০.৯২) থেকে ধাপ এগোলে শীট normal (০.৪২)
+ * স্ন্যাপে নেমে আসে, যাতে ক্যামেরার flyTo ও হিরো নির্দেশ একই সময়ে দৃশ্যমান থাকে।
+ */
+test.describe("Umrah Guide sheet choreography (mobile)", () => {
+  test.use({ viewport: { width: 390, height: 844 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.removeItem("umrah-guide-storage");
+    });
+  });
+
+  test("বিস্তারিত থেকে ধাপ এগোলে শীট normal স্ন্যাপে ফিরে আসে", async ({ page }) => {
+    await startMobileGuide(page);
+    const guideSheet = guideSheetLocator(page);
+    await expect(guideSheet).toBeVisible({ timeout: 8000 });
+
+    // বিস্তারিতে প্রসারণ - উচ্চতা ~০.৯২ × ভিউপোর্ট
+    await page.getByRole("button", { name: "বিস্তারিত" }).click();
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeGreaterThan(0.9 * 844 - 30);
+    // বিস্তারিত ফুটারে এখন সরাসরি পরবর্তী বোতাম
+    const nextBtn = guideSheet.getByRole("button", { name: "পরবর্তী ধাপ" });
+    await expect(nextBtn).toBeVisible();
+
+    // অসম্পন্ন ধাপ - মডাল বাধা দেয়, নিশ্চিত করে এগোনো হয়
+    await nextBtn.click();
+    await page.getByRole("button", { name: "সম্পন্ন করেছি" }).click();
+
+    // কোরিওগ্রাফি: শীট ~০.৪২ × ভিউপোর্টে নেমে আসে (সেটল ≤৪০০ms + মডাল বন্ধ)
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeLessThan(0.42 * 844 + 40);
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeGreaterThan(0.42 * 844 - 40);
+    // কম্প্যাক্ট ভিউতে ফিরেছে
+    await expect(page.getByRole("button", { name: "বিস্তারিত" })).toBeVisible();
+  });
+
+  test("তওয়াফ ধাপে ল্যান্ডমার্ক ইঙ্গিত শীটের ওপরে থাকে", async ({ page }) => {
+    // হাজরে আসওয়াদের ঠিক কাছে অবস্থান - proximity ইঙ্গিত নিশ্চিতভাবে দেখায়
+    await page.context().grantPermissions(["geolocation"]);
+    await page.context().setGeolocation({ latitude: 21.4224, longitude: 39.8266 });
+
+    await startMobileGuide(page);
+    const guideSheet = guideSheetLocator(page);
+    await expect(guideSheet).toBeVisible({ timeout: 8000 });
+
+    // পেজিনেশন থেকে তওয়াফ ধাপে যান - ধাপ বদলের কোরিওগ্রাফি শীটকে normal-এ রাখে
+    await guideSheet.getByRole("tab", { name: /তওয়াফ/ }).click();
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeLessThan(0.42 * 844 + 40);
+
+    // তওয়াফ ইঙ্গিত দৃশ্যমান (RitualRoundHud-ও role=status, তাই টেক্সটে আলাদা করা)
+    // - শীটের ওপরের ধার ছাড়িয়ে যায় না
+    const hint = page.locator('[role="status"]').filter({ hasText: /কালো পাথর/ });
+    await expect(hint).toBeVisible({ timeout: 8000 });
+    const hintBox = await hint.boundingBox();
+    const sheetBox = await guideSheet.boundingBox();
+    expect(hintBox).not.toBeNull();
+    expect(sheetBox).not.toBeNull();
+    if (hintBox && sheetBox) {
+      expect(hintBox.y + hintBox.height).toBeLessThanOrEqual(sheetBox.y + 24);
+    }
+  });
+});
+
+/**
+ * ৬৪০-৭৬৭px ট্যাবলেট ব্যান্ড - এই প্রস্থে শীট থাকে (শীট/প্যানেল বিভাজন md:768),
+ * তাই কোরিওগ্রাফি ও শীট-সচেতন অবস্থান এখানেও প্রযোজ্য হতে হবে।
+ */
+test.describe("Umrah Guide sheet choreography (tablet band)", () => {
+  test.use({ viewport: { width: 700, height: 800 } });
+
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.localStorage.removeItem("umrah-guide-storage");
+    });
+  });
+
+  test("ধাপ এগোলে শীট normal স্ন্যাপে থাকে", async ({ page }) => {
+    await startMobileGuide(page);
+    const guideSheet = guideSheetLocator(page);
+    await expect(guideSheet).toBeVisible({ timeout: 8000 });
+
+    await guideSheet.getByRole("tab", { name: /তওয়াফ/ }).click();
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeGreaterThan(0.42 * 800 - 40);
+    await expect.poll(() => sheetHeight(page), { timeout: 2000 }).toBeLessThan(0.42 * 800 + 40);
   });
 });
