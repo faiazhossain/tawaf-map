@@ -29,6 +29,9 @@ interface TawafGuideSheetProps {
  * মোবাইল গাইডেড শীট - তিন স্ন্যাপ অবস্থা: peek (এক লাইন), normal (পেজিনেশন + হিরো
  * নির্দেশ + কাউন্টার + পরবর্তী), expanded (পেজিনেশন + শুধু বর্তমান ধাপের সম্পূর্ণ বিস্তারিত)।
  * ব্যাকড্রপ ছাড়া, যাতে মানচিত্র সবসময় দৃশ্যমান থাকে। বাংলা-প্রথম, টিল থিম।
+ * ড্র্যাগ-করে ছোট করা যায় (peek পর্যন্ত), কিন্তু ড্র্যাগে কখনো বন্ধ হয় না -
+ * গাইড চালু/বন্ধ করার একমাত্র পথ নেভবারের ওমরাহ টগল (নিচে টেনে ভুলে গাইড
+ * নিষ্ক্রিয় হয়ে যাওয়ায় ব্যবহারকারী হারিয়ে যেত কোথায় শীট গেল)।
  */
 export function TawafGuideSheet({
   open,
@@ -44,6 +47,7 @@ export function TawafGuideSheet({
       snapPoints={[0.12, 0.42, 0.92]}
       defaultSnap={1}
       showBackdrop={false}
+      dismissOnDragDown={false}
     >
       <SheetBody
         onOpenMiqatOverview={onOpenMiqatOverview}

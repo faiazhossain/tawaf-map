@@ -5,14 +5,26 @@ import {
   useCallback,
   useContext,
   useEffect,
+  useLayoutEffect,
+  useMemo,
   useRef,
   useState,
   type ReactNode,
-  type TouchEvent,
 } from "react";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useFocusTrap } from "@/lib/hooks/useFocusTrap";
+import {
+  clampWithRubberBand,
+  createVelocityTracker,
+  dismissBandPx,
+  DRAG_THRESHOLD_PX,
+  MAX_HEIGHT_FRACTION,
+  selectSnapIndex,
+  settleDurationMs,
+  shouldDismissOnRelease,
+  shouldEngageDrag,
+} from "@/lib/utils/sheet-physics";
 
 interface BottomSheetContextValue {
   close: () => void;
@@ -50,9 +62,17 @@ export interface BottomSheetProps {
 
 const SNAP_POINTS_DEFAULT = [0.15, 0.5, 0.92];
 const DEFAULT_SNAP_INDEX = 1;
-const DRAG_THRESHOLD = 10;
-const VELOCITY_THRESHOLD = 0.5;
 const CLOSE_TRANSITION_MS = 300;
+/** iOS-style overshoot easing for the settle tween. */
+const SETTLE_EASING = "cubic-bezier(0.32, 0.72, 0, 1)";
+/** Data attribute marking the drag handle; gestures starting inside it always engage. */
+const DRAG_REGION_ATTR = "data-sheet-drag-region";
+
+type GestureState = "idle" | "pending" | "dragging" | "rejected";
+
+// Ref-counted: two stacked sheets (e.g. the persistent NearbyGatesPanel plus
+// GateInfoPanel on the map page) must hold the body lock until both close.
+let openSheetCount = 0;
 
 function prefersReducedMotion(): boolean {
   if (typeof window === "undefined") return false;
@@ -78,25 +98,25 @@ export function BottomSheet({
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-  const backdropRef = useRef<HTMLDivElement>(null);
 
   // Focus trap + restore: move focus into the sheet on open, constrain Tab,
   // restore to the trigger on close (audit: "No focus trap anywhere").
   useFocusTrap(sheetRef, open && !isClosing);
 
+  // Everything the gesture handlers touch lives in refs: the handlers are
+  // attached natively (non-passive touchmove) and must never re-render.
+  const gestureState = useRef<GestureState>("idle");
+  const touchId = useRef<number | null>(null);
   const startY = useRef(0);
-  const startHeight = useRef(0);
-  const currentY = useRef(0);
-  const lastY = useRef(0);
-  const velocity = useRef(0);
-  const rafId = useRef<number | null>(null);
+  const startX = useRef(0);
+  const startHeightPx = useRef(0);
+  const startedOnDragRegion = useRef(false);
+  const tracker = useRef(createVelocityTracker());
+  const settleTimerRef = useRef<number | null>(null);
   const closeTimerRef = useRef<number | null>(null);
   const isClosingRef = useRef(false);
-  const isDraggingRef = useRef(false);
 
   // Exit animation: slide the sheet down + fade the backdrop, then unmount.
-  // Previously close() toggled isClosing synchronously (batched) so the sheet
-  // popped out with no transition. Now it stays mounted for the transition.
   const close = useCallback(() => {
     if (isClosingRef.current) return;
     if (prefersReducedMotion()) {
@@ -113,129 +133,338 @@ export function BottomSheet({
     }, CLOSE_TRANSITION_MS);
   }, [onOpenChange]);
 
-  const snapTo = useCallback(
-    (targetHeight: number, animate = true) => {
-      if (!sheetRef.current) return;
+  /** Imperative height write - the only path the gesture layer uses, so a drag
+      or settle causes zero React renders. */
+  const writeHeightPx = useCallback((heightPx: number) => {
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    sheet.style.setProperty("--sheet-height", `${heightPx}px`);
+  }, []);
 
-      // Reduced-motion: snap instantly, no rAF.
-      if (!animate || prefersReducedMotion()) {
-        setCurrentHeight(targetHeight);
-        setCurrentSnapIndex(snapPoints.indexOf(targetHeight));
+  /** Cancel any in-flight settle so a fresh drag takes over from the
+      interpolated position. The height must be read WHILE the transition is
+      still running; clearing the transition first would snap the rect to the
+      already-written target and the sheet would visually jump. */
+  const cancelSettle = useCallback((): number => {
+    const sheet = sheetRef.current;
+    const timer = settleTimerRef.current;
+    const wasSettling = timer !== null;
+    if (timer !== null) {
+      window.clearTimeout(timer);
+      settleTimerRef.current = null;
+    }
+    if (!sheet) return 0;
+    if (wasSettling) {
+      const visualPx = sheet.getBoundingClientRect().height;
+      sheet.style.transition = "none";
+      // Freeze the visually-current height so removing the transition does
+      // not snap the sheet to the settle target mid-grab.
+      sheet.style.setProperty("--sheet-height", `${visualPx}px`);
+      return visualPx;
+    }
+    return sheet.getBoundingClientRect().height;
+  }, []);
+
+  const settleToIndex = useCallback(
+    (index: number) => {
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      const clamped = Math.max(0, Math.min(snapPoints.length - 1, index));
+      const targetFraction = snapPoints[clamped];
+      const targetPx = targetFraction * window.innerHeight;
+
+      const finish = () => {
+        setCurrentHeight(targetFraction);
+        setCurrentSnapIndex(clamped);
+      };
+
+      sheet.style.transition = "none";
+      const currentPx = sheet.getBoundingClientRect().height;
+
+      if (prefersReducedMotion() || Math.abs(targetPx - currentPx) < 1) {
+        settleTimerRef.current = null;
+        writeHeightPx(targetPx);
+        finish();
         return;
       }
 
-      const start = currentHeight;
-      const distance = targetHeight - start;
-      const startTime = performance.now();
-      const duration = Math.min(Math.abs(distance) * 0.3 + 150, 400);
+      const duration = settleDurationMs(targetPx - currentPx);
+      // The write happens on the next frame so the render before the
+      // transition style lands uses the pre-settle value.
+      requestAnimationFrame(() => {
+        if (!sheetRef.current) return;
+        sheet.style.transition = `height ${duration}ms ${SETTLE_EASING}`;
+        sheet.style.setProperty("--sheet-height", `${targetPx}px`);
+      });
 
-      const animateSpring = (currentTime: number) => {
-        const elapsed = currentTime - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // Easing function (ease-out cubic)
-        const easeOut = 1 - Math.pow(1 - progress, 3);
-        const newHeight = start + distance * easeOut;
-
-        setCurrentHeight(newHeight);
-
-        if (progress < 1) {
-          rafId.current = requestAnimationFrame(animateSpring);
-        } else {
-          setCurrentSnapIndex(snapPoints.indexOf(targetHeight));
-        }
-      };
-
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
-      }
-      rafId.current = requestAnimationFrame(animateSpring);
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      settleTimerRef.current = window.setTimeout(() => {
+        settleTimerRef.current = null;
+        // Land the state where the transition ended; the layout effect keeps
+        // the dvh write from visibly repositioning the sheet.
+        sheet.style.transition = "";
+        finish();
+      }, duration + 10);
     },
-    [currentHeight, snapPoints]
+    [snapPoints, writeHeightPx]
   );
 
   const snapToIndex = useCallback(
     (index: number) => {
-      const clamped = Math.max(0, Math.min(snapPoints.length - 1, index));
-      snapTo(snapPoints[clamped]);
+      settleToIndex(index);
     },
-    [snapPoints, snapTo]
+    [settleToIndex]
   );
 
-  const handleTouchStart = useCallback(
-    (e: TouchEvent) => {
-      if (!sheetRef.current) return;
+  const settleWithVelocity = useCallback(
+    (heightPx: number, velocityPxPerMs: number) => {
+      const viewport = Math.max(window.innerHeight, 1);
+      const snapPointsPx = snapPoints.map((fraction) => fraction * viewport);
+      settleToIndex(selectSnapIndex(heightPx, velocityPxPerMs, snapPointsPx));
+    },
+    [snapPoints, settleToIndex]
+  );
 
-      isDraggingRef.current = true;
-      startY.current = e.touches[0].clientY;
-      startHeight.current = currentHeight;
-      lastY.current = e.touches[0].clientY;
-      velocity.current = 0;
+  // Effect: open/close state, body scroll lock, gesture listeners. Heavily
+  // ref-driven so it attaches once per open instead of re-binding per render.
+  useEffect(() => {
+    if (!open) return;
 
-      if (rafId.current) {
-        cancelAnimationFrame(rafId.current);
+    openSheetCount += 1;
+    document.body.classList.add("bottom-sheet-open");
+
+    setCurrentSnapIndex(defaultSnap);
+    const restingFraction = snapPoints[defaultSnap];
+    setCurrentHeight(restingFraction);
+    const sheet = sheetRef.current;
+    if (sheet) {
+      sheet.style.setProperty("--sheet-height", `${restingFraction * 100}dvh`);
+      sheet.style.transition = "";
+    }
+    gestureState.current = "idle";
+    tracker.current.reset();
+
+    return () => {
+      openSheetCount = Math.max(0, openSheetCount - 1);
+      if (openSheetCount === 0) {
+        document.body.classList.remove("bottom-sheet-open");
+      }
+      if (settleTimerRef.current) window.clearTimeout(settleTimerRef.current);
+      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+      gestureState.current = "idle";
+    };
+  }, [open, defaultSnap, snapPoints]);
+
+  const onGestureStart = useCallback(
+    (clientX: number, clientY: number, target: EventTarget | null) => {
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      startHeightPx.current = cancelSettle();
+      startX.current = clientX;
+      startY.current = clientY;
+      tracker.current.reset();
+      tracker.current.add(clientY, performance.now());
+      startedOnDragRegion.current =
+        target instanceof HTMLElement && target.closest(`[${DRAG_REGION_ATTR}]`) !== null;
+      gestureState.current = "pending";
+    },
+    [cancelSettle]
+  );
+
+  const onGestureMove = useCallback(
+    (clientX: number, clientY: number, preventDefault: () => void) => {
+      const sheet = sheetRef.current;
+      const content = contentRef.current;
+      if (!sheet || gestureState.current === "idle" || gestureState.current === "rejected") return;
+
+      const dx = clientX - startX.current;
+      const dy = clientY - startY.current;
+
+      if (gestureState.current === "pending") {
+        if (Math.abs(dx) < DRAG_THRESHOLD_PX && Math.abs(dy) < DRAG_THRESHOLD_PX) return;
+        // Horizontal swipes scroll carousels / switch tabs, never drag the sheet.
+        if (Math.abs(dx) > Math.abs(dy)) {
+          gestureState.current = "rejected";
+          return;
+        }
+        const engage = shouldEngageDrag({
+          dy,
+          scrollTop: content?.scrollTop ?? 0,
+          scrollHeight: content?.scrollHeight ?? 0,
+          clientHeight: content?.clientHeight ?? 0,
+          startedOnDragRegion: startedOnDragRegion.current,
+        });
+        if (!engage) return; // stay pending: native scroll owns the gesture
+        gestureState.current = "dragging";
       }
 
-      sheetRef.current.style.transition = "none";
+      preventDefault();
+      tracker.current.add(clientY, performance.now());
+
+      const viewport = Math.max(window.innerHeight, 1);
+      const snapPointsPx = snapPoints.map((fraction) => fraction * viewport);
+      const peekPx = snapPointsPx[0];
+      const rawHeightPx = startHeightPx.current - dy;
+      const displayed = clampWithRubberBand(rawHeightPx, {
+        // The drag never collapses the sheet past its peek strip: below the
+        // lowest snap the pull becomes a rubber-banded over-pull, so the
+        // grabbable handle stays on screen. Dismissal is decided on release
+        // (fling or a long deliberate pull), never by the sheet vanishing.
+        minPx: peekPx,
+        maxPx: snapPointsPx[snapPointsPx.length - 1],
+        hardMinPx: 0,
+        hardMaxPx: MAX_HEIGHT_FRACTION * viewport,
+        dimensionPx: viewport,
+        overPullDimensionPx: dismissBandPx(peekPx, viewport),
+      });
+      writeHeightPx(displayed);
     },
-    [currentHeight]
+    [snapPoints, writeHeightPx]
   );
 
-  const handleTouchMove = useCallback((e: TouchEvent) => {
-    if (!isDraggingRef.current || !sheetRef.current) return;
-
-    currentY.current = e.touches[0].clientY;
-    const deltaY = currentY.current - lastY.current;
-    velocity.current = deltaY;
-    lastY.current = currentY.current;
-
-    const newHeight =
-      startHeight.current - (currentY.current - startY.current) / window.innerHeight;
-
-    if (newHeight >= 0 && newHeight <= 0.98) {
-      setCurrentHeight(newHeight);
+  const onGestureEnd = useCallback(() => {
+    if (gestureState.current !== "dragging") {
+      gestureState.current = "idle";
+      return;
     }
-  }, []);
+    gestureState.current = "idle";
+    const sheet = sheetRef.current;
+    if (!sheet) return;
 
-  const handleTouchEnd = useCallback(() => {
-    if (!isDraggingRef.current || !sheetRef.current) return;
+    const viewport = Math.max(window.innerHeight, 1);
+    const snapPointsPx = snapPoints.map((fraction) => fraction * viewport);
+    const heightPx = sheet.getBoundingClientRect().height;
+    const velocityPxPerMs = tracker.current.velocity();
 
-    isDraggingRef.current = false;
-    sheetRef.current.style.transition = "";
-
-    const finalVelocity = Math.abs(velocity.current / (window.innerHeight || 1));
-
-    // Check if should dismiss (dragged down past threshold or high velocity downward)
     if (
-      dismissOnDragDown &&
-      (currentHeight < 0.1 || (velocity.current > 0 && finalVelocity > VELOCITY_THRESHOLD))
+      shouldDismissOnRelease({
+        heightPx,
+        peekPx: snapPointsPx[0],
+        viewportPx: viewport,
+        velocityPxPerMs,
+        dismissOnDragDown,
+      })
     ) {
       close();
       return;
     }
+    settleWithVelocity(heightPx, velocityPxPerMs);
+  }, [close, dismissOnDragDown, snapPoints, settleWithVelocity]);
 
-    // Find nearest snap point
-    const velocityDirection = velocity.current > 0 ? -1 : 1;
-    let targetIndex = currentSnapIndex;
+  const onGestureCancel = useCallback(() => {
+    if (gestureState.current !== "dragging") {
+      gestureState.current = "idle";
+      return;
+    }
+    gestureState.current = "idle";
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+    settleWithVelocity(sheet.getBoundingClientRect().height, 0);
+  }, [settleWithVelocity]);
 
-    if (finalVelocity > VELOCITY_THRESHOLD) {
-      targetIndex = Math.max(
-        0,
-        Math.min(snapPoints.length - 1, currentSnapIndex + velocityDirection)
-      );
-    } else {
-      let minDistance = Infinity;
-      snapPoints.forEach((point, index) => {
-        const distance = Math.abs(currentHeight - point);
-        if (distance < minDistance) {
-          minDistance = distance;
-          targetIndex = index;
+  // Native non-passive listeners: React attaches touchmove passively at the
+  // root, which makes preventDefault (needed for the mid-gesture scroll
+  // handoff) impossible - hence addEventListener on the sheet element itself.
+  useEffect(() => {
+    if (!open) return;
+    const sheet = sheetRef.current;
+    if (!sheet) return;
+
+    const trackedTouch = (event: TouchEvent): Touch | null => {
+      if (touchId.current === null) return null;
+      for (const touch of Array.from(event.changedTouches)) {
+        if (touch.identifier === touchId.current) return touch;
+      }
+      return null;
+    };
+
+    const handleTouchStart = (event: globalThis.TouchEvent) => {
+      if (touchId.current !== null) return; // single-finger gesture only
+      const touch = event.changedTouches[0];
+      touchId.current = touch.identifier;
+      onGestureStart(touch.clientX, touch.clientY, event.target);
+    };
+
+    const handleTouchMove = (event: globalThis.TouchEvent) => {
+      const touch = trackedTouch(event);
+      if (!touch) return;
+      onGestureMove(touch.clientX, touch.clientY, () => event.preventDefault());
+    };
+
+    const handleTouchEnd = (event: globalThis.TouchEvent) => {
+      const touch = trackedTouch(event);
+      if (!touch) return;
+      touchId.current = null;
+      onGestureEnd();
+    };
+
+    const handleTouchCancel = (event: globalThis.TouchEvent) => {
+      const touch = trackedTouch(event);
+      if (!touch) return;
+      touchId.current = null;
+      onGestureCancel();
+    };
+
+    // Mouse/pen: touch is owned by the touch path above.
+    const handlePointerDown = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (!event.isPrimary) return;
+      sheet.setPointerCapture(event.pointerId);
+      if (gestureState.current === "dragging") {
+        sheet.style.userSelect = "none"; // avoid text selection mid-drag
+      }
+      onGestureStart(event.clientX, event.clientY, event.target);
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (!event.isPrimary) return;
+      onGestureMove(event.clientX, event.clientY, () => {
+        if (gestureState.current === "dragging") {
+          sheet.style.userSelect = "none";
         }
       });
-    }
+    };
 
-    snapTo(snapPoints[targetIndex]);
-  }, [currentHeight, currentSnapIndex, dismissOnDragDown, snapPoints, snapTo, close]);
+    const finishPointer = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (!event.isPrimary) return;
+      sheet.style.userSelect = "";
+      onGestureEnd();
+    };
+
+    const cancelPointer = (event: PointerEvent) => {
+      if (event.pointerType === "touch") return;
+      if (!event.isPrimary) return;
+      sheet.style.userSelect = "";
+      onGestureCancel();
+    };
+
+    sheet.addEventListener("touchstart", handleTouchStart, { passive: true });
+    sheet.addEventListener("touchmove", handleTouchMove, { passive: false });
+    sheet.addEventListener("touchend", handleTouchEnd);
+    sheet.addEventListener("touchcancel", handleTouchCancel);
+    sheet.addEventListener("pointerdown", handlePointerDown);
+    sheet.addEventListener("pointermove", handlePointerMove);
+    sheet.addEventListener("pointerup", finishPointer);
+    sheet.addEventListener("pointercancel", cancelPointer);
+    sheet.addEventListener("lostpointercapture", cancelPointer);
+
+    return () => {
+      sheet.removeEventListener("touchstart", handleTouchStart);
+      sheet.removeEventListener("touchmove", handleTouchMove);
+      sheet.removeEventListener("touchend", handleTouchEnd);
+      sheet.removeEventListener("touchcancel", handleTouchCancel);
+      sheet.removeEventListener("pointerdown", handlePointerDown);
+      sheet.removeEventListener("pointermove", handlePointerMove);
+      sheet.removeEventListener("pointerup", finishPointer);
+      sheet.removeEventListener("pointercancel", cancelPointer);
+      sheet.removeEventListener("lostpointercapture", cancelPointer);
+      touchId.current = null;
+      gestureState.current = "idle";
+      sheet.style.userSelect = "";
+    };
+  }, [open, onGestureStart, onGestureMove, onGestureEnd, onGestureCancel]);
 
   const handleBackdropClick = useCallback(() => {
     if (dismissOnBackdropClick) {
@@ -244,8 +473,8 @@ export function BottomSheet({
   }, [dismissOnBackdropClick, close]);
 
   const handleKeyDown = useCallback(
-    (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
+    (event: globalThis.KeyboardEvent) => {
+      if (event.key === "Escape") {
         close();
       }
     },
@@ -253,38 +482,36 @@ export function BottomSheet({
   );
 
   useEffect(() => {
-    if (open) {
-      setCurrentSnapIndex(defaultSnap);
-      setCurrentHeight(snapPoints[defaultSnap]);
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-
-    return () => {
-      document.body.style.overflow = "";
-    };
-  }, [open, defaultSnap, snapPoints]);
-
-  useEffect(() => {
+    if (!open) return;
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [handleKeyDown]);
+  }, [open, handleKeyDown]);
 
-  // Cancel any in-flight animation/timer on unmount.
+  // State is the source of truth at rest: write the dvh-derived height whenever
+  // the resting fraction changes (open, snap settle, resizes are left to dvh).
+  useLayoutEffect(() => {
+    const sheet = sheetRef.current;
+    if (!sheet || !open) return;
+    if (gestureState.current === "dragging") return; // never clobber a live drag
+    sheet.style.transition = "";
+    sheet.style.setProperty("--sheet-height", `${currentHeight * 100}dvh`);
+  }, [currentHeight, open]);
+
   useEffect(() => {
     return () => {
-      if (rafId.current) cancelAnimationFrame(rafId.current);
-      if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
+      isClosingRef.current = false;
     };
   }, []);
 
-  const contextValue: BottomSheetContextValue = {
-    close,
-    snapIndex: currentSnapIndex,
-    snapCount: snapPoints.length,
-    snapToIndex,
-  };
+  const contextValue = useMemo<BottomSheetContextValue>(
+    () => ({
+      close,
+      snapIndex: currentSnapIndex,
+      snapCount: snapPoints.length,
+      snapToIndex,
+    }),
+    [close, currentSnapIndex, snapPoints.length, snapToIndex]
+  );
 
   if (!open) return null;
 
@@ -293,7 +520,6 @@ export function BottomSheet({
       {/* Backdrop */}
       {showBackdrop && (
         <div
-          ref={backdropRef}
           className={cn(
             "fixed inset-0 z-[100] bg-black/40 transition-opacity duration-300",
             isClosing ? "opacity-0" : "opacity-100"
@@ -316,8 +542,9 @@ export function BottomSheet({
           className
         )}
         style={{
-          height: `${currentHeight * 100}dvh`,
-          // Slide down to dismiss on close (CSS transition, off main thread).
+          height: "var(--sheet-height)",
+          ["--sheet-height" as string]: `${currentHeight * 100}dvh`,
+          // Slide down to dismiss on close (CSS transition, off the gesture path).
           transform: isClosing ? "translateY(100%)" : "translateY(0)",
           transition: isClosing
             ? `transform ${CLOSE_TRANSITION_MS}ms cubic-bezier(0.4, 0, 0.2, 1)`
@@ -325,24 +552,23 @@ export function BottomSheet({
           paddingLeft: "env(safe-area-inset-left, 0px)",
           paddingRight: "env(safe-area-inset-right, 0px)",
         }}
-        onTouchStart={handleTouchStart}
-        onTouchMove={handleTouchMove}
-        onTouchEnd={handleTouchEnd}
         role="dialog"
         aria-modal="true"
       >
         {/* Handle/Grabber */}
         {showHandle && (
-          <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
+          <div
+            {...{ [DRAG_REGION_ATTR]: "" }}
+            className="flex justify-center pt-3 pb-1 flex-shrink-0 touch-none cursor-grab active:cursor-grabbing"
+          >
             <button
-              className="p-2 rounded-full hover:bg-muted active:bg-muted transition-colors cursor-grab active:cursor-grabbing"
+              className="p-2 rounded-full hover:bg-muted active:bg-muted transition-colors"
               aria-label="শীট সরাতে টানুন"
               tabIndex={0}
-              // কীবোর্ড: Enter/Space পরবর্তী স্ন্যাপ পয়েন্টে যায় (উপরে থাকলে বড়, নিচে থাকলে ছোট)।
-              // আগে এই <button> এ aria-label ছিল কিন্তু কীবোর্ড অ্যাকশন ছিল না (অডিট)।
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
+              // কীবোর্ড: Enter/Space পরবর্তী স্ন্যাপ পয়েন্টে যায়।
+              onKeyDown={(event) => {
+                if (event.key === "Enter" || event.key === " ") {
+                  event.preventDefault();
                   snapToIndex(Math.min(currentSnapIndex + 1, snapPoints.length - 1));
                 }
               }}
@@ -357,7 +583,7 @@ export function BottomSheet({
           ref={contentRef}
           className={cn(
             "flex-1 overflow-y-auto overflow-x-hidden min-h-0",
-            "scrollbar-thin",
+            "scrollbar-thin overscroll-contain touch-pan-y",
             contentClassName
           )}
           style={{
@@ -440,7 +666,7 @@ BottomSheet.ScrollContent = function BottomSheetScrollContent({
 }) {
   return (
     <div
-      className={cn("overflow-y-auto scrollbar-thin", className)}
+      className={cn("overflow-y-auto scrollbar-thin overscroll-contain", className)}
       style={{
         paddingBottom: "env(safe-area-inset-bottom, 1rem)",
       }}

@@ -202,8 +202,10 @@
     background-color: hsl(var(--muted-foreground) / 0.65);
   }
 
-  /* Prevent pull-to-refresh on mobile when using bottom sheets */
+  /* Applied to <body> while any bottom sheet is open (ref-counted in bottom-sheet.tsx):
+     kills pull-to-refresh and scroll chaining out of the sheet, locks page scroll. */
   .bottom-sheet-open {
+    overflow: hidden;
     overscroll-behavior: contain;
   }
 }
