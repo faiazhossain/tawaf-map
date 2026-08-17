@@ -11,6 +11,7 @@ import {
 } from "@/components/map";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
+import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
 import { useGateProximity } from "@/lib/hooks";
 import {
@@ -131,10 +132,20 @@ export default function MapPage() {
 
   // ওমরাহ গাইড ডিফল্টে চালু: অনবোর্ডেড ব্যবহারকারীর জন্য অ্যাপের মূল ফিচারটি
   // সরাসরি দৃশ্যমান রাখা। মাউন্টের পরে স্টোর হাইড্রেশন শেষ হয়েছে, তাই সঠিক মান পাওয়া যায়।
+  // ডেমো ওয়ার্ল্ড মোডে গাইড স্বয়ংক্রিয় খোলা হয় না — গাইড ক্যামেরা মক্কায় ফ্লাই করে,
+  // যা ঢাকার ডেমো এরিনা পরীক্ষার অভিজ্ঞতা নষ্ট করত।
   useEffect(() => {
-    if (useUmrahGuideStore.getState().onboarded) {
+    if (useUmrahGuideStore.getState().onboarded && !isDemoWorldActive()) {
       setShowUmrahGuide(true);
     }
+  }, []);
+
+  // ডেমো ওয়ার্ল্ড মোড মাউন্টের পরে জানা যায় (SSR-এ সবসময় false) — hydration
+  // mismatch এড়াতে state ব্যবহার। 3D মডেল মক্কার কোঅর্ডিনেটে পিন করা, তাই
+  // ডেমো মোডে বোতামটি লুকানো।
+  const [demoWorldActive, setDemoWorldActive] = useState(false);
+  useEffect(() => {
+    setDemoWorldActive(isDemoWorldActive());
   }, []);
 
   // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
@@ -351,23 +362,25 @@ export default function MapPage() {
                   <Mountain className="hidden sm:inline-block w-4 h-4" />
                   <span className="inline whitespace-nowrap">{showTerrain ? "On" : "Terr"}</span>
                 </Button>
-                <Button
-                  variant={show3DModel ? "default" : "outline"}
-                  size={show3DModel ? "sm" : "icon"}
-                  onClick={() => setShow3DModel((prev) => !prev)}
-                  onPointerEnter={handle3DIntent}
-                  onTouchStart={handle3DIntent}
-                  onFocus={handle3DIntent}
-                  className={
-                    show3DModel
-                      ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                      : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                  }
-                  title="৩ডি মডেল"
-                >
-                  <Box className="hidden sm:inline-block w-4 h-4" />
-                  <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
-                </Button>
+                {!demoWorldActive && (
+                  <Button
+                    variant={show3DModel ? "default" : "outline"}
+                    size={show3DModel ? "sm" : "icon"}
+                    onClick={() => setShow3DModel((prev) => !prev)}
+                    onPointerEnter={handle3DIntent}
+                    onTouchStart={handle3DIntent}
+                    onFocus={handle3DIntent}
+                    className={
+                      show3DModel
+                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                    }
+                    title="৩ডি মডেল"
+                  >
+                    <Box className="hidden sm:inline-block w-4 h-4" />
+                    <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
+                  </Button>
+                )}
                 <Button
                   variant={showGates ? "default" : "outline"}
                   size={showGates ? "sm" : "icon"}

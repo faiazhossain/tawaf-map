@@ -96,6 +96,7 @@ import { RecenterButton } from "./RecenterButton";
 import { RitualRoundHud } from "./RitualRoundHud";
 import { MapInstanceProvider } from "@/lib/map/MapInstanceContext";
 import { MAP_COLORS } from "@/lib/map/colors";
+import { getDemoWorldViewport } from "@/lib/dev/demo-world";
 
 interface MapViewProps {
   className?: string;
@@ -351,11 +352,15 @@ export function MapView({
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return;
 
+    // Demo world (dev harness): start framed on the translated arena instead
+    // of Makkah. Only affects the very first map creation, so no fighting.
+    const demoViewport = getDemoWorldViewport();
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: BARIKOI_MAP_STYLE,
-      center: [center[0], center[1]],
-      zoom,
+      center: demoViewport?.center ?? [center[0], center[1]],
+      zoom: demoViewport?.zoom ?? zoom,
       bearing,
       pitch,
       // Create the WebGL context with MSAA antialiasing so the custom 3D-model

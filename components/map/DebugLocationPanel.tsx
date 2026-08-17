@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { MapPin, ChevronDown, ChevronUp, Crosshair, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
+import { MapPin, ChevronDown, ChevronUp, Crosshair, Satellite, Trash2 } from "lucide-react";
 import { useLocationStore } from "@/lib/store";
+import {
+  DEFAULT_GPS_SIM_SCALE,
+  getGpsSimRuntime,
+  storeGpsSimPrefs,
+  type GpsSimRuntime,
+} from "@/lib/dev/gps-sim";
+import { isDemoWorldActive, storeDemoWorldActive } from "@/lib/dev/demo-world";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 
@@ -13,6 +20,103 @@ const TEST_LOCATIONS = [
   { name: "সাফা-মারওয়া", nameAr: "الصفا والمروة", lat: 21.4235, lng: 39.8242, icon: "safa" },
   { name: "আবরাজ আল-বাইত", nameAr: "أبراج البيت", lat: 21.422, lng: 39.825, icon: "building" },
 ];
+
+/**
+ * Location testing modes (dev/test harness), two mutually exclusive options:
+ *
+ * - Demo world: the Makkah datasets (gates, hotels, places) are moved around
+ *   the developer. Real GPS, real permission prompt, real "near me" panels.
+ * - Live GPS simulation: the developer's GPS fixes are remapped into Makkah
+ *   instead (pairs with the Umrah guide + ritual overlay at the Haram).
+ */
+function LocationTestModesSection() {
+  const [sim, setSim] = useState<GpsSimRuntime | null>(null);
+  const [demoWorld, setDemoWorld] = useState(false);
+
+  useEffect(() => {
+    const rt = getGpsSimRuntime();
+    setSim(rt?.enabled ? rt : null);
+    setDemoWorld(isDemoWorldActive());
+  }, []);
+
+  const gpsSimEnabled = sim?.enabled ?? false;
+
+  // Reload without the query string so stale ?gps-sim / ?demo-world params
+  // cannot immediately flip the harness back after a toggle.
+  const reloadClean = () => window.location.assign(window.location.pathname);
+
+  const handleToggleDemoWorld = () => {
+    storeDemoWorldActive(!demoWorld);
+    if (!demoWorld) {
+      storeGpsSimPrefs(null);
+    }
+    reloadClean();
+  };
+
+  const handleToggleGpsSim = () => {
+    if (gpsSimEnabled) {
+      storeGpsSimPrefs(null);
+    } else {
+      storeDemoWorldActive(false);
+      storeGpsSimPrefs({ mode: "live", scale: sim?.scale ?? DEFAULT_GPS_SIM_SCALE });
+    }
+    reloadClean();
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="p-3 bg-amber-500/10 rounded-xl border border-amber-500/20">
+        <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1.5">
+          <MapPin className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-xs font-medium">ডেমো ডেটা মোড (আমার কাছে)</span>
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground mb-2">
+          {demoWorld
+            ? "চালু আছে: গেট, হোটেল ও স্থানের ডেটা আপনার এলাকায় সরানো হয়েছে। আসল জিপিএস দিয়েই হাঁটুন, কাছের তথ্য দেখুন।"
+            : "গেট, হোটেল ও ঐতিহাসিক স্থান আপনার আশেপাশে বসিয়ে দেওয়া হবে; আসল জিপিএস ও অনুমতির ফ্লো অপরিবর্তিত থাকবে।"}
+        </p>
+        <Button
+          onClick={handleToggleDemoWorld}
+          size="sm"
+          variant="outline"
+          className={
+            demoWorld
+              ? "w-full gap-1.5 border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-400"
+              : "w-full gap-1.5 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-600 dark:hover:text-amber-400"
+          }
+        >
+          <MapPin className="w-3.5 h-3.5" />
+          {demoWorld ? "ডেমো ডেটা বন্ধ করুন" : "ডেমো ডেটা চালু করুন"}
+        </Button>
+      </div>
+
+      <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
+        <div className="flex items-center gap-2 text-muted-foreground mb-1.5">
+          <Satellite className="w-3.5 h-3.5 shrink-0" />
+          <span className="text-xs font-medium">লাইভ জিপিএস সিমুলেশন (ঢাকা → মক্কা)</span>
+        </div>
+        <p className="text-[11px] leading-relaxed text-muted-foreground mb-2">
+          {gpsSimEnabled
+            ? "চালু আছে: আসল জিপিএস মক্কার কোঅর্ডিনেটে রূপান্তরিত হচ্ছে, হাঁটলে হারামের ভেতরে নড়াচড়া দেখা যাবে।"
+            : "আপনার জিপিএস-কে মক্কায় সরিয়ে নেওয়া হবে (ওমরাহ গাইড + হারাম ওভারলে পরীক্ষার জন্য)।"}
+        </p>
+        <Button
+          onClick={handleToggleGpsSim}
+          size="sm"
+          variant="outline"
+          className={
+            gpsSimEnabled
+              ? "w-full gap-1.5 border-rose-500/20 text-rose-400 hover:bg-rose-500/10 hover:text-rose-400"
+              : "w-full gap-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+          }
+        >
+          <Satellite className="w-3.5 h-3.5" />
+          {gpsSimEnabled ? "সিমুলেশন বন্ধ করুন" : "সিমুলেশন চালু করুন"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 function TestLocationContent({
   latitude,
@@ -37,6 +141,9 @@ function TestLocationContent({
 }) {
   return (
     <div className="space-y-4">
+      {/* Location testing modes (demo world / GPS simulation) */}
+      <LocationTestModesSection />
+
       {/* Current Location Display */}
       {latitude !== null && longitude !== null && (
         <div className="p-3 bg-emerald-500/10 rounded-xl border border-emerald-500/20">
