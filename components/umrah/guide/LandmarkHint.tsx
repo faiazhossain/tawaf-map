@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { X, MapPin } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -10,6 +11,8 @@ interface LandmarkHintProps {
   actionLabel?: string;
   onDismiss: () => void;
   className?: string;
+  /** ইনলাইন অবস্থান (যেমন গাইড শীটের ওপরে বসানো) - ক্লাসের bottom কে ওভাররাইড করে। */
+  style?: CSSProperties;
 }
 
 export function LandmarkHint({
@@ -19,6 +22,7 @@ export function LandmarkHint({
   actionLabel,
   onDismiss,
   className,
+  style,
 }: LandmarkHintProps) {
   return (
     <div
@@ -26,6 +30,7 @@ export function LandmarkHint({
         "max-w-sm rounded-3xl border border-border/80 bg-surface/95 p-4 shadow-2xl backdrop-blur-xl text-left",
         className
       )}
+      style={style}
       role="status"
       aria-live="polite"
     >

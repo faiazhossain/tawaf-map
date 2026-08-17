@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import { LocateFixed } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -7,6 +8,8 @@ interface RecenterButtonProps {
   onClick: () => void;
   className?: string;
   label?: string;
+  /** ইনলাইন অবস্থান (যেমন গাইড শীটের ওপরে বসানো) - ক্লাসের bottom কে ওভাররাইড করে। */
+  style?: CSSProperties;
 }
 
 /**
@@ -18,12 +21,14 @@ export function RecenterButton({
   onClick,
   className,
   label = "কেন্দ্রে ফেরান",
+  style,
 }: RecenterButtonProps) {
   return (
     <button
       type="button"
       onClick={onClick}
       aria-label={label}
+      style={style}
       className={cn(
         "flex items-center justify-center",
         "h-11 w-11 rounded-full",

@@ -32,4 +32,18 @@ describe("LandmarkHint", () => {
     getByRole("button").click();
     expect(onDismiss).toHaveBeenCalledTimes(1);
   });
+
+  it("passes the style prop through to the root element", () => {
+    const { container } = render(
+      <LandmarkHint
+        title="টেস্ট ল্যান্ডমার্ক"
+        description="এখানে একটি ছোট বর্ণনা থাকবে।"
+        onDismiss={() => undefined}
+        style={{ bottom: "370px" }}
+      />
+    );
+
+    const root = container.firstElementChild as HTMLElement;
+    expect(root.style.bottom).toBe("370px");
+  });
 });

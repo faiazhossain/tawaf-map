@@ -1,12 +1,15 @@
 "use client";
 
-import { useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { ChevronRight, ChevronLeft, ChevronsUp, ChevronsDown } from "lucide-react";
 import { BottomSheet, useBottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { useUmrahGuideStore, selectCurrentStep, selectCounter } from "@/lib/store/umrahGuideStore";
+import { useGuideSheetStore } from "@/lib/store/guideSheetStore";
 import { getStepById } from "@/lib/data/umrah/steps";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
+import { GUIDE_SHEET_SNAP_POINTS, GUIDE_SHEET_DEFAULT_SNAP } from "@/lib/utils/guide-sheet";
+import { useGuideSheetStepSync } from "@/lib/hooks/useGuideSheetStepSync";
 import { InstructionCard } from "./InstructionCard";
 import { CircuitControl } from "./CircuitControl";
 import { GuidePeek } from "./GuidePeek";
@@ -40,12 +43,30 @@ export function TawafGuideSheet({
   onOpenMistake,
   onNext,
 }: TawafGuideSheetProps) {
+  // শীটের সেটল-টার্গেট স্টোরে প্রকাশ - MapView-এর ক্যামেরা প্যাডিং ও ওভারলে এটি পড়ে।
+  const setSheetSnap = useGuideSheetStore((s) => s.setSheetSnap);
+  const clearSheetSnap = useGuideSheetStore((s) => s.clearSheetSnap);
+  const handleSnapChange = useCallback(
+    (snapIndex: number) => setSheetSnap(snapIndex),
+    [setSheetSnap]
+  );
+
+  useEffect(() => {
+    if (open) {
+      setSheetSnap(GUIDE_SHEET_DEFAULT_SNAP);
+    } else {
+      clearSheetSnap();
+    }
+    return clearSheetSnap;
+  }, [open, setSheetSnap, clearSheetSnap]);
+
   return (
     <BottomSheet
       open={open}
       onOpenChange={onOpenChange}
-      snapPoints={[0.12, 0.42, 0.92]}
-      defaultSnap={1}
+      snapPoints={[...GUIDE_SHEET_SNAP_POINTS]}
+      defaultSnap={GUIDE_SHEET_DEFAULT_SNAP}
+      onSnapChange={handleSnapChange}
       showBackdrop={false}
       dismissOnDragDown={false}
     >
@@ -68,6 +89,8 @@ function SheetBody({
   onNext?: () => void;
 }) {
   const { snapIndex, snapToIndex } = useBottomSheet();
+  // ধাপ বদলালেই শীট normal স্ন্যাপে ফেরে (কোরিওগ্রাফি) - হুক শর্তহীন, তাই শীরোষে।
+  useGuideSheetStepSync();
   const step = useUmrahGuideStore(selectCurrentStep);
   const counterValue = useUmrahGuideStore((s) => (step ? selectCounter(s, step.id) : 0));
   const stepIds = useUmrahGuideStore((s) => s.stepIds);
@@ -129,14 +152,27 @@ function SheetBody({
             >
               <ChevronLeft className="w-4 h-4" /> পেছনে
             </Button>
-            <Button
-              size="sm"
-              onClick={() => snapToIndex(1)}
-              variant="outline"
-              className="ml-auto border-border bg-muted/60 text-foreground hover:bg-muted gap-1"
-            >
-              <ChevronsUp className="w-4 h-4" /> সংক্ষেপে
-            </Button>
+            {/* বিস্তারিত পড়ে সরাসরি এগোনো যায় - ট্যাপ করলেই কোরিওগ্রাফি শীট normal
+                স্ন্যাপে নামিয়ে ক্যামেরা flyTo দৃশ্যমান করে। শেষ ধাপে এগোনোর কিছু নেই,
+                তখন সংক্ষেপে ফেরার রাস্তা রাখা হয়। */}
+            {isLast ? (
+              <Button
+                size="sm"
+                onClick={() => snapToIndex(1)}
+                variant="outline"
+                className="ml-auto border-border bg-muted/60 text-foreground hover:bg-muted gap-1"
+              >
+                <ChevronsUp className="w-4 h-4" /> সংক্ষেপে
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={nextStepAction}
+                className="ml-auto bg-primary hover:bg-primary-hover text-primary-foreground border-0 gap-1"
+              >
+                পরবর্তী ধাপ <ChevronRight className="w-4 h-4" />
+              </Button>
+            )}
           </div>
         </>
       ) : (

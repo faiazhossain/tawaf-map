@@ -40,7 +40,14 @@ import {
   useHotelStore,
   useTouristPlaceStore,
   useUmrahGuideStore,
+  useGuideSheetStore,
 } from "@/lib/store";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import {
+  guideCameraPadding,
+  guideOverlayBottomPx,
+  withGuidePadding,
+} from "@/lib/utils/guide-sheet";
 import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
 import type { LandmarkHintData } from "@/lib/map/landmark-utils";
 import { getContextualLandmarkHint, getClosestAnchorId } from "@/lib/map/landmark-utils";
@@ -254,6 +261,19 @@ export function MapView({
   const umrahCompleted = useUmrahGuideStore((s) => s.completed);
   const umrahCounters = useUmrahGuideStore((s) => s.counters);
   const umrahProfile = useUmrahGuideStore((s) => s.profile);
+
+  // মোবাইল গাইড শীট - ক্যামেরা প্যাডিং ও ওভারলে অবস্থান শীটের উচ্চতার সাথে মানানসই করে।
+  // md:768 শীট/প্যানেল বিভাজনের সাথে মিলিয়ে (ডেস্কটপে শীট mounted-কিন্তু-লুকানো
+  // থাকে, তাই স্টোর লিখলেও mdUp গেট সেটি উপেক্ষা করে)।
+  const guideSheetSnap = useGuideSheetStore((s) => s.snapIndex);
+  const mdUp = useMediaQuery("(min-width: 768px)");
+  const mdUpRef = useRef(mdUp);
+  mdUpRef.current = mdUp;
+  /** শীট সক্রিয় কি না - প্যাডিং/ওভাররাইড নির্ধারণে বারবার ব্যবহৃত। */
+  const guideSheetActive = !mdUp && guideSheetSnap !== null;
+  const overlayBottomPx = guideSheetActive
+    ? guideOverlayBottomPx(guideSheetSnap, window.innerHeight)
+    : undefined;
   // তওয়াফ/সাঈ কাউন্টার - বৃদ্ধি শনাক্ত করে অঙ্কন অ্যানিমেশন ট্রিগার করতে
   const tawafCounter = useUmrahGuideStore((s) => s.counters["tawaf"] ?? 1);
   const saiCounter = useUmrahGuideStore((s) => s.counters["sai"] ?? 1);
@@ -1178,11 +1198,23 @@ export function MapView({
 
     // তওয়াফ/সাঈ-এর সময় কাছে জুম করা; অন্যথা মাঝারি
     const targetZoom = step.stage === "tawaf" || step.stage === "sai" ? 18 : 16;
-    programmaticFlyTo({
-      center: anchor.location.coordinates,
-      zoom: targetZoom,
-      duration: 1200,
-    });
+    // মোবাইলে শীটের ওপরের দৃশ্যমান অংশে অ্যাংকর বসাতে padding। ইম্পারেটিভ রিড:
+    // কোরিওগ্রাফি ধাপ-বদলের মুহূর্তেই টার্গেট স্ন্যাপ স্টোরে লেখে, তাই এই ইফেক্ট
+    // সবসময় সদ্য-লিখিত মান দেখে; deps-এ স্ন্যাপ যোগ করলে ড্র্যাগে ক্যামেরা পুনরায়
+    // উড়ত, তাই রাখা হয়নি।
+    const padding = mdUpRef.current
+      ? undefined
+      : guideCameraPadding(useGuideSheetStore.getState().snapIndex, window.innerHeight);
+    programmaticFlyTo(
+      withGuidePadding(
+        {
+          center: anchor.location.coordinates,
+          zoom: targetZoom,
+          duration: 1200,
+        },
+        padding
+      )
+    );
   }, [showUmrah, showMiqatOverview, mapLoaded, umrahCurrentIndex, umrahStepIds, programmaticFlyTo]);
 
   // ----- ওমরাহ: মিকাত সারসংক্ষেপ মানচিত্র (৫ পয়েন্টের রিং) -----
@@ -1261,7 +1293,11 @@ export function MapView({
   const handleRecenter = () => {
     if (!recenterTarget) return;
     const targetZoom = recenterTarget.stage === "tawaf" || recenterTarget.stage === "sai" ? 18 : 16;
-    programmaticFlyTo({ center: recenterTarget.coords, zoom: targetZoom, duration: 1000 });
+    // Recenter-এ ধাপ বদলায় না, তাই ব্যবহারকারীর বর্তমান স্ন্যাপই মানানসই - রিঅ্যাক্টিভ মান।
+    const padding = mdUp ? undefined : guideCameraPadding(guideSheetSnap, window.innerHeight);
+    programmaticFlyTo(
+      withGuidePadding({ center: recenterTarget.coords, zoom: targetZoom, duration: 1000 }, padding)
+    );
   };
 
   // ব্যবহারকারী ম্যানুয়ালি মানচিত্র সরিয়েছে এবং একটি গাইড ধাপ সক্রিয় - Recenter দেখাও
@@ -1292,13 +1328,15 @@ export function MapView({
             description={contextualLandmarkHint.description}
             anchorName={contextualLandmarkHint.anchorName}
             onDismiss={() => setHintDismissed(true)}
-            className="absolute bottom-28 left-4 z-[40] sm:bottom-8"
+            className="absolute bottom-28 left-4 z-[40] sm:bottom-8 transition-[bottom] duration-300"
+            style={overlayBottomPx !== undefined ? { bottom: overlayBottomPx } : undefined}
           />
         )}
         {showRecenter && (
           <RecenterButton
             onClick={handleRecenter}
-            className="absolute bottom-28 right-4 z-[40] sm:bottom-8"
+            className="absolute bottom-28 right-4 z-[40] sm:bottom-8 transition-[bottom] duration-300"
+            style={overlayBottomPx !== undefined ? { bottom: overlayBottomPx } : undefined}
           />
         )}
         {show3DModel &&
