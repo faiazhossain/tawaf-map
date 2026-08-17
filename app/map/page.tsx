@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import {
   MapView,
-  MapControls,
   GateSelector,
   UserLocation,
   NearbyGatesPanel,
@@ -548,11 +547,6 @@ export default function MapPage() {
           onTouristPlaceClick={handleTouristPlaceClick}
           onUmrahStepClick={handleUmrahStepClick}
         />
-
-        {/* Map Controls */}
-        <div className="absolute top-4 left-4 z-[40]">
-          <MapControls />
-        </div>
 
         {/* Tourist Places List */}
         {showTouristList && !hasActivePanel && (

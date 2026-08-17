@@ -1,5 +1,4 @@
 export { MapView } from "./MapView";
-export { MapControls } from "./MapControls";
 export { GateInfoPanel } from "./GateInfoPanel";
 export { GateSelector } from "./GateSelector";
 export { UserLocation } from "./UserLocation";

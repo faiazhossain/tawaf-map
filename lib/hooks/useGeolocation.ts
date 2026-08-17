@@ -1,5 +1,13 @@
 import { useEffect, useRef } from "react";
 import { useLocationStore } from "@/lib/store";
+import {
+  GPS_TIMEOUT_MS,
+  MAXIMUM_AGE_MS,
+  describeGeolocationError,
+  getCurrentPositionWithFallback,
+  unsupportedFailure,
+  type LocateFailure,
+} from "@/lib/utils/geolocation";
 
 interface UseGeolocationOptions {
   watch?: boolean;
@@ -15,7 +23,12 @@ interface UseGeolocationOptions {
  * @returns Location state from store
  */
 export function useGeolocation(options: UseGeolocationOptions = {}) {
-  const { watch = true, enableHighAccuracy = true, timeout = 10000, maximumAge = 5000 } = options;
+  const {
+    watch = true,
+    enableHighAccuracy = true,
+    timeout = GPS_TIMEOUT_MS,
+    maximumAge = MAXIMUM_AGE_MS,
+  } = options;
 
   const watchIdRef = useRef<number>();
 
@@ -25,47 +38,42 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
 
     // Check if geolocation is supported
     if (!navigator.geolocation) {
-      store.setError("Geolocation is not supported by this browser");
-      store.setPermission("unknown");
+      const failure = unsupportedFailure();
+      store.setError(failure.message);
+      store.setPermission(failure.permission);
       return;
     }
 
-    // Request permission and get initial location
-    const startPosition = () => {
+    // Request permission and get initial location. GPS first, with a coarse
+    // network fallback so indoor devices still get a first fix (see
+    // lib/utils/geolocation.ts).
+    const startPosition = async () => {
       store.setLoading(true);
 
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          store.setLocation(
-            position.coords.latitude,
-            position.coords.longitude,
-            position.coords.accuracy
-          );
-          if (position.coords.heading !== null) {
-            store.setHeading(position.coords.heading);
-          }
-          if (position.coords.speed !== null) {
-            store.setSpeed(position.coords.speed);
-          }
-          store.setPermission("granted");
-          store.setLoading(false);
-        },
-        (error) => {
-          const errorMessage =
-            {
-              [GeolocationPositionError.PERMISSION_DENIED]: "Location permission denied",
-              [GeolocationPositionError.POSITION_UNAVAILABLE]: "Location unavailable",
-              [GeolocationPositionError.TIMEOUT]: "Location request timed out",
-            }[error.code] || "Unknown location error";
-
-          store.setError(errorMessage);
-          store.setPermission(
-            error.code === GeolocationPositionError.PERMISSION_DENIED ? "denied" : "prompt"
-          );
-          store.setLoading(false);
-        },
-        { enableHighAccuracy, timeout, maximumAge }
-      );
+      try {
+        const position = await getCurrentPositionWithFallback({ timeout, maximumAge });
+        store.setLocation(
+          position.coords.latitude,
+          position.coords.longitude,
+          position.coords.accuracy
+        );
+        if (position.coords.heading !== null) {
+          store.setHeading(position.coords.heading);
+        }
+        if (position.coords.speed !== null) {
+          store.setSpeed(position.coords.speed);
+        }
+        store.setPermission("granted");
+        store.setLoading(false);
+      } catch (error) {
+        // The helper always rejects with a LocateFailure; guard the type anyway.
+        const failure: LocateFailure =
+          error !== null && typeof error === "object" && "message" in error
+            ? (error as LocateFailure)
+            : describeGeolocationError(error);
+        store.setError(failure.message);
+        store.setPermission(failure.permission);
+      }
     };
 
     startPosition();
@@ -87,17 +95,9 @@ export function useGeolocation(options: UseGeolocationOptions = {}) {
           }
         },
         (error) => {
-          const errorMessage =
-            {
-              [GeolocationPositionError.PERMISSION_DENIED]: "Location permission denied",
-              [GeolocationPositionError.POSITION_UNAVAILABLE]: "Location unavailable",
-              [GeolocationPositionError.TIMEOUT]: "Location request timed out",
-            }[error.code] || "Unknown location error";
-
-          store.setError(errorMessage);
-          store.setPermission(
-            error.code === GeolocationPositionError.PERMISSION_DENIED ? "denied" : "prompt"
-          );
+          const failure = describeGeolocationError(error);
+          store.setError(failure.message);
+          store.setPermission(failure.permission);
         },
         { enableHighAccuracy, timeout, maximumAge }
       );

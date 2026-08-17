@@ -94,6 +94,7 @@ import {
 } from "@/lib/map/markers";
 import { RecenterButton } from "./RecenterButton";
 import { RitualRoundHud } from "./RitualRoundHud";
+import { ZoomIndicatorControl } from "./ZoomIndicatorControl";
 import { MapInstanceProvider } from "@/lib/map/MapInstanceContext";
 import { MAP_COLORS } from "@/lib/map/colors";
 import { resolveCanvasQuality } from "@/lib/map/canvas-quality";
@@ -400,6 +401,10 @@ export function MapView({
 
     // Add fullscreen control
     map.addControl(new maplibregl.FullscreenControl(), "top-right");
+
+    // Zoom-level pill, stacked under the controls above inside
+    // `maplibregl-ctrl-top-right` (added last = bottom of the column).
+    map.addControl(new ZoomIndicatorControl(), "top-right");
 
     // Add scale control
     map.addControl(

@@ -1,4 +1,9 @@
 import { create } from "zustand";
+import {
+  describeGeolocationError,
+  getCurrentPositionWithFallback,
+  type LocateFailure,
+} from "@/lib/utils/geolocation";
 import type { LocationState, LocationActions } from "@/types/navigation";
 
 interface LocationStore extends LocationState, LocationActions {}
@@ -45,19 +50,10 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
   requestLocation: async () => {
     set({ loading: true, error: null });
 
-    if (!navigator.geolocation) {
-      set({ error: "Geolocation is not supported by this browser", loading: false });
-      return;
-    }
-
     try {
-      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(resolve, reject, {
-          enableHighAccuracy: true,
-          timeout: 10000,
-          maximumAge: 5000,
-        });
-      });
+      // GPS first with a coarse network fallback, so indoor devices still
+      // get a first fix; rejects with a LocateFailure (see lib/utils/geolocation.ts).
+      const position = await getCurrentPositionWithFallback();
 
       set({
         latitude: position.coords.latitude,
@@ -71,20 +67,16 @@ export const useLocationStore = create<LocationStore>((set, get) => ({
         error: null,
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof GeolocationPositionError
-          ? {
-              [GeolocationPositionError.PERMISSION_DENIED]: "Location permission denied",
-              [GeolocationPositionError.POSITION_UNAVAILABLE]: "Location unavailable",
-              [GeolocationPositionError.TIMEOUT]: "Location request timed out",
-            }[error.code] || "Unknown location error"
-          : "Failed to get location";
-
+      // The helper always rejects with a LocateFailure; guard the type anyway
+      // so an unexpected rejection cannot set a blank error message.
+      const failure: LocateFailure =
+        error !== null && typeof error === "object" && "message" in error
+          ? (error as LocateFailure)
+          : describeGeolocationError(error);
       set({
-        error: errorMessage,
+        error: failure.message,
         loading: false,
-        permission:
-          error instanceof GeolocationPositionError && error.code === 1 ? "denied" : "prompt",
+        permission: failure.permission,
       });
     }
   },

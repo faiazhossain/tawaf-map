@@ -43,8 +43,9 @@ export function UserLocation({ onRequestLocation }: UserLocationProps) {
   if (error && !latitude) {
     return (
       <div className="flex items-center gap-2 px-3 py-2 bg-surface/90 backdrop-blur-xl border border-border/50 rounded-xl shadow-lg">
-        <NavigationOff className="w-4 h-4 text-muted-foreground" />
-        <span className="text-sm text-muted-foreground hidden sm:inline">{error}</span>
+        <NavigationOff className="w-4 h-4 shrink-0 text-muted-foreground" />
+        {/* মোবাইলেও দেখা যায় — GPS ব্যর্থ হলে ইঙ্গিতটুকু প্রয়োজন। */}
+        <span className="text-xs sm:text-sm text-muted-foreground leading-snug">{error}</span>
       </div>
     );
   }
