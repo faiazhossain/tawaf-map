@@ -18,7 +18,8 @@
     "test:e2e:headed": "playwright test --headed",
     "prepare": "husky",
     "pre-commit": "lint-staged",
-    "pre-push": "vitest run"
+    "pre-push": "vitest run",
+    "dev:lan-https": "next dev --experimental-https -H 0.0.0.0"
   },
   "dependencies": {
     "@maplibre/maplibre-gl-geocoder": "^1.5.0",
