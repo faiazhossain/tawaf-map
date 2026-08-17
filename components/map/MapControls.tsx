@@ -17,7 +17,10 @@ import { useEffect, useState } from "react";
  */
 export function MapControls() {
   const map = useMapInstance();
-  const zoom = useMapStore((state) => state.zoom);
+  // Rounded because the indicator only ever shows an integer zoom level —
+  // subscribing to the raw value re-rendered this toolbar on every per-frame
+  // zoom write during pinch gestures.
+  const zoom = useMapStore((state) => Math.round(state.zoom));
   // Local indicator so taps feel responsive even before the map emits zoom.
   const [displayZoom, setDisplayZoom] = useState(zoom);
 

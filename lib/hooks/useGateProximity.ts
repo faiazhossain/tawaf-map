@@ -59,7 +59,11 @@ function getDirectionFromBearing(bearing: number): string {
  * @returns Array of nearby gates with distance and direction info
  */
 export function useGateProximity(maxDistance = 2000, count = 5) {
-  const { latitude, longitude } = useLocationStore();
+  // Individual selectors: the location store also receives heading/speed
+  // writes on every GPS fix, and a whole-store subscription re-rendered every
+  // consumer (including the map page) for changes this hook never reads.
+  const latitude = useLocationStore((state) => state.latitude);
+  const longitude = useLocationStore((state) => state.longitude);
 
   const nearbyGates = useMemo((): GateProximity[] => {
     if (latitude === null || longitude === null) {

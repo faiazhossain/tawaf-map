@@ -96,6 +96,7 @@ import { RecenterButton } from "./RecenterButton";
 import { RitualRoundHud } from "./RitualRoundHud";
 import { MapInstanceProvider } from "@/lib/map/MapInstanceContext";
 import { MAP_COLORS } from "@/lib/map/colors";
+import { resolveCanvasQuality } from "@/lib/map/canvas-quality";
 import { getDemoWorldViewport } from "@/lib/dev/demo-world";
 
 interface MapViewProps {
@@ -226,11 +227,12 @@ export function MapView({
   const miqatMarkersRef = useRef<Map<string, Marker>>(new Map());
   const userLocationMarkerRef = useRef<Marker | null>(null);
 
-  // Store state - use individual selectors to avoid object creation issues
-  const center = useMapStore((state) => state.center);
-  const zoom = useMapStore((state) => state.zoom);
-  const bearing = useMapStore((state) => state.bearing);
-  const pitch = useMapStore((state) => state.pitch);
+  // Store state - individual selectors only. Camera state (center/zoom/
+  // bearing/pitch) is deliberately NOT subscribed to: the move/zoom handlers
+  // below write those to the store every frame, so a reactive subscription
+  // here re-rendered this whole component at up to 60fps while panning (the
+  // top offender of the mobile-jank audit). Initial camera values are read
+  // from the store once inside the init effect instead.
   const userTookControl = useMapStore((state) => state.userTookControl);
   const setCenter = useMapStore((state) => state.setCenter);
   const setZoom = useMapStore((state) => state.setZoom);
@@ -356,17 +358,26 @@ export function MapView({
     // of Makkah. Only affects the very first map creation, so no fighting.
     const demoViewport = getDemoWorldViewport();
 
+    // Initial camera from the store's CURRENT values (not subscriptions) —
+    // see the selector note at the top of the component.
+    const {
+      center: initialCenter,
+      zoom: initialZoom,
+      bearing: initialBearing,
+      pitch: initialPitch,
+    } = useMapStore.getState();
+
     const map = new maplibregl.Map({
       container: mapContainerRef.current,
       style: BARIKOI_MAP_STYLE,
-      center: demoViewport?.center ?? [center[0], center[1]],
-      zoom: demoViewport?.zoom ?? zoom,
-      bearing,
-      pitch,
-      // Create the WebGL context with MSAA antialiasing so the custom 3D-model
-      // layer (and vector lines) render without jagged edges. Matches the
-      // official maplibre-gl "Add a 3D model using three.js" example.
-      antialias: true,
+      center: demoViewport?.center ?? [initialCenter[0], initialCenter[1]],
+      zoom: demoViewport?.zoom ?? initialZoom,
+      bearing: initialBearing,
+      pitch: initialPitch,
+      // Canvas quality: capped pixel ratio + MSAA only on low-DPI displays —
+      // see lib/map/canvas-quality.ts. (The context is created once here; the
+      // 3D-model layer adopts this same context.)
+      ...resolveCanvasQuality(window.devicePixelRatio),
       minZoom: 6,
       maxZoom: 20,
       // Allow steeper pitch for the 3D-model view (default max is 60, which
@@ -827,49 +838,61 @@ export function MapView({
     programmaticFitBounds,
   ]);
 
-  // Add/update user location marker
+  // Add/update user location marker.
+  //
+  // মার্কারটি একবারই তৈরি হয় (অবস্থান পাওয়া গেলে বা টগল বদলালে); প্রতি GPS
+  // ফিক্সে শুধু marker.setLngLat + accuracy সোর্সের setData হয়। আগে প্রতি
+  // ফিক্সে DOM এলিমেন্ট ভেঙে নতুন করে বানানো হতো (watchPosition ~১ সেকেন্ডে
+  // একবার) — মোবাইলে সেই layout/GC চার্ণই জ্যাঙ্কের বড় একটি উৎস ছিল।
+  const hasUserPosition = latitude !== null && longitude !== null;
   useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showUserLocation) return;
-
+    if (!mapRef.current || !mapLoaded || !showUserLocation || !hasUserPosition) return;
     const map = mapRef.current;
 
-    // Remove existing marker
-    if (userLocationMarkerRef.current) {
-      userLocationMarkerRef.current.remove();
+    // create-effect শুধু "অবস্থান আছে কি না" দেখে; তাই মানগুলো স্টোর থেকে
+    // সরাসরি নেওয়া হয় — প্রতি ফিক্সে এই ইফেক্ট পুনরায় চলে না।
+    const { latitude: lat, longitude: lng, accuracy: acc } = useLocationStore.getState();
+    if (lat === null || lng === null) return;
+
+    const el = createUserLocationElement();
+    const marker = new Marker({
+      element: el,
+      anchor: "center",
+    })
+      .setLngLat([lng, lat])
+      .addTo(map);
+    userLocationMarkerRef.current = marker;
+
+    // Accuracy ring
+    if (!map.getSource("user-accuracy")) {
+      map.addSource("user-accuracy", createUserAccuracySource(lat, lng, acc));
+    }
+    if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
+      const layerConfigs = getLayerConfigs();
+      map.addLayer({
+        id: USER_ACCURACY_LAYER_ID,
+        type: "fill",
+        source: "user-accuracy",
+        paint: layerConfigs.userAccuracy.paint,
+      });
+    }
+
+    return () => {
+      marker.remove();
       userLocationMarkerRef.current = null;
-    }
+    };
+  }, [mapLoaded, showUserLocation, hasUserPosition]);
 
-    if (latitude !== null && longitude !== null) {
-      const el = createUserLocationElement();
-
-      const marker = new Marker({
-        element: el,
-        anchor: "center",
-      })
-        .setLngLat([longitude, latitude])
-        .addTo(map);
-
-      userLocationMarkerRef.current = marker;
-
-      // Add/update accuracy ring
-      if (!map.getSource("user-accuracy")) {
-        map.addSource("user-accuracy", createUserAccuracySource(null, null, null));
-      }
-      (map.getSource("user-accuracy") as any)?.setData(
-        createUserAccuracySource(latitude, longitude, accuracy).data
-      );
-
-      if (!map.getLayer(USER_ACCURACY_LAYER_ID)) {
-        const layerConfigs = getLayerConfigs();
-        map.addLayer({
-          id: USER_ACCURACY_LAYER_ID,
-          type: "fill",
-          source: "user-accuracy",
-          paint: layerConfigs.userAccuracy.paint,
-        });
-      }
-    }
-  }, [mapLoaded, showUserLocation, latitude, longitude, accuracy]);
+  // প্রতি GPS ফিক্সে মার্কার সরানো + accuracy বৃত্ত আপডেট (কোনো DOM পুনঃনির্মাণ নেই)।
+  useEffect(() => {
+    const marker = userLocationMarkerRef.current;
+    const map = mapRef.current;
+    if (!marker || !map || latitude === null || longitude === null) return;
+    marker.setLngLat([longitude, latitude]);
+    (map.getSource("user-accuracy") as any)?.setData(
+      createUserAccuracySource(latitude, longitude, accuracy).data
+    );
+  }, [latitude, longitude, accuracy]);
 
   // Fly to selected gate
   useEffect(() => {

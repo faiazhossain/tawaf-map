@@ -16,7 +16,9 @@ interface GateSelectorProps {
 export function GateSelector({ showLabel = false }: GateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
-  const { flyTo } = useMapStore();
+  // Selector-sliced: a whole-store subscription here re-rendered the selector
+  // on every per-frame center/zoom write from MapView's move handlers.
+  const flyTo = useMapStore((state) => state.flyTo);
   const { setGate, selectedGate } = useGateStore();
 
   const filteredGates = HARAM_GATES.filter(

@@ -175,6 +175,13 @@ export default function MapPage() {
     useUmrahGuideStore.getState().setMode(open ? "miqat-overview" : "guide");
   };
 
+  // ধাপ মার্কার ক্লিক — useCallback-এ স্থিতিশীল আইডেন্টিটি জরুরি: inline অ্যারো
+  // হলে প্রতি রি-রেন্ডারে (GPS ফিক্সসহ) MapView-এর মার্কার ইফেক্ট পুনরায় চলে সব
+  // ওমরাহ ধাপ-মার্কার ও যাত্রা রেখা ভেঙে নতুন করে বসাত।
+  const handleUmrahStepClick = useCallback((stepId: string) => {
+    useUmrahGuideStore.getState().goToStepId(stepId);
+  }, []);
+
   // ওমরাহ গাইড ডিফল্টে চালু: অনবোর্ডেড ব্যবহারকারীর জন্য অ্যাপের মূল ফিচারটি
   // সরাসরি দৃশ্যমান রাখা। মাউন্টের পরে স্টোর হাইড্রেশন শেষ হয়েছে, তাই সঠিক মান পাওয়া যায়।
   // ডেমো ওয়ার্ল্ড মোডে গাইড স্বয়ংক্রিয় খোলা হয় না — গাইড ক্যামেরা মক্কায় ফ্লাই করে,
@@ -539,7 +546,7 @@ export default function MapPage() {
           onGateClick={handleGateClick}
           onHotelClick={handleHotelClick}
           onTouristPlaceClick={handleTouristPlaceClick}
-          onUmrahStepClick={(stepId) => useUmrahGuideStore.getState().goToStepId(stepId)}
+          onUmrahStepClick={handleUmrahStepClick}
         />
 
         {/* Map Controls */}
