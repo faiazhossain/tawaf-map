@@ -370,7 +370,7 @@ export default function MapPage() {
   );
 
   return (
-    <main className="flex flex-col h-screen w-screen overflow-hidden bg-background">
+    <main className="flex flex-col h-dvh w-screen overflow-hidden bg-background">
       {/* Header */}
       <header className="relative px-4 py-3 bg-surface border-b border-border z-10">
         <div className="flex flex-row items-center justify-between gap-3 max-w-screen-2xl mx-auto">
