@@ -8,7 +8,12 @@ import { HARAM_GATES } from "@/lib/data/gates";
 import { Search, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export function GateSelector() {
+interface GateSelectorProps {
+  /** লেবেল বাধ্যতামূলক দেখাও (মোবাইল মেনুতে); ডিফল্টে শুধু >=sm-এ দেখায়। */
+  showLabel?: boolean;
+}
+
+export function GateSelector({ showLabel = false }: GateSelectorProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const { flyTo } = useMapStore();
@@ -49,7 +54,7 @@ export function GateSelector() {
         )}
       >
         <MapPin className={cn("w-4 h-4 transition-colors", isOpen && "text-primary")} />
-        <span className="hidden sm:inline max-w-[120px] truncate">
+        <span className={cn(showLabel ? "inline" : "hidden sm:inline", "max-w-[120px] truncate")}>
           {selectedGate.gate ? selectedGate.gate.name : "গেট খুঁজুন"}
         </span>
         {selectedGate.distance && (

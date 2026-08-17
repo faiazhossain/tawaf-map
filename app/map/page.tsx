@@ -29,7 +29,18 @@ import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
-import { Hotel, Mountain, Building2, Box, X, DoorOpen, Moon, Menu } from "lucide-react";
+import { cn } from "@/lib/utils";
+import {
+  Hotel,
+  Mountain,
+  Building2,
+  Box,
+  X,
+  DoorOpen,
+  Moon,
+  Menu,
+  type LucideIcon,
+} from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -63,6 +74,51 @@ const DebugLocationPanel = dynamic(
     })),
   { ssr: false }
 );
+
+// মোবাইল হ্যামবার্গার মেনুর টগল-সারি: আইকন + বাংলা লেবেল বামে, সুইচ ডানে।
+// সুইচের রঙ primary থিম অনুসরণ করে; বোতামটি aria-pressed-এ অবস্থা জানায়।
+function MenuToggleRow({
+  label,
+  icon: Icon,
+  checked,
+  onChange,
+  onIntent,
+}: {
+  label: string;
+  icon: LucideIcon;
+  checked: boolean;
+  onChange: () => void;
+  onIntent?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={checked}
+      onClick={onChange}
+      onPointerEnter={onIntent}
+      onTouchStart={onIntent}
+      onFocus={onIntent}
+      className="flex w-full items-center justify-between gap-3 rounded-xl px-2.5 py-1.5 text-left transition-colors hover:bg-muted active:bg-muted"
+    >
+      <span className="flex items-center gap-2.5">
+        <Icon
+          className={cn("h-[18px] w-[18px]", checked ? "text-primary" : "text-muted-foreground")}
+          aria-hidden
+        />
+        <span className="text-sm font-medium text-foreground">{label}</span>
+      </span>
+      <span
+        aria-hidden
+        className={cn(
+          "flex h-5 w-9 shrink-0 items-center rounded-full border px-[2px] transition-colors",
+          checked ? "justify-end border-primary bg-primary" : "justify-start border-border bg-muted"
+        )}
+      >
+        <span className="block h-4 w-4 rounded-full bg-white shadow" />
+      </span>
+    </button>
+  );
+}
 
 export default function MapPage() {
   const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
@@ -267,9 +323,10 @@ export default function MapPage() {
     setActivePanel("route");
   }
 
-  // হেডারের শেয়ার্ড আইটেম — ডেস্কটপ টুলবার ও মোবাইল হ্যামবার্গার মেনু একই JSX
+  // হেডারের শেয়ার্ড আইটেম — ডেস্কটপ টুলবার ও মোবাইল ক্লাস্টার/মেনু একই JSX
   // ব্যবহার করে। isDesktop শর্তে যেকোনো সময় একটিই লেআউট রেন্ডার হয়, তাই প্রতিটি
-  // আইটেম একবারই মাউন্ট হয়।
+  // আইটেম একবারই মাউন্ট হয়। লেয়ার টগলগুলো আলাদা: ডেস্কটপে Button, মোবাইল
+  // মেনুতে MenuToggleRow।
   const themeToggle = <ThemeToggle />;
   const userLocationItem = <UserLocation />;
   const umrahButton = (
@@ -287,85 +344,6 @@ export default function MapPage() {
       <span className="inline whitespace-nowrap">
         {umrahOnboarded ? (showUmrahGuide ? "চলছে" : "ওমরাহ") : "ওমরাহ"}
       </span>
-    </Button>
-  );
-  const hotelsButton = (
-    <Button
-      variant={showHotels ? "default" : "outline"}
-      size={showHotels ? "sm" : "icon"}
-      onClick={handleToggleHotels}
-      className={
-        showHotels
-          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-      }
-    >
-      <Hotel className="hidden sm:inline-block w-4 h-4" />
-      <span className="inline whitespace-nowrap">{showHotels ? "On" : "Hotels"}</span>
-    </Button>
-  );
-  const touristPlacesButton = (
-    <Button
-      variant={showTouristPlaces ? "default" : "outline"}
-      size={showTouristPlaces ? "sm" : "icon"}
-      onClick={handleToggleTouristPlaces}
-      className={
-        showTouristPlaces
-          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-      }
-    >
-      <Building2 className="hidden sm:inline-block w-4 h-4" />
-      <span className="inline whitespace-nowrap">{showTouristPlaces ? "Hist On" : "Hist"}</span>
-    </Button>
-  );
-  const terrainButton = (
-    <Button
-      variant={showTerrain ? "default" : "outline"}
-      size={showTerrain ? "sm" : "icon"}
-      onClick={() => setShowTerrain((prev) => !prev)}
-      className={
-        showTerrain
-          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-      }
-    >
-      <Mountain className="hidden sm:inline-block w-4 h-4" />
-      <span className="inline whitespace-nowrap">{showTerrain ? "On" : "Terr"}</span>
-    </Button>
-  );
-  const model3DButton = !demoWorldActive && (
-    <Button
-      variant={show3DModel ? "default" : "outline"}
-      size={show3DModel ? "sm" : "icon"}
-      onClick={() => setShow3DModel((prev) => !prev)}
-      onPointerEnter={handle3DIntent}
-      onTouchStart={handle3DIntent}
-      onFocus={handle3DIntent}
-      className={
-        show3DModel
-          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-      }
-      title="৩ডি মডেল"
-    >
-      <Box className="hidden sm:inline-block w-4 h-4" />
-      <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
-    </Button>
-  );
-  const gatesButton = (
-    <Button
-      variant={showGates ? "default" : "outline"}
-      size={showGates ? "sm" : "icon"}
-      onClick={handleToggleGates}
-      className={
-        showGates
-          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-      }
-    >
-      <DoorOpen className="hidden sm:inline-block w-4 h-4" />
-      <span className="inline whitespace-nowrap">{showGates ? "On" : "Gates"}</span>
     </Button>
   );
 
@@ -401,11 +379,79 @@ export default function MapPage() {
                   {themeToggle}
                   {userLocationItem}
                   {umrahButton}
-                  {hotelsButton}
-                  {touristPlacesButton}
-                  {terrainButton}
-                  {model3DButton}
-                  {gatesButton}
+                  <Button
+                    variant={showHotels ? "default" : "outline"}
+                    size={showHotels ? "sm" : "icon"}
+                    onClick={handleToggleHotels}
+                    className={
+                      showHotels
+                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                    }
+                  >
+                    <Hotel className="hidden sm:inline-block w-4 h-4" />
+                    <span className="inline whitespace-nowrap">{showHotels ? "On" : "Hotels"}</span>
+                  </Button>
+                  <Button
+                    variant={showTouristPlaces ? "default" : "outline"}
+                    size={showTouristPlaces ? "sm" : "icon"}
+                    onClick={handleToggleTouristPlaces}
+                    className={
+                      showTouristPlaces
+                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                    }
+                  >
+                    <Building2 className="hidden sm:inline-block w-4 h-4" />
+                    <span className="inline whitespace-nowrap">
+                      {showTouristPlaces ? "Hist On" : "Hist"}
+                    </span>
+                  </Button>
+                  <Button
+                    variant={showTerrain ? "default" : "outline"}
+                    size={showTerrain ? "sm" : "icon"}
+                    onClick={() => setShowTerrain((prev) => !prev)}
+                    className={
+                      showTerrain
+                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                    }
+                  >
+                    <Mountain className="hidden sm:inline-block w-4 h-4" />
+                    <span className="inline whitespace-nowrap">{showTerrain ? "On" : "Terr"}</span>
+                  </Button>
+                  {!demoWorldActive && (
+                    <Button
+                      variant={show3DModel ? "default" : "outline"}
+                      size={show3DModel ? "sm" : "icon"}
+                      onClick={() => setShow3DModel((prev) => !prev)}
+                      onPointerEnter={handle3DIntent}
+                      onTouchStart={handle3DIntent}
+                      onFocus={handle3DIntent}
+                      className={
+                        show3DModel
+                          ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                          : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                      }
+                      title="৩ডি মডেল"
+                    >
+                      <Box className="hidden sm:inline-block w-4 h-4" />
+                      <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
+                    </Button>
+                  )}
+                  <Button
+                    variant={showGates ? "default" : "outline"}
+                    size={showGates ? "sm" : "icon"}
+                    onClick={handleToggleGates}
+                    className={
+                      showGates
+                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
+                    }
+                  >
+                    <DoorOpen className="hidden sm:inline-block w-4 h-4" />
+                    <span className="inline whitespace-nowrap">{showGates ? "On" : "Gates"}</span>
+                  </Button>
                   <GateSelector />
                 </div>
               </div>
@@ -429,17 +475,50 @@ export default function MapPage() {
         </div>
 
         {/* মোবাইল হ্যামবার্গার মেনু: মানচিত্রের উপর ওভারলে — মানচিত্রের মাপ
-            অপরিবর্তিত থাকে, তাই ক্যানভাস রিসাইজ লাগে না */}
+            অপরিবর্তিত থাকে, তাই ক্যানভাস রিসাইজ লাগে না। লেয়ার টগল উল্লম্ব
+            তালিকা হিসেবে, নিচে গেট সার্চ ও লোকেশন। */}
         {!isDesktop && toolbarMenuOpen && (
           <div className="absolute inset-x-0 top-full z-20 border-b border-border bg-surface/95 shadow-lg backdrop-blur-md">
-            <div className="mx-auto flex max-w-screen-2xl flex-wrap items-center gap-2 px-4 py-3">
-              {userLocationItem}
-              {hotelsButton}
-              {touristPlacesButton}
-              {terrainButton}
-              {model3DButton}
-              {gatesButton}
-              <GateSelector />
+            <div className="mx-auto max-w-screen-2xl max-h-[70vh] overflow-y-auto px-3 py-1.5">
+              <div className="divide-y divide-border">
+                <MenuToggleRow
+                  label="নিকটবর্তী হোটেল"
+                  icon={Hotel}
+                  checked={showHotels}
+                  onChange={handleToggleHotels}
+                />
+                <MenuToggleRow
+                  label="দর্শনীয় স্থানসমূহ"
+                  icon={Building2}
+                  checked={showTouristPlaces}
+                  onChange={handleToggleTouristPlaces}
+                />
+                <MenuToggleRow
+                  label="টেরেইন ম্যাপ"
+                  icon={Mountain}
+                  checked={showTerrain}
+                  onChange={() => setShowTerrain((prev) => !prev)}
+                />
+                {!demoWorldActive && (
+                  <MenuToggleRow
+                    label="৩ডি মডেল"
+                    icon={Box}
+                    checked={show3DModel}
+                    onChange={() => setShow3DModel((prev) => !prev)}
+                    onIntent={handle3DIntent}
+                  />
+                )}
+                <MenuToggleRow
+                  label="হারামের গেট"
+                  icon={DoorOpen}
+                  checked={showGates}
+                  onChange={handleToggleGates}
+                />
+              </div>
+              <div className="mt-1.5 flex items-center justify-end gap-3 border-t border-border pt-2.5">
+                <GateSelector showLabel />
+                {userLocationItem}
+              </div>
             </div>
           </div>
         )}
