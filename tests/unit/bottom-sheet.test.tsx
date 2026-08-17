@@ -186,6 +186,147 @@ describe("BottomSheet snap context", () => {
   });
 });
 
+describe("BottomSheet pointer capture", () => {
+  function firePointer(
+    target: Element,
+    type: string,
+    coords: { clientX: number; clientY: number },
+    pointerId = 1
+  ): void {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.assign(event, {
+      pointerId,
+      pointerType: "mouse",
+      isPrimary: true,
+      ...coords,
+    });
+    target.dispatchEvent(event);
+  }
+
+  /** jsdom-এ setPointerCapture নেই - কল গণনার জন্য স্টাব। */
+  function stubCapture(sheet: HTMLElement): number[] {
+    const calls: number[] = [];
+    sheet.setPointerCapture = (pointerId: number) => {
+      calls.push(pointerId);
+    };
+    return calls;
+  }
+
+  it("does not capture the pointer on pointerdown (clicks reach buttons)", () => {
+    render(
+      <BottomSheet open onOpenChange={vi.fn()}>
+        <p>content</p>
+      </BottomSheet>
+    );
+    const sheet = getSheet();
+    const captureCalls = stubCapture(sheet);
+
+    firePointer(sheet, "pointerdown", { clientX: 100, clientY: 400 });
+
+    expect(captureCalls).toHaveLength(0);
+  });
+
+  it("captures the pointer once a drag engages, so moves outside still track", () => {
+    render(
+      <BottomSheet open onOpenChange={vi.fn()}>
+        <p>content</p>
+      </BottomSheet>
+    );
+    const sheet = getSheet();
+    const region = getHandleRegion();
+    stubRect(sheet, 384);
+    const captureCalls = stubCapture(sheet);
+
+    firePointer(region, "pointerdown", { clientX: 100, clientY: 200 });
+    // ড্র্যাগ থ্রেশল্ড পার করা মুভ - এখানেই engage হওয়া উচিত
+    firePointer(sheet, "pointermove", { clientX: 100, clientY: 230 });
+    firePointer(sheet, "pointermove", { clientX: 100, clientY: 260 });
+    firePointer(sheet, "pointerup", { clientX: 100, clientY: 260 });
+
+    expect(captureCalls).toHaveLength(1);
+  });
+});
+
+describe("BottomSheet onSnapChange", () => {
+  function SnapButton({ index }: { index: number }) {
+    const { snapToIndex } = useBottomSheet();
+    return <button data-testid="snap" onClick={() => snapToIndex(index)} />;
+  }
+
+  it("fires the default snap once on open", () => {
+    const onSnapChange = vi.fn();
+    render(
+      <BottomSheet open onOpenChange={vi.fn()} onSnapChange={onSnapChange}>
+        <p>content</p>
+      </BottomSheet>
+    );
+    expect(onSnapChange).toHaveBeenCalledTimes(1);
+    expect(onSnapChange).toHaveBeenCalledWith(1);
+  });
+
+  it("fires the target only after the settle completes, not mid-settle", async () => {
+    const onSnapChange = vi.fn();
+    const { getByTestId } = render(
+      <BottomSheet open onOpenChange={vi.fn()} onSnapChange={onSnapChange}>
+        <SnapButton index={2} />
+      </BottomSheet>
+    );
+
+    act(() => {
+      getByTestId("snap").click();
+    });
+    // সেটল চলাকালীন এখনও শুধু খোলার ইভেন্ট
+    expect(onSnapChange).toHaveBeenCalledTimes(1);
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    expect(onSnapChange).toHaveBeenLastCalledWith(2);
+  });
+
+  it("fires for a drag release that settles on the nearest snap", async () => {
+    const onSnapChange = vi.fn();
+    render(
+      <BottomSheet open onOpenChange={vi.fn()} onSnapChange={onSnapChange}>
+        <p>content</p>
+      </BottomSheet>
+    );
+    const sheet = getSheet();
+    const region = getHandleRegion();
+    stubRectFromVar(sheet, 384);
+
+    // ছোট নিচের টান: উচ্চতা পিকের অনেক ওপরে, তাই ছেড়ে দিলে স্ন্যাপ ১-এ ফিরে যায়।
+    mockClock([0, 400]);
+    fireTouch(region, "touchstart", touchPayload(500));
+    fireTouch(sheet, "touchmove", touchPayload(620));
+    fireTouch(sheet, "touchend", endTouches(620));
+
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    expect(onSnapChange).toHaveBeenLastCalledWith(1);
+    expect(onSnapChange).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not fire mid-drag", () => {
+    const onSnapChange = vi.fn();
+    render(
+      <BottomSheet open onOpenChange={vi.fn()} onSnapChange={onSnapChange}>
+        <p>content</p>
+      </BottomSheet>
+    );
+    const sheet = getSheet();
+    const region = getHandleRegion();
+    stubRect(sheet, 400);
+
+    fireTouch(region, "touchstart", touchPayload(600));
+    fireTouch(sheet, "touchmove", touchPayload(560));
+    fireTouch(sheet, "touchmove", touchPayload(520));
+
+    expect(onSnapChange).toHaveBeenCalledTimes(1); // শুধু খোলার ইভেন্ট
+  });
+});
+
 describe("BottomSheet gestures", () => {
   it("dragging on the handle writes --sheet-height without re-rendering", () => {
     let renderCount = 0;

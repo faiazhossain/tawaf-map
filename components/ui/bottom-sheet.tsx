@@ -52,6 +52,8 @@ export interface BottomSheetProps {
   children: ReactNode;
   snapPoints?: number[];
   defaultSnap?: number;
+  /** প্রতিবার শীট একটি স্ন্যাপে সেটল করলে (খোলা, snapToIndex, ড্র্যাগ ছাড়া) তার ইনডেক্স জানায়। */
+  onSnapChange?: (snapIndex: number) => void;
   className?: string;
   contentClassName?: string;
   showHandle?: boolean;
@@ -91,10 +93,16 @@ export function BottomSheet({
   showBackdrop = true,
   dismissOnBackdropClick = true,
   dismissOnDragDown = true,
+  onSnapChange,
 }: BottomSheetProps) {
   const [currentSnapIndex, setCurrentSnapIndex] = useState(defaultSnap);
   const [currentHeight, setCurrentHeight] = useState(snapPoints[defaultSnap]);
   const [isClosing, setIsClosing] = useState(false);
+
+  // Ref-এ রাখা হয় যাতে settleToIndex-এর কলব্যাক আইডেন্টিটি স্থির থাকে - প্যারেন্ট
+  // রি-রেন্ডারে জেসচার লেয়ারের নেটিভ লিসনার কখনো পুনরায় বাঁধা না পড়ে।
+  const onSnapChangeRef = useRef(onSnapChange);
+  onSnapChangeRef.current = onSnapChange;
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -176,6 +184,7 @@ export function BottomSheet({
       const finish = () => {
         setCurrentHeight(targetFraction);
         setCurrentSnapIndex(clamped);
+        onSnapChangeRef.current?.(clamped);
       };
 
       sheet.style.transition = "none";
@@ -234,6 +243,7 @@ export function BottomSheet({
     document.body.classList.add("bottom-sheet-open");
 
     setCurrentSnapIndex(defaultSnap);
+    onSnapChangeRef.current?.(defaultSnap);
     const restingFraction = snapPoints[defaultSnap];
     setCurrentHeight(restingFraction);
     const sheet = sheetRef.current;
@@ -405,25 +415,31 @@ export function BottomSheet({
       onGestureCancel();
     };
 
-    // Mouse/pen: touch is owned by the touch path above.
+    // Mouse/pen: touch is owned by the touch path above. Pointer capture শুধু
+    // ড্র্যাগ শুরু হলে নেওয়া হয় - pointerdown-এ নিলে click ইভেন্ট শীটে redirect
+    // হয়ে যায় এবং শীটের ভেতরের বোতামগুলো মাউসে কাজ করে না (৬৪০-৭৬৭px ব্যান্ডে
+    // শীট দেখা যায় এমন ডেস্কটপ/ট্যাবলেটে সব বোতাম মৃত ছিল)।
     const handlePointerDown = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
       if (!event.isPrimary) return;
-      sheet.setPointerCapture(event.pointerId);
-      if (gestureState.current === "dragging") {
-        sheet.style.userSelect = "none"; // avoid text selection mid-drag
-      }
       onGestureStart(event.clientX, event.clientY, event.target);
     };
 
     const handlePointerMove = (event: PointerEvent) => {
       if (event.pointerType === "touch") return;
       if (!event.isPrimary) return;
+      const wasDragging = gestureState.current === "dragging";
       onGestureMove(event.clientX, event.clientY, () => {
         if (gestureState.current === "dragging") {
           sheet.style.userSelect = "none";
         }
       });
+      // ড্র্যাগ এই মুভেই engage হলে এখন capture নাও - এর পরের মুভ/আপ শীটের
+      // বাইরে গেলেও ট্র্যাক হবে।
+      if (!wasDragging && gestureState.current === "dragging") {
+        sheet.setPointerCapture(event.pointerId);
+        sheet.style.userSelect = "none";
+      }
     };
 
     const finishPointer = (event: PointerEvent) => {
