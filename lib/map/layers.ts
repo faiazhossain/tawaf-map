@@ -24,6 +24,26 @@ export const USER_ACCURACY_LAYER_ID = "user-accuracy";
 export const HOTEL_MARKER_LAYER_ID = "hotel-markers";
 export const HOTEL_LABEL_LAYER_ID = "hotel-labels";
 
+// "Near me" radius ring layers
+export const NEARBY_RADIUS_SOURCE_ID = "nearby-radius";
+export const NEARBY_RADIUS_FILL_LAYER_ID = "nearby-radius-fill";
+export const NEARBY_RADIUS_LINE_LAYER_ID = "nearby-radius-line";
+
+/**
+ * Radius ring paints — emerald guidance color: soft fill + dashed outline.
+ */
+export const nearbyRadiusFillPaint: any = {
+  "fill-color": MAP_COLORS.route,
+  "fill-opacity": 0.06,
+};
+
+export const nearbyRadiusLinePaint: any = {
+  "line-color": MAP_COLORS.route,
+  "line-width": 1.5,
+  "line-opacity": 0.5,
+  "line-dasharray": [2, 2],
+};
+
 /**
  * Gate marker paint properties
  */

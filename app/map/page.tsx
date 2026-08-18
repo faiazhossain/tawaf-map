@@ -19,7 +19,7 @@ import {
   useNearbyStore,
 } from "@/lib/store";
 import { guideOverlayBottomPx } from "@/lib/utils/guide-sheet";
-import type { NearbyCategory } from "@/types/nearby";
+import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { INTENT_PRELOAD_MODEL_URLS } from "@/lib/map/model-config";
 import { fetchModelBytes } from "@/lib/map/model-manager";
@@ -123,7 +123,9 @@ export default function MapPage() {
   // "আমার কাছে" — থ্রটল-করা লাইভ কোয়েরি (গণনা + সক্রিয় বিভাগের তালিকা)
   const nearby = useNearbyPlaces();
   const activeNearbyCategory = useNearbyStore((state) => state.activeCategory);
+  const nearbySelectedItem = useNearbyStore((state) => state.selectedItem);
   const nearbySettingsOpen = useNearbyStore((state) => state.settingsOpen);
+  const nearbyRadius = useNearbyStore((state) => state.radius);
   const guideSheetSnap = useGuideSheetStore((state) => state.snapIndex);
   // GPS ওয়াচ পেজ লেভেলে — মোবাইলে UserLocation এখন হ্যামবার্গার মেনুর ভেতরে
   // শুধু মেনু খোলা থাকলে মাউন্ট হয়; ওয়াচ ওখানে থাকলে মেনু বন্ধ মানেই জিপিএস
@@ -198,6 +200,9 @@ export default function MapPage() {
   }, []);
 
   // "আমার কাছে" হ্যান্ডলার — স্টোর getState() দিয়ে, তাই স্থিতিশীল (handleUmrahStepClick ধাঁচ)
+  const handleNearbyItemClick = useCallback((item: NearbyItem) => {
+    useNearbyStore.getState().selectItem(item);
+  }, []);
   const handleNearbyCategorySelect = useCallback((category: NearbyCategory) => {
     useNearbyStore.getState().setActiveCategory(category);
   }, []);
@@ -590,19 +595,25 @@ export default function MapPage() {
       {/* Map */}
       <div className="relative flex-1">
         <MapView
-          showGates={showGates}
-          showHotels={showHotels}
-          showTouristPlaces={showTouristPlaces}
+          showGates={showGates && activeNearbyCategory !== "gate"}
+          showHotels={showHotels && activeNearbyCategory !== "hotel"}
+          showTouristPlaces={showTouristPlaces && activeNearbyCategory !== "historical"}
           touristCity={selectedTouristCity}
           showUserLocation
           showTerrain={showTerrain}
           show3DModel={show3DModel}
           showUmrah={umrahOnboarded && showUmrahGuide}
           showMiqatOverview={umrahOnboarded && showMiqatOverview}
+          nearbyCategory={activeNearbyCategory}
+          nearbyItems={activeNearbyCategory ? nearby.items : []}
+          nearbySelectedItemId={nearbySelectedItem?.id ?? null}
+          nearbyCenter={nearby.center}
+          nearbyRadiusM={nearbyRadius}
           onGateClick={handleGateClick}
           onHotelClick={handleHotelClick}
           onTouristPlaceClick={handleTouristPlaceClick}
           onUmrahStepClick={handleUmrahStepClick}
+          onNearbyItemClick={handleNearbyItemClick}
         />
 
         {/* Tourist Places List */}

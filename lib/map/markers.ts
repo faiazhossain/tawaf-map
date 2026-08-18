@@ -106,6 +106,18 @@ const TOURIST_ICONS: Record<TouristPlaceCategory, string> = {
   cemetery: `<path d="M12 2v20"/><path d="M8 6l4-4 4 4"/><path d="M9 10h6v2H9z"/><path d="M10 14h4v2h-4z"/><path d="M12 16v4"/><circle cx="12" cy="20" r="1"/>`,
 };
 
+/** "আমার কাছে" POI বিভাগের আইকন (টয়লেট/এটিএম/ফার্মেসি/মসজিদ ইত্যাদি) */
+export type NearbyPoiCategory = "restaurant" | "cafe" | "toilet" | "atm" | "pharmacy" | "mosque";
+
+export const NEARBY_POI_ICONS: Record<NearbyPoiCategory, string> = {
+  restaurant: `<path d="M3 2v7c0 1.1.9 2 2 2h1a2 2 0 0 0 2-2V2"/><path d="M7 2v20"/><path d="M21 15V2a5 5 0 0 0-5 5v6c0 1.1.9 2 2 2h3zm0 0v7"/>`,
+  cafe: `<path d="M17 8h1a4 4 0 1 1 0 8h-1"/><path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/><path d="M6 2v4"/><path d="M10 2v4"/><path d="M14 2v4"/>`,
+  toilet: `<path d="M8 2v5a4 4 0 0 0 8 0V2"/><path d="M4 9h16"/><path d="M12 13v3"/><path d="M8 22c0-3.2 1.7-6 4-6s4 2.8 4 6"/>`,
+  atm: `<rect width="20" height="12" x="2" y="6" rx="2"/><circle cx="12" cy="12" r="2"/><path d="M6 12h.01M18 12h.01"/>`,
+  pharmacy: `<path d="M10.5 20.5 3.5 13.5a5 5 0 0 1 7-7l7 7a5 5 0 0 1-7 7Z"/><path d="m8.5 8.5 7 7"/>`,
+  mosque: TOURIST_ICONS.mosque,
+};
+
 // ---------------------------------------------------------------------------
 // Marker factories — every clickable marker is keyboard-accessible
 // ---------------------------------------------------------------------------
@@ -502,6 +514,95 @@ export function createTouristPlaceMarkerElement(
   `;
   makeAccessible(el, `${label}${isPopular ? " (জনপ্রিয়)" : ""}`, onClick);
   return el;
+}
+
+/**
+ * "আমার কাছে" POI (রেস্টুরেন্ট/ক্যাফে/টয়লেট/এটিএম/ফার্মেসি/মসজিদ) মার্কার।
+ * ট্যুরিস্ট-মার্কার ধাঁচ: নিউট্রাল ল্যান্ডমার্ক গোল পিন + বিভাগের আইকন,
+ * নির্বাচিত হলে emerald।
+ */
+export function createNearbyPOIMarkerElement(
+  category: NearbyPoiCategory,
+  isSelected = false,
+  onClick?: () => void,
+  label = "নিকটবর্তী স্থান"
+): HTMLElement {
+  const color = MAP_COLORS.landmark;
+  const accent = isSelected ? MAP_COLORS.route : color;
+  const el = document.createElement("div");
+  el.className = `map-marker map-marker-nearby-poi ${isSelected ? "map-marker-selected" : ""}`;
+
+  const circleSize = 44; // 44px touch target
+  const iconSize = 22;
+  const strokeWidth = isSelected ? 3 : 2;
+
+  Object.assign(el.style, {
+    width: `${circleSize}px`,
+    height: `${circleSize}px`,
+    cursor: "pointer",
+  });
+
+  el.innerHTML = `
+    <div style="
+      width: ${circleSize}px;
+      height: ${circleSize}px;
+      border-radius: 50%;
+      background: ${accent};
+      border: ${strokeWidth}px solid white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.3));
+    ">
+      <svg width="${iconSize}" height="${iconSize}" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        ${NEARBY_POI_ICONS[category]}
+      </svg>
+    </div>
+  `;
+  makeAccessible(el, isSelected ? `নির্বাচিত ${label}` : label, onClick);
+  return el;
+}
+
+/**
+ * NearbyItem-কে উপযুক্ত মার্কারে বাঁটে — গেট/হোটেল/ঐতিহাসিক নিজেদের
+ * ফ্যাক্টরি পুনর্ব্যবহার করে (চেহারা অপরিবর্তিত), বাকি ছয়টি POI ফ্যাক্টরি।
+ */
+export function createNearbyItemMarkerElement(
+  item: import("@/types/nearby").NearbyItem,
+  isSelected = false,
+  onClick?: () => void
+): HTMLElement {
+  switch (item.category) {
+    case "gate":
+      return createGateMarkerElement(
+        (item.source as import("@/types/gate").Gate).type,
+        isSelected,
+        onClick,
+        item.name
+      );
+    case "hotel":
+      return createHotelMarkerElement(
+        (item.source as import("@/types/hotel").Hotel).priceLevel,
+        isSelected,
+        onClick,
+        item.name
+      );
+    case "historical":
+      return createTouristPlaceMarkerElement(
+        (item.source as import("@/types/tourist-place").TouristPlace).category,
+        isSelected,
+        (item.source as import("@/types/tourist-place").TouristPlace).popular,
+        onClick,
+        item.name
+      );
+    case "restaurant":
+    case "cafe":
+    case "toilet":
+    case "atm":
+    case "pharmacy":
+    case "mosque":
+      return createNearbyPOIMarkerElement(item.category, isSelected, onClick, item.name);
+  }
 }
 
 // ---------------------------------------------------------------------------

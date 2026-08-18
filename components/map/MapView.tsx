@@ -43,14 +43,13 @@ import {
   useGuideSheetStore,
 } from "@/lib/store";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
-import {
-  guideCameraPadding,
-  guideOverlayBottomPx,
-  withGuidePadding,
-} from "@/lib/utils/guide-sheet";
+import { guideOverlayBottomPx, withGuidePadding } from "@/lib/utils/guide-sheet";
 import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
 import type { LandmarkHintData } from "@/lib/map/landmark-utils";
 import { getContextualLandmarkHint, getClosestAnchorId } from "@/lib/map/landmark-utils";
+import { nearbyRadiusBounds } from "@/lib/nearby/query";
+import { nearbyCameraPadding } from "@/lib/utils/nearby-sheet";
+import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
@@ -82,12 +81,22 @@ import {
   sacredPointsLayer,
   umrahJourneyLayer,
 } from "@/lib/map/umrah-overlay";
-import { createUserAccuracySource, createRouteSource, getGatesBounds } from "@/lib/map/sources";
+import {
+  createUserAccuracySource,
+  createRouteSource,
+  getGatesBounds,
+  createNearbyRadiusSource,
+} from "@/lib/map/sources";
 import {
   getLayerConfigs,
   ROUTE_LAYER_ID,
   ROUTE_CASING_LAYER_ID,
   USER_ACCURACY_LAYER_ID,
+  NEARBY_RADIUS_SOURCE_ID,
+  NEARBY_RADIUS_FILL_LAYER_ID,
+  NEARBY_RADIUS_LINE_LAYER_ID,
+  nearbyRadiusFillPaint,
+  nearbyRadiusLinePaint,
 } from "@/lib/map/layers";
 import {
   createGateMarkerElement,
@@ -96,6 +105,7 @@ import {
   createUserLocationElement,
   createUmrahStepMarkerElement,
   createMiqatMarkerElement,
+  createNearbyItemMarkerElement,
   pilgrimIconForGender,
   type UmrahStepStatus,
 } from "@/lib/map/markers";
@@ -118,11 +128,22 @@ interface MapViewProps {
   show3DModel?: boolean;
   showUmrah?: boolean;
   showMiqatOverview?: boolean;
+  /** "আমার কাছে": সক্রিয় বিভাগ (null = বন্ধ) */
+  nearbyCategory?: NearbyCategory | null;
+  /** সক্রিয় বিভাগের ব্যাসার্ধ-ভেতরের আইটেম — মেম্বারশিপ বদলেই মার্কার রিবিল্ড */
+  nearbyItems?: NearbyItem[];
+  /** নির্বাচিত আইটেমের id (ডিটেইল শিট খোলা) — নির্বাচন-হাইলাইট ও ক্যামেরার জন্য */
+  nearbySelectedItemId?: string | null;
+  /** থ্রটল-করা ব্যবহারকারীর ফিক্স — বৃত্ত ও fitBounds এটি ঘিরে */
+  nearbyCenter?: { latitude: number; longitude: number } | null;
+  /** ব্যাসার্ধ মিটারে */
+  nearbyRadiusM?: number;
   onGateClick?: (gateId: string) => void;
   onHotelClick?: (hotelId: string) => void;
   onTouristPlaceClick?: (placeId: string) => void;
   onUmrahStepClick?: (stepId: string) => void;
   onMiqatClick?: (miqatId: string) => void;
+  onNearbyItemClick?: (item: NearbyItem) => void;
 }
 
 // Barikoi Map Style URL — key sourced from env so it isn't hardcoded in the
@@ -174,11 +195,17 @@ export function MapView({
   show3DModel = false,
   showUmrah = false,
   showMiqatOverview = false,
+  nearbyCategory = null,
+  nearbyItems = [],
+  nearbySelectedItemId = null,
+  nearbyCenter = null,
+  nearbyRadiusM = 1000,
   onGateClick,
   onHotelClick,
   onTouristPlaceClick,
   onUmrahStepClick,
   onMiqatClick,
+  onNearbyItemClick,
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
@@ -233,7 +260,22 @@ export function MapView({
   const touristPlaceMarkersRef = useRef<Map<string, Marker>>(new Map());
   const umrahStepMarkersRef = useRef<Map<string, Marker>>(new Map());
   const miqatMarkersRef = useRef<Map<string, Marker>>(new Map());
+  const nearbyMarkersRef = useRef<Map<string, Marker>>(new Map());
   const userLocationMarkerRef = useRef<Marker | null>(null);
+
+  // "আমার কাছে" — প্রতি রেন্ডারে টাটকা মান রেফে রাখা হয়; ইফেক্ট deps-এ শুধু
+  // মেম্বারশিপ-কী (id-গুলোর join) যায়, তাই GPS-জিটারে অ্যারের identity বদলেও
+  // মার্কার পুনর্নির্মাণ হয় না — শুধু সদস্যতা/নির্বাচন বদলে।
+  const nearbyItemsRef = useRef(nearbyItems);
+  nearbyItemsRef.current = nearbyItems;
+  const nearbySelectedRef = useRef(nearbySelectedItemId);
+  nearbySelectedRef.current = nearbySelectedItemId;
+  const nearbyCenterRef = useRef(nearbyCenter);
+  nearbyCenterRef.current = nearbyCenter;
+  const nearbyMembershipKey = useMemo(
+    () => nearbyItems.map((item) => item.id).join("|"),
+    [nearbyItems]
+  );
 
   // Store state - individual selectors only. Camera state (center/zoom/
   // bearing/pitch) is deliberately NOT subscribed to: the move/zoom handlers
@@ -863,6 +905,128 @@ export function MapView({
     programmaticFitBounds,
   ]);
 
+  // ----- "আমার কাছে": সক্রিয় বিভাগের মার্কার-পরিবার -----
+  // deps-এ শুধু মেম্বারশিপ-কী + নির্বাচন — GPS ফিক্সে nearbyItems-এর identity
+  // বদলালেও (একই সদস্য) রিবিল্ড হয় না। গেট/হোটেল/ঐতিহাসিক বিভাগে পেজ
+  // সংশ্লিষ্ট show* প্রপ চেপে দেয়, তাই দ্বৈত-মার্কার হয় না।
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded) return;
+
+    const map = mapRef.current;
+    const markersMap = nearbyMarkersRef.current;
+
+    markersMap.forEach((marker) => marker.remove());
+    markersMap.clear();
+
+    if (nearbyCategory) {
+      nearbyItemsRef.current.forEach((item) => {
+        const isSelected = item.id === nearbySelectedItemId;
+        const el = createNearbyItemMarkerElement(item, isSelected, () => onNearbyItemClick?.(item));
+        const marker = new Marker({ element: el, anchor: "bottom" })
+          .setLngLat(item.coordinates)
+          .addTo(map);
+        markersMap.set(item.id, marker);
+      });
+    }
+    // onNearbyItemClick stabilize করা (useCallback, getState) — নাহলে এখানে যোগ করলে
+    // প্রতি রেন্ডারে রিবিল্ড হতো।
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, nearbyCategory, nearbyMembershipKey, nearbySelectedItemId]);
+
+  // ----- "আমার কাছে": ব্যাসার্ধ বৃত্ত (স্ট্রাকচার) -----
+  // চালু হলে সোর্স+দুই লেয়ার যোগ, বন্ধ হলে পরিষ্কার। ডেটা আলাদা ইফেক্টে setData।
+  const nearbyActive = nearbyCategory !== null;
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded) return;
+
+    if (!nearbyActive) return;
+
+    const center = nearbyCenterRef.current;
+    if (!center) return;
+
+    if (!map.getSource(NEARBY_RADIUS_SOURCE_ID)) {
+      map.addSource(
+        NEARBY_RADIUS_SOURCE_ID,
+        createNearbyRadiusSource(center.latitude, center.longitude, nearbyRadiusM) as never
+      );
+    }
+    if (!map.getLayer(NEARBY_RADIUS_FILL_LAYER_ID)) {
+      map.addLayer({
+        id: NEARBY_RADIUS_FILL_LAYER_ID,
+        type: "fill",
+        source: NEARBY_RADIUS_SOURCE_ID,
+        paint: nearbyRadiusFillPaint,
+      });
+    }
+    if (!map.getLayer(NEARBY_RADIUS_LINE_LAYER_ID)) {
+      map.addLayer({
+        id: NEARBY_RADIUS_LINE_LAYER_ID,
+        type: "line",
+        source: NEARBY_RADIUS_SOURCE_ID,
+        paint: nearbyRadiusLinePaint,
+      });
+    }
+
+    return () => {
+      if (map.getStyle()) {
+        map.removeLayer(NEARBY_RADIUS_LINE_LAYER_ID);
+        map.removeLayer(NEARBY_RADIUS_FILL_LAYER_ID);
+        map.removeSource(NEARBY_RADIUS_SOURCE_ID);
+      }
+    };
+  }, [mapLoaded, nearbyActive, nearbyRadiusM]);
+
+  // ----- "আমার কাছে": বৃত্ত ব্যবহারকারীকে অনুসরণ (শুধু setData) -----
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !nearbyActive || !nearbyCenter) return;
+    const source = map.getSource(NEARBY_RADIUS_SOURCE_ID);
+    if (!source || !("setData" in source)) return;
+    (source as maplibregl.GeoJSONSource).setData(
+      createNearbyRadiusSource(nearbyCenter.latitude, nearbyCenter.longitude, nearbyRadiusM)
+        .data as never
+    );
+  }, [mapLoaded, nearbyActive, nearbyCenter, nearbyRadiusM]);
+
+  // ----- "আমার কাছে": চিপ চালু/ব্যাসার্ধ বদলে ক্যামেরা বৃত্তে ফিট -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !nearbyCategory) return;
+    const center = nearbyCenterRef.current;
+    if (!center) return;
+    const padding = nearbyCameraPadding(
+      useGuideSheetStore.getState().snapIndex,
+      false,
+      window.innerHeight
+    );
+    programmaticFitBounds(
+      nearbyRadiusBounds(center.latitude, center.longitude, nearbyRadiusM),
+      withGuidePadding({ duration: 800 }, padding ?? { top: 60, bottom: 60, left: 60, right: 60 })
+    );
+  }, [mapLoaded, nearbyCategory, nearbyRadiusM, programmaticFitBounds]);
+
+  // ----- "আমার কাছে": নির্বাচনে আইটেমে ফ্লাই (ডিটেইল শিটের প্যাডিংসহ) -----
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !nearbySelectedItemId) return;
+    const item = nearbyItemsRef.current.find((entry) => entry.id === nearbySelectedItemId);
+    if (!item) return;
+    const targetZoom = item.category === "historical" ? 16 : 17;
+    const padding = mdUpRef.current
+      ? undefined
+      : nearbyCameraPadding(useGuideSheetStore.getState().snapIndex, true, window.innerHeight);
+    programmaticFlyTo(
+      withGuidePadding(
+        {
+          center: item.coordinates,
+          zoom: targetZoom,
+          duration: 900,
+        },
+        padding
+      )
+    );
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, nearbySelectedItemId, programmaticFlyTo]);
+
   // Add/update user location marker.
   //
   // মার্কারটি একবারই তৈরি হয় (অবস্থান পাওয়া গেলে বা টগল বদলালে); প্রতি GPS
@@ -1201,10 +1365,15 @@ export function MapView({
     // মোবাইলে শীটের ওপরের দৃশ্যমান অংশে অ্যাংকর বসাতে padding। ইম্পারেটিভ রিড:
     // কোরিওগ্রাফি ধাপ-বদলের মুহূর্তেই টার্গেট স্ন্যাপ স্টোরে লেখে, তাই এই ইফেক্ট
     // সবসময় সদ্য-লিখিত মান দেখে; deps-এ স্ন্যাপ যোগ করলে ড্র্যাগে ক্যামেরা পুনরায়
-    // উড়ত, তাই রাখা হয়নি।
+    // উড়ত, তাই রাখা হয়নি। nearbyCameraPadding কম্পোজড: "আমার কাছে" ডিটেইল
+    // শিট (~৩০%) খোলা থাকলে তার উচ্চতাও হিসাবে নেয় (নির্বাচন ref থেকে)।
     const padding = mdUpRef.current
       ? undefined
-      : guideCameraPadding(useGuideSheetStore.getState().snapIndex, window.innerHeight);
+      : nearbyCameraPadding(
+          useGuideSheetStore.getState().snapIndex,
+          nearbySelectedRef.current !== null,
+          window.innerHeight
+        );
     programmaticFlyTo(
       withGuidePadding(
         {
@@ -1294,7 +1463,10 @@ export function MapView({
     if (!recenterTarget) return;
     const targetZoom = recenterTarget.stage === "tawaf" || recenterTarget.stage === "sai" ? 18 : 16;
     // Recenter-এ ধাপ বদলায় না, তাই ব্যবহারকারীর বর্তমান স্ন্যাপই মানানসই - রিঅ্যাক্টিভ মান।
-    const padding = mdUp ? undefined : guideCameraPadding(guideSheetSnap, window.innerHeight);
+    // কম্পোজড প্যাডিং — কাছাকাছি ডিটেইল শিট খোলা থাকলে সেটিও হিসাবে।
+    const padding = mdUp
+      ? undefined
+      : nearbyCameraPadding(guideSheetSnap, nearbySelectedItemId !== null, window.innerHeight);
     programmaticFlyTo(
       withGuidePadding({ center: recenterTarget.coords, zoom: targetZoom, duration: 1000 }, padding)
     );

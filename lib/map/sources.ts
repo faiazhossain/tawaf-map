@@ -138,6 +138,43 @@ export function createUserAccuracySource(
 }
 
 /**
+ * GeoJSON source for the "near me" radius circle (dashed emerald ring).
+ * Local-tangent ring with the cos(lat) longitude scaling — the naive
+ * degrees-only circle distorts ~7% east-west at Makkah's latitude for a 3km
+ * radius (createUserAccuracySource's tiny accuracy rings don't care; we do).
+ */
+export function createNearbyRadiusSource(lat: number, lon: number, radiusMeters: number) {
+  const coordinates: number[][] = [];
+  const steps = 64;
+  const metersPerDegLat = 111320;
+  const metersPerDegLng = 111320 * Math.cos((lat * Math.PI) / 180);
+
+  for (let i = 0; i <= steps; i++) {
+    const angle = (i / steps) * 2 * Math.PI;
+    const north = radiusMeters * Math.cos(angle);
+    const east = radiusMeters * Math.sin(angle);
+    coordinates.push([lon + east / metersPerDegLng, lat + north / metersPerDegLat]);
+  }
+
+  return {
+    type: "geojson" as const,
+    data: {
+      type: "FeatureCollection" as const,
+      features: [
+        {
+          type: "Feature" as const,
+          properties: {},
+          geometry: {
+            type: "Polygon" as const,
+            coordinates: [coordinates],
+          },
+        },
+      ],
+    },
+  };
+}
+
+/**
  * Get bounds for gates
  */
 export function getGatesBounds(gates: Gate[]): LngLatBoundsLike {
