@@ -10,6 +10,7 @@ export const HARAM_GATES: Gate[] = [
     id: "king-fahd-1",
     name: "King Fahd Gate 1",
     nameAr: "باب الملك فهد ١",
+    nameBn: "কিং ফাহদ গেট ১",
     location: {
       coordinates: [39.8361, 21.4239],
     },
@@ -21,6 +22,7 @@ export const HARAM_GATES: Gate[] = [
     id: "king-fahd-2",
     name: "King Fahd Gate 2",
     nameAr: "باب الملك فهد ٢",
+    nameBn: "কিং ফাহদ গেট ২",
     location: {
       coordinates: [39.8378, 21.4245],
     },
@@ -32,6 +34,7 @@ export const HARAM_GATES: Gate[] = [
     id: "king-fahd-3",
     name: "King Fahd Gate 3",
     nameAr: "باب الملك فهد ٣",
+    nameBn: "কিং ফাহদ গেট ৩",
     location: {
       coordinates: [39.8392, 21.4251],
     },
@@ -45,6 +48,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-abdul-aziz",
     name: "Abdul Aziz Gate (Umrah)",
     nameAr: "باب عبد العزيز",
+    nameBn: "আবদুল আজিজ গেট (ওমরাহ)",
     location: {
       coordinates: [39.8245, 21.4198],
     },
@@ -72,6 +76,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-fahd",
     name: "Fahd Gate (Umrah)",
     nameAr: "باب فهد",
+    nameBn: "ফাহদ গেট (ওমরাহ)",
     location: {
       coordinates: [39.8228, 21.4205],
     },
@@ -83,6 +88,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-umar",
     name: "Umar Gate (Umrah)",
     nameAr: "باب عمر",
+    nameBn: "উমর গেট (ওমরাহ)",
     location: {
       coordinates: [39.8212, 21.4212],
     },
@@ -94,6 +100,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-salman",
     name: "Salman Al-Farsi Gate",
     nameAr: "باب سلمان الفارسي",
+    nameBn: "সালমান আল-ফারসি গেট",
     location: {
       coordinates: [39.8198, 21.4219],
     },
@@ -105,6 +112,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-ali",
     name: "Ali Gate (Umrah)",
     nameAr: "باب علي",
+    nameBn: "আলী গেট (ওমরাহ)",
     location: {
       coordinates: [39.8185, 21.4226],
     },
@@ -116,6 +124,7 @@ export const HARAM_GATES: Gate[] = [
     id: "umrah-wahab",
     name: "Abdul Wahab Gate",
     nameAr: "باب عبد الوهاب",
+    nameBn: "আবদুল ওয়াহাব গেট",
     location: {
       coordinates: [39.8172, 21.4233],
     },
@@ -129,6 +138,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-mahmoud",
     name: "Al-Mahmoud Gate",
     nameAr: "باب المحمود",
+    nameBn: "আল-মাহমুদ গেট",
     location: {
       coordinates: [39.8268, 21.4272],
     },
@@ -140,6 +150,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-nabawi",
     name: "An-Nabawi Gate",
     nameAr: "باب النبوي",
+    nameBn: "আন-নাবাবী গেট",
     location: {
       coordinates: [39.8251, 21.4278],
     },
@@ -151,6 +162,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-omar",
     name: "Omar Bin Khattab Gate",
     nameAr: "باب عمر بن الخطاب",
+    nameBn: "ওমর বিন খাত্তাব গেট",
     location: {
       coordinates: [39.8235, 21.4284],
     },
@@ -162,6 +174,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-abubakr",
     name: "Abu Bakr Gate",
     nameAr: "باب أبو بكر",
+    nameBn: "আবু বকর গেট",
     location: {
       coordinates: [39.8285, 21.4266],
     },
@@ -173,6 +186,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-utbah",
     name: "Utbah Bin Rabiah Gate",
     nameAr: "باب عتبة بن ربيعة",
+    nameBn: "উতবাহ বিন রাবিয়াহ গেট",
     location: {
       coordinates: [39.8298, 21.4259],
     },
@@ -184,6 +198,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-ruqai",
     name: "Ar-Ruqai Gate",
     nameAr: "باب الرقاعي",
+    nameBn: "আর-রুকাই গেট",
     location: {
       coordinates: [39.8311, 21.4252],
     },
@@ -195,6 +210,7 @@ export const HARAM_GATES: Gate[] = [
     id: "salah-khattab",
     name: "Al-Khattab Gate",
     nameAr: "باب الخطاب",
+    nameBn: "আল-খাত্তাব গেট",
     location: {
       coordinates: [39.8324, 21.4245],
     },
@@ -208,6 +224,7 @@ export const HARAM_GATES: Gate[] = [
     id: "safa",
     name: "As-Safa Gate",
     nameAr: "باب الصفا",
+    nameBn: "আস-সাফা গেট",
     location: {
       coordinates: [39.8355, 21.4231],
     },
@@ -228,6 +245,7 @@ export const HARAM_GATES: Gate[] = [
     id: "marwa",
     name: "Al-Marwa Gate",
     nameAr: "باب المروة",
+    nameBn: "আল-মারওয়া গেট",
     location: {
       coordinates: [39.8388, 21.4258],
     },
@@ -239,6 +257,7 @@ export const HARAM_GATES: Gate[] = [
     id: "ajyad",
     name: "Ajyad Gate",
     nameAr: "باب أجياد",
+    nameBn: "আজিয়াদ গেট",
     location: {
       coordinates: [39.8415, 21.4235],
     },

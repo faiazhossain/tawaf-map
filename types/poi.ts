@@ -6,7 +6,8 @@ export type POICategory =
   | "hotel"
   | "atm"
   | "transport"
-  | "worship";
+  | "mosque"
+  | "toilet";
 
 export type CuisineType =
   | "arabic"
@@ -21,13 +22,16 @@ export type PriceLevel = 1 | 2 | 3 | 4;
 
 export interface POI {
   id: string;
+  /** বাংলা-প্রথম নাম (যেমন "আল-বাইক") */
   name: string;
   nameAr?: string;
   category: POICategory;
   cuisine?: CuisineType[];
-  priceLevel: PriceLevel;
-  halal: boolean;
-  prayerFriendly: boolean;
+  /** খাবারের দোকানে প্রযোজ্য; টয়লেট/এটিএম/মসজিদে বাদ থাকে */
+  priceLevel?: PriceLevel;
+  /** শুধু খাদ্য বিভাগে (restaurant/cafe) অর্থবহ */
+  halal?: boolean;
+  prayerFriendly?: boolean;
   location: {
     coordinates: [number, number];
     address?: string;

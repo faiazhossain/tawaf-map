@@ -33,6 +33,7 @@ import {
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
+import { DEMO_POIS } from "@/lib/data/pois";
 
 /** Arena meters per Makkah meter (Haram ~600m gate radius -> ~200m walk). */
 export const DEMO_WORLD_SCALE = 1 / 3;
@@ -79,6 +80,8 @@ export interface DemoDatasets {
   hotels: CoordinatesHolder[];
   /** Only the entries the caller wants moved (e.g. Makkah-city places). */
   places: CoordinatesHolder[];
+  /** Demo POIs (restaurants/cafes/toilets/…); optional so older callers keep compiling. */
+  pois?: CoordinatesHolder[];
 }
 
 /**
@@ -91,7 +94,9 @@ export function applyDemoWorld(
   cfg: DemoWorldConfig = makeDemoWorldConfig()
 ): number {
   let moved = 0;
-  for (const items of [datasets.gates, datasets.hotels, datasets.places]) {
+  const families = [datasets.gates, datasets.hotels, datasets.places];
+  if (datasets.pois) families.push(datasets.pois);
+  for (const items of families) {
     for (const item of items) {
       item.location.coordinates = mapDemoPoint(item.location.coordinates, cfg);
       moved += 1;
@@ -168,6 +173,7 @@ export function activateDemoWorld(): boolean {
       gates: HARAM_GATES,
       hotels: NEARBY_HOTELS,
       places: TOURIST_PLACES.filter((place) => place.city === "makkah"),
+      pois: DEMO_POIS,
     });
   }
 

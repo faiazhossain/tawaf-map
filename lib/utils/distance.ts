@@ -90,6 +90,35 @@ export function formatWalkingTime(seconds: number): string {
 }
 
 /**
+ * Get compass direction label from bearing (8-way).
+ * Previously duplicated in useGateProximity and useHotelProximity.
+ * @param bearing - Bearing in degrees (0-360)
+ * @returns Compass label ("N", "NE", …)
+ */
+export function getDirectionFromBearing(bearing: number): string {
+  const directions = [
+    { label: "N", min: 352.5, max: 7.5 },
+    { label: "NE", min: 22.5, max: 67.5 },
+    { label: "E", min: 67.5, max: 112.5 },
+    { label: "SE", min: 112.5, max: 157.5 },
+    { label: "S", min: 157.5, max: 202.5 },
+    { label: "SW", min: 202.5, max: 247.5 },
+    { label: "W", min: 247.5, max: 292.5 },
+    { label: "NW", min: 292.5, max: 337.5 },
+  ];
+
+  for (const direction of directions) {
+    if (bearing >= direction.min && bearing < direction.max) {
+      return direction.label;
+    }
+    if (direction.min > direction.max && (bearing >= direction.min || bearing < direction.max)) {
+      return direction.label;
+    }
+  }
+  return "N";
+}
+
+/**
  * Calculate the midpoint between two coordinates
  * @param lat1 - First point latitude
  * @param lon1 - First point longitude

@@ -17,6 +17,8 @@ export interface Hotel {
   id: string;
   name: string;
   nameAr: string;
+  /** বাংলা প্রদর্শন-নাম (কাছাকাছি তালিকা/চিপে দেখানো হয়) */
+  nameBn?: string;
   starRating: HotelStarRating;
   location: {
     coordinates: [number, number];

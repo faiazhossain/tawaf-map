@@ -6,6 +6,8 @@ export interface Gate {
   id: string;
   name: string;
   nameAr: string;
+  /** বাংলা প্রদর্শন-নাম (কাছাকাছি তালিকা/চিপে দেখানো হয়) */
+  nameBn?: string;
   location: {
     coordinates: [number, number];
   };

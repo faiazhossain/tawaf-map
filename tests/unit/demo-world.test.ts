@@ -11,6 +11,7 @@ import {
 import { HARAM_GATES } from "@/lib/data/gates";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
+import { DEMO_POIS } from "@/lib/data/pois";
 import { haversineDistance, calculateBearing } from "@/lib/utils/distance";
 import { MAKKAH_CENTER } from "@/lib/utils/constants";
 
@@ -91,10 +92,11 @@ describe("applyDemoWorld", () => {
     const gates = structuredClone(HARAM_GATES);
     const hotels = structuredClone(NEARBY_HOTELS);
     const places = structuredClone(TOURIST_PLACES.filter((p) => p.city === "makkah"));
+    const pois = structuredClone(DEMO_POIS);
 
-    applyDemoWorld({ gates, hotels, places });
+    applyDemoWorld({ gates, hotels, places, pois });
 
-    const all = [...gates, ...hotels, ...places];
+    const all = [...gates, ...hotels, ...places, ...pois];
     expect(all.length).toBeGreaterThan(10);
 
     const distances = all.map((item) =>
@@ -124,6 +126,31 @@ describe("applyDemoWorld", () => {
       )
     );
     expect(nearestGate).toBeLessThan(2000);
+  });
+
+  it("translates demo POIs in place and keeps restaurants walkable from the arena", () => {
+    const pois = structuredClone(DEMO_POIS);
+    const poisRef = pois;
+
+    const moved = applyDemoWorld({ gates: [], hotels: [], places: [], pois });
+
+    expect(moved).toBe(DEMO_POIS.length);
+    expect(pois).toBe(poisRef); // array identity preserved
+
+    const restaurants = pois.filter((poi) => poi.category === "restaurant");
+    expect(restaurants.length).toBeGreaterThanOrEqual(8);
+    const nearestRestaurant = Math.min(
+      ...restaurants.map((poi) =>
+        haversineDistance(
+          DEMO_ARENA_CENTER.lat,
+          DEMO_ARENA_CENTER.lng,
+          poi.location.coordinates[1],
+          poi.location.coordinates[0]
+        )
+      )
+    );
+    // ডেমো স্কেলে (১/৩) ১.৪ কিমি রেস্টুরেন্ট ~৪৭০ মি হয় — হেঁটে যাওয়ার মতো
+    expect(nearestRestaurant).toBeLessThan(1000);
   });
 
   it("keeps relative distances consistent with the demo scale", () => {

@@ -7,6 +7,7 @@ import {
   formatDistance,
   estimateWalkingTime,
   formatWalkingTime,
+  getDirectionFromBearing,
 } from "@/lib/utils/distance";
 
 interface GateProximity {
@@ -23,32 +24,6 @@ interface GateProximity {
   walkingTime: number;
   walkingTimeFormatted: string;
   direction: string;
-}
-
-/**
- * Get compass direction from bearing
- */
-function getDirectionFromBearing(bearing: number): string {
-  const directions = [
-    { label: "N", min: 352.5, max: 7.5 },
-    { label: "NE", min: 22.5, max: 67.5 },
-    { label: "E", min: 67.5, max: 112.5 },
-    { label: "SE", min: 112.5, max: 157.5 },
-    { label: "S", min: 157.5, max: 202.5 },
-    { label: "SW", min: 202.5, max: 247.5 },
-    { label: "W", min: 247.5, max: 292.5 },
-    { label: "NW", min: 292.5, max: 337.5 },
-  ];
-
-  for (const direction of directions) {
-    if (bearing >= direction.min && bearing < direction.max) {
-      return direction.label;
-    }
-    if (direction.min > direction.max && (bearing >= direction.min || bearing < direction.max)) {
-      return direction.label;
-    }
-  }
-  return "N";
 }
 
 /**

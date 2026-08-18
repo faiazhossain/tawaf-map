@@ -1,0 +1,158 @@
+import { describe, it, expect } from "vitest";
+import {
+  getNearbyItems,
+  getNearbyCounts,
+  shouldEmitPositionChange,
+  nearbyRadiusBounds,
+  nearbySubtitle,
+} from "@/lib/nearby/query";
+import { DEMO_POIS } from "@/lib/data/pois";
+import { NEARBY_HOTELS } from "@/lib/data/hotels";
+import { haversineDistance } from "@/lib/utils/distance";
+import { MAKKAH_CENTER } from "@/lib/utils/constants";
+import type { NearbyCategory } from "@/types/nearby";
+import type { POI } from "@/types/poi";
+
+const LAT = MAKKAH_CENTER.lat;
+const LNG = MAKKAH_CENTER.lng;
+
+describe("getNearbyItems", () => {
+  it("returns items sorted by distance within the radius", () => {
+    const items = getNearbyItems("hotel", LAT, LNG, 2000);
+    expect(items.length).toBe(NEARBY_HOTELS.length);
+    for (let i = 1; i < items.length; i += 1) {
+      expect(items[i].distance).toBeGreaterThanOrEqual(items[i - 1].distance);
+    }
+  });
+
+  it("filters out everything beyond the radius", () => {
+    const items = getNearbyItems("hotel", LAT, LNG, 200);
+    for (const item of items) {
+      expect(item.distance).toBeLessThanOrEqual(200);
+    }
+    expect(items.length).toBeGreaterThan(0);
+    expect(items.length).toBeLessThan(NEARBY_HOTELS.length);
+  });
+
+  it("prefers the Bengali display name for gates and hotels", () => {
+    const items = getNearbyItems("hotel", LAT, LNG, 2000);
+    const clockTower = items.find((item) => item.id === "hotel-clock-royal-tower");
+    expect(clockTower?.name).toBe("ক্লক রয়্যাল টাওয়ার ফেয়ারমন্ট");
+  });
+
+  it("carries the original record in source with preformatted Bengali strings", () => {
+    const items = getNearbyItems("restaurant", LAT, LNG, 3000);
+    expect(items.length).toBeGreaterThan(0);
+    const first = items[0];
+    expect((first.source as POI).category).toBe("restaurant");
+    // বাংলা সংখ্যায় দূরত্ব/সময়
+    expect(first.distanceFormatted).toMatch(/[ঀ-৿]/);
+    expect(first.walkingTimeFormatted).toMatch(/[ঀ-৿]/);
+    expect(["N", "NE", "E", "SE", "S", "SW", "W", "NW"]).toContain(first.direction);
+  });
+
+  it("halalOnly excludes non-halal food but leaves other categories untouched", () => {
+    const allCafes = getNearbyItems("cafe", LAT, LNG, 3000);
+    const halalCafes = getNearbyItems("cafe", LAT, LNG, 3000, { halalOnly: true });
+    expect(halalCafes.length).toBe(allCafes.length - 1); // কর্নার ক্যাফে বাদ
+
+    const toiletsAll = getNearbyItems("toilet", LAT, LNG, 3000);
+    const toiletsHalal = getNearbyItems("toilet", LAT, LNG, 3000, { halalOnly: true });
+    expect(toiletsHalal.length).toBe(toiletsAll.length);
+  });
+
+  it("sees demo-world's in-place coordinate reassignment (lazy reads)", () => {
+    const poi = DEMO_POIS.find((p) => p.id === "poi-atm-alrajhi");
+    if (!poi) throw new Error("test POI missing");
+    const original = poi.location.coordinates;
+    try {
+      // প্রায় ২ কিমি দক্ষিণে সরানো হলে ১ কিমি ব্যাসার্ধে আর থাকে না
+      poi.location.coordinates = [original[0], original[1] - 0.018];
+      const near = getNearbyItems("atm", LAT, LNG, 1000);
+      expect(near.find((item) => item.id === "poi-atm-alrajhi")).toBeUndefined();
+    } finally {
+      poi.location.coordinates = original;
+    }
+  });
+});
+
+describe("getNearbyCounts", () => {
+  it("counts match getNearbyItems lengths for every category", () => {
+    const counts = getNearbyCounts(LAT, LNG, 1000);
+    for (const category of [
+      "gate",
+      "hotel",
+      "historical",
+      "restaurant",
+      "cafe",
+      "toilet",
+      "atm",
+      "pharmacy",
+      "mosque",
+    ] as NearbyCategory[]) {
+      expect(counts[category]).toBe(getNearbyItems(category, LAT, LNG, 1000).length);
+    }
+  });
+
+  it("reports zero for disabled categories", () => {
+    const counts = getNearbyCounts(LAT, LNG, 1000, {
+      enabledCategories: ["hotel"],
+    });
+    expect(counts.hotel).toBeGreaterThan(0);
+    expect(counts.gate).toBe(0);
+    expect(counts.restaurant).toBe(0);
+  });
+
+  it("respects halalOnly for food categories", () => {
+    const without = getNearbyCounts(LAT, LNG, 3000);
+    const withHalal = getNearbyCounts(LAT, LNG, 3000, { halalOnly: true });
+    expect(withHalal.cafe).toBe(without.cafe - 1);
+    expect(withHalal.restaurant).toBe(without.restaurant);
+  });
+});
+
+describe("shouldEmitPositionChange", () => {
+  it("always emits the first fix", () => {
+    expect(shouldEmitPositionChange(null, null, LAT, LNG)).toBe(true);
+  });
+
+  it("suppresses sub-threshold jitter", () => {
+    // ~5 মি উত্তর
+    const jitterLat = LAT + 0.000045;
+    expect(shouldEmitPositionChange(LAT, LNG, jitterLat, LNG)).toBe(false);
+  });
+
+  it("emits after moving past the threshold", () => {
+    // ~100 মি পূর্ব
+    const movedLng = LNG + 0.001;
+    expect(shouldEmitPositionChange(LAT, LNG, LAT, movedLng)).toBe(true);
+  });
+});
+
+describe("nearbyRadiusBounds", () => {
+  it("produces a box whose center is the user and spans roughly the radius", () => {
+    const [[west, south], [east, north]] = nearbyRadiusBounds(LAT, LNG, 1000);
+    expect(west).toBeLessThan(LNG);
+    expect(east).toBeGreaterThan(LNG);
+    expect(south).toBeLessThan(LAT);
+    expect(north).toBeGreaterThan(LAT);
+    const halfWidth = haversineDistance(LAT, LNG, LAT, east);
+    expect(halfWidth).toBeGreaterThan(950);
+    expect(halfWidth).toBeLessThan(1050);
+  });
+});
+
+describe("nearbySubtitle", () => {
+  it("builds category-appropriate Bengali subtitles", () => {
+    const hotel = NEARBY_HOTELS.find((h) => h.starRating === 5);
+    if (!hotel) throw new Error("five-star hotel missing");
+    expect(nearbySubtitle("hotel", hotel)).toBe("৫ তারা হোটেল");
+
+    const restaurant = DEMO_POIS.find((p) => p.id === "poi-restaurant-albaik-haram");
+    if (!restaurant) throw new Error("test restaurant missing");
+    expect(nearbySubtitle("restaurant", restaurant)).toContain("মধ্যপ্রাচ্য");
+    expect(nearbySubtitle("restaurant", restaurant)).toContain("হালাল");
+
+    expect(nearbySubtitle("toilet", DEMO_POIS[0])).toBe("পাবলিক টয়লেট");
+  });
+});

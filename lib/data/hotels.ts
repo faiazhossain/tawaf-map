@@ -5,6 +5,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-clock-royal-tower",
     name: "Clock Royal Tower Fairmont",
     nameAr: "فيرمونت برج الملكة ساعة",
+    nameBn: "ক্লক রয়্যাল টাওয়ার ফেয়ারমন্ট",
     starRating: 5,
     location: {
       coordinates: [39.8253, 21.4219],
@@ -35,6 +36,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-haram",
     name: "Haram Hotel",
     nameAr: "فندق الحرم",
+    nameBn: "হারাম হোটেল",
     starRating: 4,
     location: {
       coordinates: [39.8245, 21.4231],
@@ -53,6 +55,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-hilton",
     name: "Hilton Makkah Convention Hotel",
     nameAr: "هيلتون مكة المكرمة لل conventions",
+    nameBn: "হিল্টন মক্কা কনভেনশন হোটেল",
     starRating: 5,
     location: {
       coordinates: [39.8261, 21.4228],
@@ -84,6 +87,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-pullman",
     name: "Pullman Zamzam Makkah",
     nameAr: "فندق بولمان زمزم مكة",
+    nameBn: "পুলমান জমজম মক্কা",
     starRating: 5,
     location: {
       coordinates: [39.8248, 21.4215],
@@ -103,6 +107,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-anjum",
     name: "Anjum Hotel Makkah",
     nameAr: "فندق أنجوم مكة المكرمة",
+    nameBn: "আনজুম হোটেল মক্কা",
     starRating: 5,
     location: {
       coordinates: [39.8268, 21.4235],
@@ -131,6 +136,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-safa",
     name: "Safa Royal Hotel",
     nameAr: "فندق الصفا رويال",
+    nameBn: "সাফা রয়্যাল হোটেল",
     starRating: 4,
     location: {
       coordinates: [39.8235, 21.4242],
@@ -149,6 +155,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-marwa",
     name: "Marwa Rotana",
     nameAr: "روتانة مروة",
+    nameBn: "মারওয়া রোটানা",
     starRating: 4,
     location: {
       coordinates: [39.8242, 21.4248],
@@ -177,6 +184,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-elaf",
     name: "Elaf Kinda Hotel",
     nameAr: "فندق إلاف كندة",
+    nameBn: "ইলাফ কিন্দা হোটেল",
     starRating: 3,
     location: {
       coordinates: [39.8272, 21.4221],
@@ -195,6 +203,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-leshams",
     name: "Le Shams Hotel",
     nameAr: "فندق لي شامز",
+    nameBn: "লে শামস হোটেল",
     starRating: 3,
     location: {
       coordinates: [39.8258, 21.4205],
@@ -213,6 +222,7 @@ export const NEARBY_HOTELS: Hotel[] = [
     id: "hotel-al-masar",
     name: "Al Masar Al Harami",
     nameAr: "المسار الحرمي",
+    nameBn: "আল মাসার আল-হারামি",
     starRating: 3,
     location: {
       coordinates: [39.8238, 21.4198],

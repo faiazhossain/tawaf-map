@@ -46,7 +46,8 @@ export const POI_CATEGORIES = {
   HOTEL: "hotel",
   ATM: "atm",
   TRANSPORT: "transport",
-  WORSHIP: "worship",
+  MOSQUE: "mosque",
+  TOILET: "toilet",
 } as const;
 
 // Cuisine types
