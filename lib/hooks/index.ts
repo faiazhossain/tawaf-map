@@ -6,3 +6,4 @@ export { useMapRouting } from "./useMapRouting";
 export { useHotelProximity } from "./useHotelProximity";
 export { useMediaQuery } from "./useMediaQuery";
 export { useGuideSheetStepSync } from "./useGuideSheetStepSync";
+export { useNearbyPlaces } from "./useNearbyPlaces";

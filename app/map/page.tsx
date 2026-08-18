@@ -1,18 +1,13 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  MapView,
-  GateSelector,
-  UserLocation,
-  NearbyGatesPanel,
-  TouristPlacesList,
-} from "@/components/map";
+import { MapView, GateSelector, UserLocation, TouristPlacesList } from "@/components/map";
+import { NearbyChipBar, NearbySettingsPanel } from "@/components/map/nearby";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
-import { useGateProximity, useGeolocation, useMediaQuery } from "@/lib/hooks";
+import { useGateProximity, useGeolocation, useMediaQuery, useNearbyPlaces } from "@/lib/hooks";
 import {
   useGateStore,
   useHotelStore,
@@ -20,7 +15,11 @@ import {
   usePanelStore,
   useTouristPlaceStore,
   useUmrahGuideStore,
+  useGuideSheetStore,
+  useNearbyStore,
 } from "@/lib/store";
+import { guideOverlayBottomPx } from "@/lib/utils/guide-sheet";
+import type { NearbyCategory } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { INTENT_PRELOAD_MODEL_URLS } from "@/lib/map/model-config";
 import { fetchModelBytes } from "@/lib/map/model-manager";
@@ -120,7 +119,12 @@ function MenuToggleRow({
 }
 
 export default function MapPage() {
-  const { nearbyGates, nearestGate, hasLocation } = useGateProximity();
+  const { nearbyGates } = useGateProximity();
+  // "আমার কাছে" — থ্রটল-করা লাইভ কোয়েরি (গণনা + সক্রিয় বিভাগের তালিকা)
+  const nearby = useNearbyPlaces();
+  const activeNearbyCategory = useNearbyStore((state) => state.activeCategory);
+  const nearbySettingsOpen = useNearbyStore((state) => state.settingsOpen);
+  const guideSheetSnap = useGuideSheetStore((state) => state.snapIndex);
   // GPS ওয়াচ পেজ লেভেলে — মোবাইলে UserLocation এখন হ্যামবার্গার মেনুর ভেতরে
   // শুধু মেনু খোলা থাকলে মাউন্ট হয়; ওয়াচ ওখানে থাকলে মেনু বন্ধ মানেই জিপিএস
   // বন্ধ (ইউজার ডট/কাছাকাছি প্যানেল/ডেমো-ওয়ার্ল্ড সব চুপচাপ মরে যেত)।
@@ -193,6 +197,21 @@ export default function MapPage() {
     useUmrahGuideStore.getState().goToStepId(stepId);
   }, []);
 
+  // "আমার কাছে" হ্যান্ডলার — স্টোর getState() দিয়ে, তাই স্থিতিশীল (handleUmrahStepClick ধাঁচ)
+  const handleNearbyCategorySelect = useCallback((category: NearbyCategory) => {
+    useNearbyStore.getState().setActiveCategory(category);
+  }, []);
+  const handleNearbySettingsOpen = useCallback(() => {
+    useNearbyStore.getState().openSettings();
+  }, []);
+  const handleNearbySettingsChange = useCallback((open: boolean) => {
+    if (open) {
+      useNearbyStore.getState().openSettings();
+    } else {
+      useNearbyStore.getState().closeSettings();
+    }
+  }, []);
+
   // ওমরাহ গাইড ডিফল্টে চালু: অনবোর্ডেড ব্যবহারকারীর জন্য অ্যাপের মূল ফিচারটি
   // সরাসরি দৃশ্যমান রাখা। মাউন্টের পরে স্টোর হাইড্রেশন শেষ হয়েছে, তাই সঠিক মান পাওয়া যায়।
   // ডেমো ওয়ার্ল্ড মোডে গাইড স্বয়ংক্রিয় খোলা হয় না — গাইড ক্যামেরা মক্কায় ফ্লাই করে,
@@ -213,6 +232,16 @@ export default function MapPage() {
     // ডেমো মোডে গেট লেয়ার ডিফল্টেই চালু — এরিনায় সরানো ডেটা এক নজরে দেখা যায়,
     // আর কাছাকাছি গেট প্যানেলের সাথে মানচিত্রও সঙ্গে সঙ্গে মিলে যায়।
     if (active) setShowGates(true);
+  }, []);
+
+  // ভিউপোর্টের উচ্চতা — গাইড শিটের স্ন্যাপ অনুযায়ী চিপ-বারের bottom অফসেট
+  // হিসাবে (প্রথম রেন্ডারে 0 = সার্ভারের সাথে মিল)।
+  const [viewportHeight, setViewportHeight] = useState(0);
+  useEffect(() => {
+    const update = () => setViewportHeight(window.innerHeight);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, []);
 
   // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
@@ -619,10 +648,19 @@ export default function MapPage() {
         {/* GPS simulator badge (dev/test harness, only renders while active) */}
         <GpsSimBadge />
 
-        {/* Nearby Gates Panel */}
-        {hasLocation && nearestGate && !hasActivePanel && (
-          <NearbyGatesPanel onGateClick={handleGateClick} />
-        )}
+        {/* "আমার কাছে" চিপ-বার — গাইড শিটের পিক-এর ওপরে ভাসে (inline bottom),
+            গাইড ফুল-স্ন্যাপে বা কোনো প্যানেল খোলা থাকলে লুকানো (আগের গেট-প্যানেলের নিয়ম)। */}
+        <NearbyChipBar
+          counts={nearby.counts}
+          activeCategory={activeNearbyCategory}
+          hidden={!nearby.hasLocation || hasActivePanel || guideSheetSnap === 2}
+          style={{ bottom: guideOverlayBottomPx(guideSheetSnap, viewportHeight) }}
+          onSelectCategory={handleNearbyCategorySelect}
+          onOpenSettings={handleNearbySettingsOpen}
+        />
+
+        {/* কাছাকাছি সেটিংস (মোবাইল শিট / ডেস্কটপ কার্ড) */}
+        <NearbySettingsPanel open={nearbySettingsOpen} onOpenChange={handleNearbySettingsChange} />
 
         {/* Tourist Places Floating Button (when list is closed and places toggle is on) */}
         {!showTouristList && !hasActivePanel && showTouristPlaces && (

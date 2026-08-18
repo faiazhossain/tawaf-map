@@ -29,30 +29,6 @@ export function createGatesSource(gates: Gate[]) {
 }
 
 /**
- * GeoJSON source for POIs
- */
-export function createPOISource(pois: any[]) {
-  return {
-    type: "geojson" as const,
-    data: {
-      type: "FeatureCollection" as const,
-      features: pois.map((poi) => ({
-        type: "Feature" as const,
-        properties: {
-          id: poi.id,
-          name: poi.name,
-          category: poi.category,
-        },
-        geometry: {
-          type: "Point" as const,
-          coordinates: poi.location.coordinates,
-        },
-      })),
-    },
-  };
-}
-
-/**
  * GeoJSON source for route
  */
 export function createRouteSource(route: Route | null) {

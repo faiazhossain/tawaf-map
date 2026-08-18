@@ -2,7 +2,7 @@ export { useMapStore } from "./mapStore";
 export { useLocationStore } from "./locationStore";
 export { useGateStore } from "./gateStore";
 export { useRouteStore } from "./routeStore";
-export { usePOIStore } from "./poiStore";
+export { useNearbyStore } from "./nearbyStore";
 export { useHotelStore } from "./hotelStore";
 export { useTouristPlaceStore } from "./touristPlaceStore";
 export { usePanelStore } from "./panelStore";
