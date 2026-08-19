@@ -8,3 +8,4 @@ export { useMediaQuery } from "./useMediaQuery";
 export { useGuideSheetStepSync } from "./useGuideSheetStepSync";
 export { useGuideSheetNearbySync } from "./useGuideSheetNearbySync";
 export { useNearbyPlaces } from "./useNearbyPlaces";
+export { useLiveNearbyItem } from "./useLiveNearbyItem";
