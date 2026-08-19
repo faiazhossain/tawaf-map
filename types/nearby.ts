@@ -44,3 +44,21 @@ export interface NearbyItem {
 }
 
 export type NearbyCounts = Record<NearbyCategory, number>;
+
+/**
+ * চলাচল-ট্রেন্ড — ডেডব্যান্ড পার হলে বদলায়, প্রথম ফিক্সে/রিসেটে null।
+ */
+export type NearbyLiveTrend = "closer" | "farther" | null;
+
+/**
+ * আইটেমের কোঅর্ডিনেট বনাম বর্তমান ফিক্স থেকে হিসাব করা লাইভ ফিল্ড —
+ * NearbyItem-এর একই আকার, স্ন্যাপশটের বদলে প্রতি ফিক্সে নতুন।
+ */
+export interface NearbyLiveFields {
+  distance: number;
+  distanceFormatted: string;
+  walkingTime: number;
+  walkingTimeFormatted: string;
+  bearing: number;
+  direction: string;
+}

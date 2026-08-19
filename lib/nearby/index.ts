@@ -13,5 +13,10 @@ export {
   shouldEmitPositionChange,
   nearbyRadiusBounds,
   nearbySubtitle,
+  nearbyLiveFields,
+  nextDistanceTrend,
+  NEARBY_LIVE_MIN_DELTA_M,
+  NEARBY_TREND_DEADBAND_M,
+  NEARBY_NEAR_THRESHOLD_M,
   type NearbyQueryOptions,
 } from "./query";

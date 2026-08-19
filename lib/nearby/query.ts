@@ -11,7 +11,14 @@ import {
   getDirectionFromBearing,
 } from "@/lib/utils/distance";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
-import type { NearbyCategory, NearbyCounts, NearbyItem, NearbySource } from "@/types/nearby";
+import type {
+  NearbyCategory,
+  NearbyCounts,
+  NearbyItem,
+  NearbyLiveFields,
+  NearbyLiveTrend,
+  NearbySource,
+} from "@/types/nearby";
 import type { Gate } from "@/types/gate";
 import type { Hotel } from "@/types/hotel";
 import type { TouristPlace } from "@/types/tourist-place";
@@ -235,6 +242,65 @@ export function shouldEmitPositionChange(
 ): boolean {
   if (prevLat === null || prevLon === null) return true;
   return haversineDistance(prevLat, prevLon, lat, lon) >= minDeltaMeters;
+}
+
+// ---------------------------------------------------------------------------
+// লাইভ দূরত্ব (ডিসপ্লে-টিয়ার)
+// ---------------------------------------------------------------------------
+
+/** ডিসপ্লে-টিয়ার নির্গমন সীমা — কাঠামোগত ১০ মি-র চেয়ে সূক্ষ্ম, শুধু লেখা বদলায় */
+export const NEARBY_LIVE_MIN_DELTA_M = 2;
+/** ট্রেন্ড-ফ্লিপের ডেডব্যান্ড — GPS জিটারে "কাছে/দূরে" বারবার বদলানো বন্ধ */
+export const NEARBY_TREND_DEADBAND_M = 3;
+/** "প্রায় পৌঁছে গেছেন" অবস্থার দূরত্ব-সীমা */
+export const NEARBY_NEAR_THRESHOLD_M = 50;
+
+/**
+ * স্ন্যাপশট নির্বিশেষে আইটেমের কোঅর্ডিনেট থেকে বর্তমান ফিক্সে লাইভ ফিল্ড —
+ * toItem-এর একই গণিত, কিন্তু ব্যাসার্ধ/তালিকা-সদস্যতা থেকে স্বাধীন (তাই
+ * ডিটেইল শিট খোলা থাকাকালীন আইটেম ব্যাসার্ধ ছাড়িয়ে গেলেও দূরত্ব বাড়তে থাকে)।
+ */
+export function nearbyLiveFields(
+  coordinates: [number, number],
+  lat: number,
+  lon: number
+): NearbyLiveFields {
+  const [lng, sourceLat] = coordinates;
+  const distance = haversineDistance(lat, lon, sourceLat, lng);
+  const bearing = calculateBearing(lat, lon, sourceLat, lng);
+  const walkingTime = estimateWalkingTime(distance);
+
+  return {
+    distance,
+    distanceFormatted: formatDistance(distance),
+    walkingTime,
+    walkingTimeFormatted: formatWalkingTime(walkingTime),
+    bearing,
+    direction: getDirectionFromBearing(bearing),
+  };
+}
+
+/**
+ * ডেডব্যান্ডসহ ট্রেন্ড — শেষ "নোঙর" দূরত্ব থেকে নতুন দূরত্ব deadbandMeters-এর
+ * বেশি কমলে "closer", বাড়লে "farther"; সীমার ভেতরে আগের ট্রেন্ডই থাকে (জিটারে
+ * ফ্লিপ-ফ্লপ বন্ধ)। anchor null হলে প্রথম নোঙর বসে, ট্রেন্ড এখনো null।
+ */
+export function nextDistanceTrend(
+  previousTrend: NearbyLiveTrend,
+  anchorDistance: number | null,
+  distance: number,
+  deadbandMeters: number
+): { trend: NearbyLiveTrend; anchor: number } {
+  if (anchorDistance === null) {
+    return { trend: null, anchor: distance };
+  }
+  if (distance < anchorDistance - deadbandMeters) {
+    return { trend: "closer", anchor: distance };
+  }
+  if (distance > anchorDistance + deadbandMeters) {
+    return { trend: "farther", anchor: distance };
+  }
+  return { trend: previousTrend, anchor: anchorDistance };
 }
 
 /** fitBounds-এর জন্য ব্যবহারকারী ± ব্যাসার্ধের বাউন্ডিং বক্স [[west, south], [east, north]]। */

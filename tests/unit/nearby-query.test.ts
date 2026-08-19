@@ -5,6 +5,8 @@ import {
   shouldEmitPositionChange,
   nearbyRadiusBounds,
   nearbySubtitle,
+  nearbyLiveFields,
+  nextDistanceTrend,
 } from "@/lib/nearby/query";
 import { DEMO_POIS } from "@/lib/data/pois";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
@@ -139,6 +141,68 @@ describe("nearbyRadiusBounds", () => {
     const halfWidth = haversineDistance(LAT, LNG, LAT, east);
     expect(halfWidth).toBeGreaterThan(950);
     expect(halfWidth).toBeLessThan(1050);
+  });
+});
+
+describe("nearbyLiveFields", () => {
+  it("recomputes fields from item coordinates at an arbitrary fix (radius-independent)", () => {
+    const gate = getNearbyItems("gate", LAT, LNG, 3000)[0];
+    if (!gate) throw new Error("gate fixture missing");
+    // ~২০০ মি পূর্বে নতুন ফিক্স
+    const live = nearbyLiveFields(gate.coordinates, LAT, LNG + 0.002);
+    expect(live.distance).toBeCloseTo(
+      haversineDistance(LAT, LNG + 0.002, gate.coordinates[1], gate.coordinates[0]),
+      6
+    );
+    expect(live.distanceFormatted).toMatch(/[ঀ-৿]/);
+    expect(live.walkingTime).toBe(Math.ceil(live.distance / 1.39));
+    expect(live.walkingTimeFormatted).toMatch(/[ঀ-৿]/);
+    expect(["N", "NE", "E", "SE", "S", "SW", "W", "NW"]).toContain(live.direction);
+  });
+
+  it("matches toItem's snapshot fields at the same fix", () => {
+    const gate = getNearbyItems("gate", LAT, LNG, 3000)[0];
+    if (!gate) throw new Error("gate fixture missing");
+    const live = nearbyLiveFields(gate.coordinates, LAT, LNG);
+    expect(live.distance).toBeCloseTo(gate.distance, 6);
+    expect(live.distanceFormatted).toBe(gate.distanceFormatted);
+    expect(live.walkingTimeFormatted).toBe(gate.walkingTimeFormatted);
+    expect(live.direction).toBe(gate.direction);
+  });
+});
+
+describe("nextDistanceTrend", () => {
+  it("anchors without a trend on the first fix", () => {
+    expect(nextDistanceTrend(null, null, 500, 3)).toEqual({ trend: null, anchor: 500 });
+  });
+
+  it("keeps the previous trend and anchor inside the deadband (jitter)", () => {
+    const kept = nextDistanceTrend("closer", 500, 502, 3);
+    expect(kept).toEqual({ trend: "closer", anchor: 500 });
+    const back = nextDistanceTrend("closer", 500, 498, 3);
+    expect(back).toEqual({ trend: "closer", anchor: 500 });
+  });
+
+  it("flips to closer only after crossing the deadband downward", () => {
+    const flipped = nextDistanceTrend(null, 500, 496, 3);
+    expect(flipped).toEqual({ trend: "closer", anchor: 496 });
+    // ট্রেন্ড থাকলেও নোঙর সরে — পরের তুলনা নতুন বিন্দু থেকে
+    const again = nextDistanceTrend("closer", 496, 490, 3);
+    expect(again).toEqual({ trend: "closer", anchor: 490 });
+  });
+
+  it("flips to farther after crossing the deadband upward", () => {
+    const flipped = nextDistanceTrend("closer", 500, 504, 3);
+    expect(flipped).toEqual({ trend: "farther", anchor: 504 });
+  });
+
+  it("does not oscillate when jitter stays inside the deadband of the anchor", () => {
+    let state = { trend: null as ReturnType<typeof nextDistanceTrend>["trend"], anchor: 500 };
+    for (const distance of [502, 498, 501, 499, 502]) {
+      state = nextDistanceTrend(state.trend, state.anchor, distance, 3);
+    }
+    expect(state.trend).toBeNull();
+    expect(state.anchor).toBe(500);
   });
 });
 
