@@ -4,6 +4,7 @@ import { Check, Star, Phone, Clock, MapPin, BadgeCheck } from "lucide-react";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
 import { HOTEL_AMENITIES_LABELS } from "@/lib/data/hotels";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
+import { useLiveNearbyItem } from "@/lib/hooks/useLiveNearbyItem";
 import type { NearbyItem } from "@/types/nearby";
 import type { Gate } from "@/types/gate";
 import type { Hotel } from "@/types/hotel";
@@ -11,9 +12,16 @@ import type { TouristPlace } from "@/types/tourist-place";
 import type { POI } from "@/types/poi";
 
 /** সারাংশ তথ্য-চিপ (ডিটেইল শিট ও মোডাল উভয়ে) */
-function InfoChip({ icon: Icon, label }: { icon: typeof Clock; label: string }) {
+function InfoChip({
+  icon: Icon,
+  label,
+  ...rest
+}: { icon: typeof Clock; label: string } & React.ComponentPropsWithoutRef<"span">) {
   return (
-    <span className="flex items-center gap-1.5 rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground">
+    <span
+      {...rest}
+      className="flex items-center gap-1.5 rounded-full bg-muted/70 px-2.5 py-1 text-xs font-medium text-foreground"
+    >
       <Icon className="h-3.5 w-3.5 text-primary" aria-hidden />
       {label}
     </span>
@@ -23,17 +31,23 @@ function InfoChip({ icon: Icon, label }: { icon: typeof Clock; label: string }) 
 /**
  * বিভাগ-ভিত্তিক পূর্ণ তথ্য — মোডালের বডি। NearbyItem.source থেকে
  * মূল রেকর্ডের সব তথ্য (গেটের সুবিধা, হোটেলের অ্যামেনিটি, ঐতিহাসিক
- * বিবরণ, POI-এর খাবার-তথ্য) বাংলায় সাজায়।
+ * বিবরণ, POI-এর খাবার-তথ্য) বাংলায় সাজায়। দূরত্ব/সময়/দিক লাইভ —
+ * চলাচলে প্রতি ~২ মিটারে বদলায় (ব্যাসার্ধ-নিরপেক্ষ)।
  */
 export function NearbyDetailFullContent({ item }: { item: NearbyItem }) {
   const meta = NEARBY_CATEGORY_META[item.category];
+  const live = useLiveNearbyItem(item);
 
   return (
     <div className="space-y-4">
       {/* দূরত্ব/সময় */}
       <div className="flex flex-wrap gap-2">
-        <InfoChip icon={MapPin} label={`${item.distanceFormatted} • ${item.direction} দিকে`} />
-        <InfoChip icon={Clock} label={`${item.walkingTimeFormatted} হেঁটে`} />
+        <InfoChip
+          icon={MapPin}
+          label={`${live.distanceFormatted} • ${live.direction} দিকে`}
+          data-testid="nearby-full-distance-chip"
+        />
+        <InfoChip icon={Clock} label={`${live.walkingTimeFormatted} হেঁটে`} />
         {typeof item.rating === "number" && (
           <InfoChip icon={Star} label={`${toBengaliNumber(item.rating)} রেটিং (${meta.label})`} />
         )}

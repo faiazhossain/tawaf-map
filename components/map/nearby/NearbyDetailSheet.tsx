@@ -1,11 +1,13 @@
 "use client";
 
-import { Star, Maximize2 } from "lucide-react";
+import { Star, Maximize2, TrendingDown, TrendingUp, Footprints } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { useLiveNearbyItem } from "@/lib/hooks/useLiveNearbyItem";
+import { cn } from "@/lib/utils";
 import type { NearbyItem } from "@/types/nearby";
 
 interface NearbyDetailSheetProps {
@@ -19,6 +21,8 @@ interface NearbyDetailSheetProps {
 function DetailContent({ item, onShowDetails }: { item: NearbyItem; onShowDetails: () => void }) {
   const meta = NEARBY_CATEGORY_META[item.category];
   const Icon = meta.icon;
+  // লাইভ দূরত্ব — স্ন্যাপশট নয়; চলাচলে প্রতি ~২ মিটারে বদলায় (ব্যাসার্ধ-নিরপেক্ষ)
+  const live = useLiveNearbyItem(item);
 
   return (
     <div className="space-y-3">
@@ -41,15 +45,54 @@ function DetailContent({ item, onShowDetails }: { item: NearbyItem; onShowDetail
               {item.nameAr}
             </p>
           )}
-          <p className="text-xs text-muted-foreground">
-            {meta.label} • {item.subtitle ?? item.direction} দিকে
+          <p className="truncate text-xs text-muted-foreground">
+            {item.subtitle ? `${meta.label} • ${item.subtitle} • ` : `${meta.label} • `}
+            {live.direction} দিকে
           </p>
         </div>
       </div>
 
-      <div className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2">
-        <span className="text-sm font-semibold text-primary">{item.distanceFormatted}</span>
-        <span className="text-sm text-foreground">{item.walkingTimeFormatted} হেঁটে</span>
+      {/* লাইভ দূরত্ব-সারি — স্ক্রিন-রিডার এক বাক্যে শোনে (polite, atomic) */}
+      <div
+        className="flex items-center justify-between gap-2 rounded-xl bg-muted/60 px-3 py-2"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        <span
+          className="shrink-0 text-sm font-semibold text-primary"
+          data-testid="nearby-detail-distance"
+        >
+          {live.distanceFormatted}
+        </span>
+        {live.isNear ? (
+          <span
+            className="flex min-w-0 items-center gap-1 text-xs font-semibold text-success"
+            data-testid="nearby-near-state"
+          >
+            <Footprints className="h-3.5 w-3.5 shrink-0" aria-hidden />
+            প্রায় পৌঁছে গেছেন
+          </span>
+        ) : (
+          live.trend && (
+            <span
+              className={cn(
+                "flex min-w-0 items-center gap-1 text-xs font-medium",
+                live.trend === "closer" ? "text-success" : "text-muted-foreground"
+              )}
+              data-testid="nearby-detail-trend"
+            >
+              {live.trend === "closer" ? (
+                <TrendingDown className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              ) : (
+                <TrendingUp className="h-3.5 w-3.5 shrink-0" aria-hidden />
+              )}
+              {live.trend === "closer" ? "কাছে আসছেন" : "দূরে যাচ্ছেন"}
+            </span>
+          )
+        )}
+        <span className="shrink-0 text-sm text-foreground" data-testid="nearby-detail-walk-time">
+          {live.walkingTimeFormatted} হেঁটে
+        </span>
       </div>
 
       <Button
