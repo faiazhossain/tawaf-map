@@ -5,6 +5,7 @@ import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import { useLiveNearbyItem } from "@/lib/hooks/useLiveNearbyItem";
 import { cn } from "@/lib/utils";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 
@@ -17,6 +18,67 @@ interface NearbyListSheetProps {
   onSelect: (item: NearbyItem) => void;
 }
 
+/**
+ * একটি তালিকা-সারি — দূরত্ব/সময়/দিক লাইভ (প্রতি ~২ মি চলাচলে); সারির
+ * সদস্যতা/ক্রম ১০ মি হিস্টেরেসিসে (useNearbyPlaces) — আঙুলের নিচে সারি
+ * লাফাতে থাকে না, শুধু সংখ্যা বদলায়।
+ */
+function NearbyRow({
+  item,
+  isSelected,
+  onSelect,
+}: {
+  item: NearbyItem;
+  isSelected: boolean;
+  onSelect: (item: NearbyItem) => void;
+}) {
+  const meta = NEARBY_CATEGORY_META[item.category];
+  const Icon = meta.icon;
+  const live = useLiveNearbyItem(item);
+
+  return (
+    <button
+      type="button"
+      role="listitem"
+      onClick={() => onSelect(item)}
+      data-testid={`nearby-row-${item.id}`}
+      aria-label={`${item.name}, ${live.distanceFormatted}`}
+      className={cn(
+        "flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/60",
+        isSelected && "bg-primary-soft"
+      )}
+    >
+      <span className="flex min-w-0 flex-1 items-center gap-3">
+        <span
+          className={cn(
+            "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
+            isSelected ? "bg-primary text-primary-foreground" : "bg-primary/10"
+          )}
+        >
+          <Icon
+            className={cn("h-4 w-4", isSelected ? "text-primary-foreground" : "text-primary")}
+            aria-hidden
+          />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-medium text-foreground">{item.name}</span>
+          <span className="block truncate text-xs text-muted-foreground">
+            {item.subtitle ? `${item.subtitle} • ` : ""}
+            {live.direction} দিকে
+          </span>
+        </span>
+      </span>
+      <span className="shrink-0 text-right" data-testid={`nearby-row-distance-${item.id}`}>
+        <span className="block text-sm font-semibold text-primary">{live.distanceFormatted}</span>
+        <span className="block text-xs text-muted-foreground">
+          {live.walkingTimeFormatted} হেঁটে
+        </span>
+      </span>
+      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+    </button>
+  );
+}
+
 /** দূরত্ব-সাজানো সারি — তালিকা শিট ও ডেস্কটপ কার্ড উভয়েই ব্যবহৃত */
 function NearbyListContent({
   category,
@@ -25,7 +87,6 @@ function NearbyListContent({
   onSelect,
 }: Pick<NearbyListSheetProps, "category" | "items" | "selectedItemId" | "onSelect">) {
   const meta = NEARBY_CATEGORY_META[category];
-  const Icon = meta.icon;
 
   return (
     <div role="list" aria-label={`কাছাকাছি ${meta.plural} তালিকা`}>
@@ -34,55 +95,14 @@ function NearbyListContent({
           ব্যাসার্ধের ভেতরে কোনো {meta.label} নেই — সেটিংসে ব্যাসার্ধ বাড়িয়ে দেখুন
         </p>
       )}
-      {items.map((item) => {
-        const isSelected = item.id === selectedItemId;
-        return (
-          <button
-            key={item.id}
-            type="button"
-            role="listitem"
-            onClick={() => onSelect(item)}
-            data-testid={`nearby-row-${item.id}`}
-            aria-label={`${item.name}, ${item.distanceFormatted}`}
-            className={cn(
-              "flex w-full items-center justify-between gap-3 border-b border-border/60 px-4 py-3 text-left transition-colors last:border-b-0 hover:bg-muted/60",
-              isSelected && "bg-primary-soft"
-            )}
-          >
-            <span className="flex min-w-0 flex-1 items-center gap-3">
-              <span
-                className={cn(
-                  "flex h-9 w-9 shrink-0 items-center justify-center rounded-full",
-                  isSelected ? "bg-primary text-primary-foreground" : "bg-primary/10"
-                )}
-              >
-                <Icon
-                  className={cn("h-4 w-4", isSelected ? "text-primary-foreground" : "text-primary")}
-                  aria-hidden
-                />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate text-sm font-medium text-foreground">
-                  {item.name}
-                </span>
-                <span className="block truncate text-xs text-muted-foreground">
-                  {item.subtitle ? `${item.subtitle} • ` : ""}
-                  {item.direction} দিকে
-                </span>
-              </span>
-            </span>
-            <span className="shrink-0 text-right">
-              <span className="block text-sm font-semibold text-primary">
-                {item.distanceFormatted}
-              </span>
-              <span className="block text-xs text-muted-foreground">
-                {item.walkingTimeFormatted} হেঁটে
-              </span>
-            </span>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
-          </button>
-        );
-      })}
+      {items.map((item) => (
+        <NearbyRow
+          key={item.id}
+          item={item}
+          isSelected={item.id === selectedItemId}
+          onSelect={onSelect}
+        />
+      ))}
     </div>
   );
 }
