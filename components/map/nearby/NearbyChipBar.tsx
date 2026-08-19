@@ -39,7 +39,9 @@ export function NearbyChipBar({
 
   return (
     <div
-      className="pointer-events-none absolute inset-x-0 bottom-4 z-[40] px-3 md:inset-x-auto md:bottom-6 md:left-1/2 md:-translate-x-1/2 md:px-0"
+      // ml-16: বাম কোণের বারিকই লোগোর (BarikoiAttribution) জায়গা রিজার্ভ — মোবাইলে
+      // চিপ-সারি লোগোর ডানে শুরু। md+ এ বার সেন্টারড, কোণ মুক্ত, তাই মার্জিন 0।
+      className="pointer-events-none absolute inset-x-0 bottom-4 z-[40] ml-16 px-3 md:inset-x-auto md:bottom-6 md:left-1/2 md:ml-0 md:-translate-x-1/2 md:px-0"
       style={style}
       role="group"
       aria-label="আমার কাছে বিভাগ"

@@ -15,6 +15,8 @@ export const GUIDE_SHEET_SNAP_POINTS = [0.12, 0.42, 0.92] as const;
 export const GUIDE_SHEET_DEFAULT_SNAP = 1;
 /** ধাপ পরিবর্তনের কোরিওগ্রাফি সবসময় এই স্ন্যাপে ফেরে - হিরো নির্দেশ ও মানচিত্র উভয় দৃশ্যমান। */
 export const GUIDE_STEP_SNAP = 1;
+/** "আমার কাছে" চিপ চালুর ম্যাপ-মোমেন্ট স্ন্যাপ — গাইড peek-এ নেমে নিচের প্রান্ত ছেড়ে দেয়। */
+export const GUIDE_NEARBY_SNAP = 0;
 /** ওভারলে ও শীটের ওপরের ধারের মাঝের ফাঁক। */
 export const GUIDE_OVERLAY_GAP_PX = 12;
 /** ক্যামেরা প্যাডিং-এর ওপরের মার্জিন - RitualRoundHud (top-4 কেন্দ্রে) সরিয়ে রাখে। */
@@ -44,6 +46,15 @@ export function guideOverlayBottomPx(
 ): number | undefined {
   const height = guideSheetHeightPx(snapIndex, viewportHeightPx);
   return height > 0 ? height + GUIDE_OVERLAY_GAP_PX : undefined;
+}
+
+/**
+ * শিট peek-এর ঊর্ধ্বে উঠে আছে কি না (শীট বন্ধ হলে false)। উঠলে নিচের প্রান্ত
+ * গাইডের দখলে - "আমার কাছে" চিপ-বার/কার্ড-স্ট্রিপ তখন লুকিয়ে থাকে; peek বা
+ * বন্ধ শিটেই কেবল দেখা যায় (নিচের প্রান্তে একই সময়ে একজনই মালিক)।
+ */
+export function guideSheetRaised(snapIndex: number | null): boolean {
+  return snapIndex !== null && snapIndex > 0;
 }
 
 /**

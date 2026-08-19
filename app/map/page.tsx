@@ -1,8 +1,20 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { MapView, GateSelector, UserLocation, TouristPlacesList } from "@/components/map";
+import {
+  MapView,
+  GateSelector,
+  UserLocation,
+  TouristPlacesList,
+  BarikoiAttribution,
+} from "@/components/map";
 import { NearbyChipBar, NearbySettingsPanel } from "@/components/map/nearby";
+import {
+  NearbyCardsStrip,
+  NearbyListSheet,
+  NearbyDetailSheet,
+  NearbyDetailModal,
+} from "@/components/map/nearby";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
@@ -18,7 +30,8 @@ import {
   useGuideSheetStore,
   useNearbyStore,
 } from "@/lib/store";
-import { guideOverlayBottomPx } from "@/lib/utils/guide-sheet";
+import { guideOverlayBottomPx, guideSheetRaised } from "@/lib/utils/guide-sheet";
+import { NEARBY_CHIP_BAR_HEIGHT_PX, NEARBY_CARDS_STRIP_GAP_PX } from "@/lib/utils/nearby-sheet";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { INTENT_PRELOAD_MODEL_URLS } from "@/lib/map/model-config";
@@ -125,6 +138,8 @@ export default function MapPage() {
   const activeNearbyCategory = useNearbyStore((state) => state.activeCategory);
   const nearbySelectedItem = useNearbyStore((state) => state.selectedItem);
   const nearbySettingsOpen = useNearbyStore((state) => state.settingsOpen);
+  const nearbyListMode = useNearbyStore((state) => state.listMode);
+  const nearbyDetailModalOpen = useNearbyStore((state) => state.detailModalOpen);
   const nearbyRadius = useNearbyStore((state) => state.radius);
   const guideSheetSnap = useGuideSheetStore((state) => state.snapIndex);
   // GPS ওয়াচ পেজ লেভেলে — মোবাইলে UserLocation এখন হ্যামবার্গার মেনুর ভেতরে
@@ -216,6 +231,26 @@ export default function MapPage() {
       useNearbyStore.getState().closeSettings();
     }
   }, []);
+  const handleNearbyExpand = useCallback(() => {
+    useNearbyStore.getState().expandList();
+  }, []);
+  const handleNearbyListChange = useCallback((open: boolean) => {
+    // টেনে-নামা/ব্যাকড্রপ-ট্যাপে তালিকা ভাঁজ হয়ে কার্ড-স্ট্রিপে ফেরে
+    if (!open) {
+      useNearbyStore.getState().collapseList();
+    }
+  }, []);
+  const handleNearbyDetailChange = useCallback((open: boolean) => {
+    if (!open) {
+      useNearbyStore.getState().clearSelection();
+    }
+  }, []);
+  const handleNearbyShowDetails = useCallback(() => {
+    useNearbyStore.getState().openDetailModal();
+  }, []);
+  const handleNearbyModalClose = useCallback(() => {
+    useNearbyStore.getState().closeDetailModal();
+  }, []);
 
   // ওমরাহ গাইড ডিফল্টে চালু: অনবোর্ডেড ব্যবহারকারীর জন্য অ্যাপের মূল ফিচারটি
   // সরাসরি দৃশ্যমান রাখা। মাউন্টের পরে স্টোর হাইড্রেশন শেষ হয়েছে, তাই সঠিক মান পাওয়া যায়।
@@ -248,6 +283,20 @@ export default function MapPage() {
     window.addEventListener("resize", update);
     return () => window.removeEventListener("resize", update);
   }, []);
+
+  // গাইড শিটের স্ন্যাপ থেকে চিপ-বার/কার্ড-স্ট্রিপের bottom অফসেট। ডেস্কটপে (>=md)
+  // গাইড পার্শ্ব-প্যানেল হিসেবে রেন্ডার হয়, মোবাইল শীটটি লুকানো থাকে — কিন্তু
+  // স্টোরে স্ন্যাপ লেখা চলতেই থাকে, তাই MapView-এর (guideSheetActive) মতোই mdUp
+  // গেট ছাড়া অফসেট প্রয়োগ করলে চিপ-বার পর্দার মাঝ বরাবর ভেসে যেত।
+  const mdUp = useMediaQuery("(min-width: 768px)");
+  const guideSheetActive = !mdUp && guideSheetSnap !== null;
+  const nearbyOverlayBottomPx = guideSheetActive
+    ? guideOverlayBottomPx(guideSheetSnap, viewportHeight)
+    : undefined;
+  // নিচের প্রান্তে একই সময়ে একজনই মালিক: গাইড শিট peek-এর ঊর্ধ্বে উঠলে
+  // কাছাকাছি চিপ-বার/কার্ড-স্ট্রিপ লুকায় (চিপ চালু করলে শিট প্রথমেই peek-এ
+  // নামে - useGuideSheetNearbySync; এই নিয়ম সেটেল-চলাকালীন ফাঁকও ঢাকে)।
+  const guideBlocksNearby = guideSheetActive && guideSheetRaised(guideSheetSnap);
 
   // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
   // এতে লোকেশন আপডেটে পেইজ রি-রেন্ডার হলেও MapView-এর effect পুনরায় না চলে —
@@ -659,20 +708,6 @@ export default function MapPage() {
         {/* GPS simulator badge (dev/test harness, only renders while active) */}
         <GpsSimBadge />
 
-        {/* "আমার কাছে" চিপ-বার — গাইড শিটের পিক-এর ওপরে ভাসে (inline bottom),
-            গাইড ফুল-স্ন্যাপে বা কোনো প্যানেল খোলা থাকলে লুকানো (আগের গেট-প্যানেলের নিয়ম)। */}
-        <NearbyChipBar
-          counts={nearby.counts}
-          activeCategory={activeNearbyCategory}
-          hidden={!nearby.hasLocation || hasActivePanel || guideSheetSnap === 2}
-          style={{ bottom: guideOverlayBottomPx(guideSheetSnap, viewportHeight) }}
-          onSelectCategory={handleNearbyCategorySelect}
-          onOpenSettings={handleNearbySettingsOpen}
-        />
-
-        {/* কাছাকাছি সেটিংস (মোবাইল শিট / ডেস্কটপ কার্ড) */}
-        <NearbySettingsPanel open={nearbySettingsOpen} onOpenChange={handleNearbySettingsChange} />
-
         {/* Tourist Places Floating Button (when list is closed and places toggle is on) */}
         {!showTouristList && !hasActivePanel && showTouristPlaces && (
           <div className="absolute bottom-20 left-4 z-[40]">
@@ -715,6 +750,79 @@ export default function MapPage() {
         {umrahOnboarded && (
           <MiqatOverviewPanel open={showMiqatOverview} onOpenChange={handleMiqatOverviewChange} />
         )}
+
+        {/* বারিকই অ্যাট্রিবিউশন — নিচের বাম কোণে ছোট লোগো; NearbyChipBar
+            (মোবাইলে ml-16) এই কোণটি রিজার্ভ করে রাখে। */}
+        <BarikoiAttribution />
+
+        {/* "আমার কাছে" — গাইড শিট/প্যানেলের পরে মাউন্ট, যাতে শিট-স্ট্যাকিংয়ে
+            (একই z-[110]) পরে-বসা কাছাকাছি শিটগুলো ওপরে থাকে। */}
+        <NearbyChipBar
+          counts={nearby.counts}
+          activeCategory={activeNearbyCategory}
+          hidden={
+            !nearby.hasLocation ||
+            hasActivePanel ||
+            guideBlocksNearby ||
+            nearbyListMode === "expanded" ||
+            nearbySelectedItem !== null
+          }
+          style={{ bottom: nearbyOverlayBottomPx }}
+          onSelectCategory={handleNearbyCategorySelect}
+          onOpenSettings={handleNearbySettingsOpen}
+        />
+
+        {activeNearbyCategory && (
+          <NearbyCardsStrip
+            category={activeNearbyCategory}
+            items={nearby.items}
+            hidden={
+              !nearby.hasLocation ||
+              hasActivePanel ||
+              guideBlocksNearby ||
+              nearbyListMode !== "cards" ||
+              nearbySelectedItem !== null
+            }
+            style={{
+              bottom:
+                // অফসেট না থাকলে চিপ-বারের ক্লাস-ডিফল্ট (bottom-4 / md:bottom-6) মিরর
+                (nearbyOverlayBottomPx ?? (mdUp ? 24 : 16)) +
+                NEARBY_CHIP_BAR_HEIGHT_PX +
+                NEARBY_CARDS_STRIP_GAP_PX,
+            }}
+            onSelect={handleNearbyItemClick}
+            onExpand={handleNearbyExpand}
+          />
+        )}
+
+        <NearbySettingsPanel open={nearbySettingsOpen} onOpenChange={handleNearbySettingsChange} />
+
+        <NearbyListSheet
+          open={
+            activeNearbyCategory !== null &&
+            nearbyListMode === "expanded" &&
+            nearbySelectedItem === null
+          }
+          onOpenChange={handleNearbyListChange}
+          category={activeNearbyCategory ?? "hotel"}
+          items={nearby.items}
+          selectedItemId={nearbySelectedItem?.id ?? null}
+          onSelect={handleNearbyItemClick}
+        />
+
+        {nearbySelectedItem && (
+          <NearbyDetailSheet
+            open
+            onOpenChange={handleNearbyDetailChange}
+            item={nearbySelectedItem}
+            onShowDetails={handleNearbyShowDetails}
+          />
+        )}
+
+        <NearbyDetailModal
+          item={nearbySelectedItem && nearbyDetailModalOpen ? nearbySelectedItem : null}
+          onClose={handleNearbyModalClose}
+        />
       </div>
     </main>
   );

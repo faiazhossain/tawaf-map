@@ -446,9 +446,7 @@ export function MapView({
       // Allow steeper pitch for the 3D-model view (default max is 60, which
       // leaves no headroom when we want a dramatic low-angle of the mosque).
       maxPitch: 75,
-      // OSM-derived tiles require attribution. Barikoi adds its own attribution
-      // via the style; the AttributionControl shows the active source attributions.
-      attributionControl: { compact: true },
+      attributionControl: false,
       hash: "map",
     });
 
@@ -467,15 +465,6 @@ export function MapView({
     // Zoom-level pill, stacked under the controls above inside
     // `maplibregl-ctrl-top-right` (added last = bottom of the column).
     map.addControl(new ZoomIndicatorControl(), "top-right");
-
-    // Add scale control
-    map.addControl(
-      new maplibregl.ScaleControl({
-        maxWidth: 100,
-        unit: "metric",
-      }),
-      "bottom-left"
-    );
 
     map.on("load", () => {
       setMapLoaded(true);

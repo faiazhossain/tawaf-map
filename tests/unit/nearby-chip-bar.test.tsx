@@ -139,4 +139,19 @@ describe("NearbyChipBar", () => {
     );
     expect(container.firstChild).toBeNull();
   });
+
+  it("reserves the bottom-left corner for the Barikoi logo on mobile only", () => {
+    render(
+      <NearbyChipBar
+        counts={makeCounts()}
+        activeCategory={null}
+        onSelectCategory={noop}
+        onOpenSettings={noop}
+      />
+    );
+    // মোবাইলে চিপ-সারি বাম কোণের লোগোর ডানে শুরু; md+ এ বার সেন্টারড, মার্জিন 0
+    const bar = screen.getByRole("group");
+    expect(bar.className).toContain("ml-16");
+    expect(bar.className).toContain("md:ml-0");
+  });
 });

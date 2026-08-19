@@ -10,6 +10,7 @@ import { getStepById } from "@/lib/data/umrah/steps";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { GUIDE_SHEET_SNAP_POINTS, GUIDE_SHEET_DEFAULT_SNAP } from "@/lib/utils/guide-sheet";
 import { useGuideSheetStepSync } from "@/lib/hooks/useGuideSheetStepSync";
+import { useGuideSheetNearbySync } from "@/lib/hooks/useGuideSheetNearbySync";
 import { InstructionCard } from "./InstructionCard";
 import { CircuitControl } from "./CircuitControl";
 import { GuidePeek } from "./GuidePeek";
@@ -91,6 +92,9 @@ function SheetBody({
   const { snapIndex, snapToIndex } = useBottomSheet();
   // ধাপ বদলালেই শীট normal স্ন্যাপে ফেরে (কোরিওগ্রাফি) - হুক শর্তহীন, তাই শীরোষে।
   useGuideSheetStepSync();
+  // "আমার কাছে" চিপ চালু হলে শীট peek-এ নামে, শিট ওঠালে বিভাগ নিভে যায় - নিচের
+  // প্রান্ত এক প্রসঙ্গের দখলে (শীরোষে, useBottomSheet-এর জন্য)।
+  useGuideSheetNearbySync();
   const step = useUmrahGuideStore(selectCurrentStep);
   const counterValue = useUmrahGuideStore((s) => (step ? selectCounter(s, step.id) : 0));
   const stepIds = useUmrahGuideStore((s) => s.stepIds);

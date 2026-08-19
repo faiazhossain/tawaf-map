@@ -1,12 +1,14 @@
 import { afterEach, describe, expect, it } from "vitest";
 import {
   GUIDE_CAMERA_BOTTOM_GAP_PX,
+  GUIDE_NEARBY_SNAP,
   GUIDE_OVERLAY_GAP_PX,
   GUIDE_SHEET_SNAP_POINTS,
   GUIDE_STEP_SNAP,
   guideCameraPadding,
   guideOverlayBottomPx,
   guideSheetHeightPx,
+  guideSheetRaised,
   withGuidePadding,
 } from "@/lib/utils/guide-sheet";
 import { useGuideSheetStore } from "@/lib/store";
@@ -49,6 +51,18 @@ describe("guideOverlayBottomPx", () => {
   it("adds the overlay gap above the sheet height", () => {
     const height = guideSheetHeightPx(GUIDE_STEP_SNAP, VIEWPORT);
     expect(guideOverlayBottomPx(GUIDE_STEP_SNAP, VIEWPORT)).toBe(height + GUIDE_OVERLAY_GAP_PX);
+  });
+});
+
+describe("guideSheetRaised", () => {
+  it("is false when the sheet is closed or at peek", () => {
+    expect(guideSheetRaised(null)).toBe(false);
+    expect(guideSheetRaised(GUIDE_NEARBY_SNAP)).toBe(false);
+  });
+
+  it("is true above peek - the guide owns the bottom edge", () => {
+    expect(guideSheetRaised(GUIDE_STEP_SNAP)).toBe(true);
+    expect(guideSheetRaised(2)).toBe(true);
   });
 });
 

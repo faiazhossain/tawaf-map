@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act, render } from "@testing-library/react";
+import { useState } from "react";
 import { BottomSheet, useBottomSheet } from "@/components/ui/bottom-sheet";
 
 // jsdom has no TouchEvent; dispatch plain Events with touches patched on.
@@ -181,6 +182,38 @@ describe("BottomSheet snap context", () => {
 
     await act(async () => {
       await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    expect(getByTestId("probe").getAttribute("data-snap-index")).toBe("2");
+  });
+
+  // রিগ্রেশন: সব কলার ইনলাইন snapPoints অ্যারে দেয় - প্যারেন্ট রি-রেন্ডারে (GPS
+  // টিকের মতো) খোলা-এফেক্ট পুনরায় চলে শিটকে defaultSnap-এ টেনে ফেরাত; ব্যবহারকারীর
+  // ড্র্যাগ/এক্সপ্যান্ড প্রতি সেকেন্ডে মুছে যেত।
+  it("keeps the settled snap through parent re-renders with an inline snapPoints array", async () => {
+    let bump: (value: number) => void = () => {};
+    function Harness() {
+      const [, setTick] = useState(0);
+      bump = setTick;
+      return (
+        <BottomSheet open onOpenChange={vi.fn()} snapPoints={[0.12, 0.42, 0.92]} defaultSnap={1}>
+          <Probe />
+        </BottomSheet>
+      );
+    }
+    const { getByTestId } = render(<Harness />);
+    expect(getByTestId("probe").getAttribute("data-snap-index")).toBe("1");
+
+    act(() => {
+      getByTestId("probe").click();
+    });
+    await act(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 500));
+    });
+    expect(getByTestId("probe").getAttribute("data-snap-index")).toBe("2");
+
+    // প্যারেন্ট রি-রেন্ডার - নতুন snapPoints আইডেন্টিটি, open/defaultSnap অপরিবর্তিত
+    act(() => {
+      bump(1);
     });
     expect(getByTestId("probe").getAttribute("data-snap-index")).toBe("2");
   });

@@ -103,6 +103,12 @@ export function BottomSheet({
   // রি-রেন্ডারে জেসচার লেয়ারের নেটিভ লিসনার কখনো পুনরায় বাঁধা না পড়ে।
   const onSnapChangeRef = useRef(onSnapChange);
   onSnapChangeRef.current = onSnapChange;
+  // প্রতিটি কলার ইনলাইন অ্যারে দেয় (snapPoints={[0.5, 0.85]}), তাই প্রপের আইডেন্টিটি
+  // প্রতি রি-রেন্ডারে বদলায়। খোলা-এফেক্টের deps-এ থাকলে GPS-টিকের মতো ঘন ঘন
+  // রি-রেন্ডারেই এফেক্ট পুনরায় চলে শিটকে defaultSnap-এ টেনে ফেরাত - ব্যবহারকারীর
+  // ড্র্যাগ/স্ন্যাপ প্রতি সেকেন্ডে মুছে যেত। এফেক্ট রেফ থেকে পড়ে, deps-এ নয়।
+  const snapPointsRef = useRef(snapPoints);
+  snapPointsRef.current = snapPoints;
 
   const sheetRef = useRef<HTMLDivElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -244,7 +250,7 @@ export function BottomSheet({
 
     setCurrentSnapIndex(defaultSnap);
     onSnapChangeRef.current?.(defaultSnap);
-    const restingFraction = snapPoints[defaultSnap];
+    const restingFraction = snapPointsRef.current[defaultSnap];
     setCurrentHeight(restingFraction);
     const sheet = sheetRef.current;
     if (sheet) {
@@ -263,7 +269,7 @@ export function BottomSheet({
       if (closeTimerRef.current) window.clearTimeout(closeTimerRef.current);
       gestureState.current = "idle";
     };
-  }, [open, defaultSnap, snapPoints]);
+  }, [open, defaultSnap]);
 
   const onGestureStart = useCallback(
     (clientX: number, clientY: number, target: EventTarget | null) => {

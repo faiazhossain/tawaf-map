@@ -1,0 +1,103 @@
+"use client";
+
+import { Star, Maximize2 } from "lucide-react";
+import { BottomSheet } from "@/components/ui/bottom-sheet";
+import { Button } from "@/components/ui/button";
+import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
+import { toBengaliNumber } from "@/lib/utils/bengali-number";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import type { NearbyItem } from "@/types/nearby";
+
+interface NearbyDetailSheetProps {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  item: NearbyItem;
+  onShowDetails: () => void;
+}
+
+/** ডিটেইল সারাংশ — শিট (৩০%) ও ডেস্কটপ কার্ড উভয়ে */
+function DetailContent({ item, onShowDetails }: { item: NearbyItem; onShowDetails: () => void }) {
+  const meta = NEARBY_CATEGORY_META[item.category];
+  const Icon = meta.icon;
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary/10">
+          <Icon className="h-5 w-5 text-primary" aria-hidden />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-foreground">{item.name}</h3>
+            {typeof item.rating === "number" && (
+              <span className="flex shrink-0 items-center gap-1 rounded-full bg-gold/10 px-2 py-0.5 text-xs font-medium text-gold">
+                <Star className="h-3 w-3 fill-gold" aria-hidden />
+                {toBengaliNumber(item.rating)}
+              </span>
+            )}
+          </div>
+          {item.nameAr && (
+            <p dir="rtl" className="truncate font-arabic text-sm text-muted-foreground">
+              {item.nameAr}
+            </p>
+          )}
+          <p className="text-xs text-muted-foreground">
+            {meta.label} • {item.subtitle ?? item.direction} দিকে
+          </p>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between rounded-xl bg-muted/60 px-3 py-2">
+        <span className="text-sm font-semibold text-primary">{item.distanceFormatted}</span>
+        <span className="text-sm text-foreground">{item.walkingTimeFormatted} হেঁটে</span>
+      </div>
+
+      <Button
+        onClick={onShowDetails}
+        data-testid="nearby-show-details-button"
+        className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary-hover"
+      >
+        <Maximize2 className="mr-1.5 h-4 w-4" aria-hidden />
+        বিস্তারিত
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * নির্বাচিত আইটেমের ডিটেইল শিট — মোবাইলে ~৩০% ভিউপোর্ট (স্ন্যাপ ০.৩, টেনে
+ * ওপরে ৮৫% পর্যন্ত), ডেস্কটপে ডান-পাশের কার্ড। "বিস্তারিত" মোডাল খোলে।
+ */
+export function NearbyDetailSheet({
+  open,
+  onOpenChange,
+  item,
+  onShowDetails,
+}: NearbyDetailSheetProps) {
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+
+  if (!open) return null;
+
+  if (isDesktop) {
+    return (
+      <div className="absolute bottom-24 right-4 z-[100] w-96 rounded-2xl border border-border/60 bg-surface/95 p-4 shadow-2xl backdrop-blur-xl">
+        <DetailContent item={item} onShowDetails={onShowDetails} />
+      </div>
+    );
+  }
+
+  return (
+    <BottomSheet
+      open={open}
+      onOpenChange={onOpenChange}
+      snapPoints={[0.3, 0.85]}
+      defaultSnap={0}
+      showBackdrop={false}
+      dismissOnDragDown
+    >
+      <BottomSheet.Content>
+        <DetailContent item={item} onShowDetails={onShowDetails} />
+      </BottomSheet.Content>
+    </BottomSheet>
+  );
+}
