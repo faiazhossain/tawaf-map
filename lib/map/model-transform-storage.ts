@@ -3,10 +3,10 @@
 // 3D toggle and page reloads, so tuning work isn't lost before you "Copy config"
 // and bake the values into model-config.ts.
 //
-// Each model ("masjid" | "clock-tower") stores under its own key. The key embeds
-// a signature of that model's compiled-in defaults: whenever its constants in
-// model-config.ts change, the key changes and the previously saved transform is
-// ignored automatically (no manual cache-busting).
+// Each model ("masjid" | "clock-tower" | "nabawi") stores under its own key.
+// The key embeds a signature of that model's compiled-in defaults: whenever
+// its constants in model-config.ts change, the key changes and the previously
+// saved transform is ignored automatically (no manual cache-busting).
 //
 // Dev-only by design: every helper no-ops in production and when localStorage
 // is unavailable, so production always renders the baked defaults.
@@ -19,10 +19,13 @@ import {
   CLOCK_TOWER_CENTER,
   CLOCK_TOWER_CONFIG,
   CLOCK_TOWER_ORIGIN,
+  NABAWI_CENTER,
+  NABAWI_CONFIG,
+  NABAWI_ORIGIN,
   type ModelTunables,
 } from "./model-config";
 
-export type TunableModelKey = "masjid" | "clock-tower";
+export type TunableModelKey = "masjid" | "clock-tower" | "nabawi";
 
 const STORAGE_PREFIX = "tawaf:model-transform";
 
@@ -36,6 +39,7 @@ const DEFAULTS_BY_MODEL: Record<
     config: CLOCK_TOWER_CONFIG,
     center: CLOCK_TOWER_CENTER,
   },
+  nabawi: { origin: NABAWI_ORIGIN, config: NABAWI_CONFIG, center: NABAWI_CENTER },
 };
 
 function storageKey(model: TunableModelKey): string {

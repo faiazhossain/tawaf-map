@@ -1,6 +1,6 @@
 // Custom MapLibre layer that renders a GLB 3D model (Masjid Al-Haram, the
-// Makkah clock tower) at a fixed lng/lat, sharing MapLibre's WebGL context
-// with three.js.
+// Makkah clock tower, Masjid an-Nabawi in Madinah) at a fixed lng/lat, sharing
+// MapLibre's WebGL context with three.js.
 //
 // Mirrors the structure of maplibre-gl's official "Add a 3D model using three.js"
 // example, adapted for: (1) maplibre-gl 4.7.1's `render(gl, matrix)` signature
@@ -74,7 +74,9 @@ interface ModelInstance {
 
 // cacheKey -> parsed instance. Module-level so it survives layer/map teardown
 // (React StrictMode remounts, page navigation) — only a full page reload clears
-// it. Two hero models is a bounded, intentional GPU/RAM budget.
+// it. The hero models of the venues actually visited (Makkah: masjid + clock
+// tower; Madinah: Nabawi) are a bounded, intentional GPU/RAM budget — venues
+// never visited in a session are never parsed at all.
 const instanceCache = new Map<string, ModelInstance>();
 
 export interface ModelLayerHandle {

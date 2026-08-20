@@ -1,19 +1,22 @@
 import type { ModelTransform } from "./three-model-layer";
+import { haversineDistance } from "@/lib/utils/distance";
 
-// Georeferencing + asset config for the Masjid Al-Haram 3D model layer.
+// Georeferencing + asset config for the 3D model layers (Makkah: Masjid
+// Al-Haram + clock tower; Madinah: Masjid an-Nabawi).
 //
-// The GLB is a generic (non-georeferenced) model, so its real-world scale and
-// heading are NOT baked into the file. The constants below are the single place
-// to iterate alignment against the satellite basemap. See three-model-layer.ts
-// for how they are consumed.
+// The GLBs are generic (non-georeferenced) models, so their real-world scale
+// and heading are NOT baked into the files. The constants below are the single
+// place to iterate alignment against the satellite basemap. See
+// three-model-layer.ts for how they are consumed.
 //
 // HOW TO ALIGN A MODEL
 // --------------------
-// These constants are the source of truth — both 3D layers always render the
-// baked defaults (the dev tuner widget + localStorage persistence in
-// MapView.tsx are disabled). Workflow to re-align a model: temporarily mount
-// the dev tuner (components/map/ModelTuner.tsx — parameterized per model) in
-// MapView.tsx, adjust the sliders live against the satellite basemap, click
+// These constants are the source of truth — every layer renders the baked
+// defaults in production. The Masjid + clock tower are ALIGNED; the Nabawi
+// constants are the seed, with the dev tuner currently mounted for it in
+// MapView.tsx (dev-only). Workflow to align a model: mount the dev tuner
+// (components/map/ModelTuner.tsx — parameterized per model) in MapView.tsx,
+// adjust the sliders live against the satellite basemap, click
 // "Copy config", paste the values into the model's constants below, then
 // remove the tuner render block again. "Reset" in the tuner reverts to the
 // baked values here.
@@ -134,12 +137,14 @@ export const CLOCK_TOWER_URL = "/models/clock_tower_compress.glb";
 // WHEN models download (loading policy; see lib/map/model-manager.ts):
 //   - PREFETCHABLE: background-prefetched once the map settles (connection
 //     permitting). Only cheap models belong here — even compressed, the ~63MB
-//     Masjid GLB must NOT auto-download for every visitor (heavy on roaming
-//     data). Revisit only if it shrinks dramatically.
-//   - INTENT_PRELOAD: fetched the moment the user touches the 3D button —
-//     explicit intent, so everything the 3D mode needs is listed.
+//     Masjid GLB and the ~79.5MB Nabawi GLB must NOT auto-download for every
+//     visitor (heavy on roaming data). Revisit only if they shrink
+//     dramatically.
+//   - INTENT_PRELOAD (intentPreloadModelUrls below): fetched the moment the
+//     user touches the 3D button — explicit intent, but venue-aware: only the
+//     URLs of the venue the camera is nearest to, so touching the button over
+//     Makkah never pulls the Nabawi GLB (and vice versa).
 export const PREFETCHABLE_MODEL_URLS = [CLOCK_TOWER_URL] as const;
-export const INTENT_PRELOAD_MODEL_URLS = [MODEL_URL, CLOCK_TOWER_URL] as const;
 
 // Measured glTF bbox center (see above). The layer re-captures the real bbox
 // center after load, so this is only the pre-load seed.
@@ -164,6 +169,97 @@ export const CLOCK_TOWER_CONFIG = {
  */
 export function buildInitialClockTowerTransform(): ModelTransform {
   return toTransform(CLOCK_TOWER_ORIGIN, CLOCK_TOWER_CONFIG, CLOCK_TOWER_CENTER);
+}
+
+// ---------------------------------------------------------------------------
+// Masjid an-Nabawi (Madinah) — the second hero venue. NOT YET ALIGNED: the
+// constants below are the seed; align with the dev tuner per the workflow at
+// the top of this file (mounted for "nabawi" in MapView.tsx, dev-only), then
+// bake the final values here.
+//
+// GLB facts (measured from the file): 79,462,760 bytes, Draco-compressed
+// (decoder at /draco/), 122 meshes / 15 textured materials, uses
+// KHR_materials_specular (three.js handles natively). The root node
+// "Sketchfab_model" carries its own rotation + translation, so the effective
+// bbox is the root-rotated one: min [-368.78, -127.48, -719.09],
+// max [455.22, 295.24, 47.3] (size 824 x 423 x 766), center
+// [43.22, 83.88, -335.89] — the pre-load CENTER seed below. Units are likely
+// NOT meters (423 units of height vs the ~105m real minarets), so expect
+// scaleMultiplier well below 1 after tuning.
+// ---------------------------------------------------------------------------
+
+// maplibre custom-layer id. Stable for idempotent getLayer/addLayer checks.
+export const NABAWI_LAYER_ID = "nabawi-3d-model";
+
+// Direct raw GitHub URL (CORS * + Content-Length like MODEL_URL, so streaming
+// progress works — NOT the /models proxy). ~79.5MB even Draco-compressed:
+// never add to PREFETCHABLE_MODEL_URLS, and never intent-preload outside the
+// Madinah venue.
+export const NABAWI_URL =
+  "https://raw.githubusercontent.com/golamrabbii/3d-models/main/masjid_al_nababi.glb";
+
+// Anchored on the Nabawi POI coordinate (id "madinah-al-masjid-al-nabawi" in
+// lib/data/tourist-places.ts).
+export const NABAWI_ORIGIN: [number, number] = [39.6147, 24.4672];
+
+// Root-rotated bbox center seed (see above). The layer re-captures the real
+// bbox center after load, so this is only the pre-load seed.
+export const NABAWI_CENTER: [number, number, number] = [43.22, 83.88, -335.89];
+
+// Seed tunables — first-time alignment pending (dev tuner, see MapView.tsx).
+export const NABAWI_CONFIG = {
+  altitudeMeters: 0,
+  rotateX: 0,
+  rotateY: 0,
+  rotateZ: 0,
+  scaleMultiplier: 1.0,
+  offsetEastMeters: 0,
+  offsetNorthMeters: 0,
+} as const;
+
+/**
+ * Build the initial (mutable) transform for the Nabawi layer, seeded from the
+ * constants above. In dev, MapView prefers loadTunedModelTransform("nabawi")
+ * over this so in-progress tuning survives reloads; production always gets
+ * these baked defaults (the storage helper no-ops there).
+ */
+export function buildInitialNabawiTransform(): ModelTransform {
+  return toTransform(NABAWI_ORIGIN, NABAWI_CONFIG, NABAWI_CENTER);
+}
+
+// ---------------------------------------------------------------------------
+// Venue-aware 3D loading (production behavior)
+// ---------------------------------------------------------------------------
+// The two hero venues are ~340km apart. The "3D" toggle activates whichever
+// venue the camera is nearest to, and ONLY that venue's models are created,
+// downloaded and active — someone toggling 3D over Makkah must not pull the
+// ~79.5MB Nabawi GLB, and vice versa.
+
+export type Venue3DKey = "makkah" | "madinah";
+
+export interface Venue3D {
+  /** Fly-to anchor + nearest-venue reference point ([lng, lat]). */
+  anchor: [number, number];
+  /** Every GLB the 3D mode needs at this venue (intent preload + layers). */
+  modelUrls: readonly string[];
+}
+
+export const VENUES_3D: Record<Venue3DKey, Venue3D> = {
+  makkah: { anchor: MODEL_ORIGIN, modelUrls: [MODEL_URL, CLOCK_TOWER_URL] },
+  madinah: { anchor: NABAWI_ORIGIN, modelUrls: [NABAWI_URL] },
+};
+
+/** Pure + three.js-free so page.tsx (intent preload) and MapView share it. */
+export function nearest3DVenue(lngLat: [number, number]): Venue3DKey {
+  const [lng, lat] = lngLat;
+  const toMakkah = haversineDistance(lat, lng, MODEL_ORIGIN[1], MODEL_ORIGIN[0]);
+  const toMadinah = haversineDistance(lat, lng, NABAWI_ORIGIN[1], NABAWI_ORIGIN[0]);
+  return toMadinah < toMakkah ? "madinah" : "makkah"; // exact tie -> makkah
+}
+
+/** Intent-preload list for a camera position: only the NEAREST venue's URLs. */
+export function intentPreloadModelUrls(lngLat: [number, number]): readonly string[] {
+  return VENUES_3D[nearest3DVenue(lngLat)].modelUrls;
 }
 
 /** Map a model's baked constants onto the layer's mutable transform shape. */

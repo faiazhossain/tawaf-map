@@ -29,12 +29,13 @@ import {
   useUmrahGuideStore,
   useGuideSheetStore,
   useNearbyStore,
+  useMapStore,
 } from "@/lib/store";
 import { guideOverlayBottomPx, guideSheetRaised } from "@/lib/utils/guide-sheet";
 import { NEARBY_CHIP_BAR_HEIGHT_PX, NEARBY_CARDS_STRIP_GAP_PX } from "@/lib/utils/nearby-sheet";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
-import { INTENT_PRELOAD_MODEL_URLS } from "@/lib/map/model-config";
+import { intentPreloadModelUrls } from "@/lib/map/model-config";
 import { fetchModelBytes } from "@/lib/map/model-manager";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
@@ -187,10 +188,13 @@ export default function MapPage() {
   };
 
   // "3D" বাটনে আঙুল/মাউস/ফোকাস পড়ামাত্রই মডেল ডাউনলোড শুরু (intent preload)।
-  // ক্লিকের ১-২ সেকেন্ড আগের এই হেড-স্টার্টই 3D চালু করার অপেক্ষা প্রায় মুছে
-  // দেয়; ক্যাশে থাকলে কিছুই নামে না। ব্যর্থতা নীরব — ক্লিকে আবার চেষ্টা হবে।
+  // ক্যামেরা যে শহরের সবচেয়ে কাছে, শুধু সেই ভিনিউ-এর মডেলই নামে — মক্কার ওপর
+  // বাটন ছুঁয়ে ~৭৯.৫MB নাবাভি নামবে না (এবং উল্টোটাও)। ক্লিকের ১-২ সেকেন্ড
+  // আগের এই হেড-স্টার্টই 3D চালু করার অপেক্ষা প্রায় মুছে দেয়; ক্যাশে থাকলে
+  // কিছুই নামে না। ব্যর্থতা নীরব — ক্লিকে আবার চেষ্টা হবে।
   const handle3DIntent = useCallback(() => {
-    for (const url of INTENT_PRELOAD_MODEL_URLS) {
+    const [lng, lat] = useMapStore.getState().center;
+    for (const url of intentPreloadModelUrls([lng, lat])) {
       void fetchModelBytes(url).catch(() => {});
     }
   }, []);

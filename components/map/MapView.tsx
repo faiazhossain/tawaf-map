@@ -9,14 +9,19 @@ import { useMiqatBoundaryAnimation } from "@/lib/hooks/useMiqatBoundaryAnimation
 import { useDirectionArrows } from "@/lib/hooks/useDirectionArrows";
 import {
   MODEL_LAYER_ID,
-  MODEL_ORIGIN,
   MODEL_URL,
   CLOCK_TOWER_LAYER_ID,
   CLOCK_TOWER_URL,
+  NABAWI_LAYER_ID,
+  NABAWI_URL,
   PREFETCHABLE_MODEL_URLS,
+  VENUES_3D,
+  nearest3DVenue,
   buildInitialModelTransform,
   buildInitialClockTowerTransform,
+  buildInitialNabawiTransform,
   BASEMAP_3D_HIDDEN_LAYERS,
+  type Venue3DKey,
 } from "@/lib/map/model-config";
 // Model loading policy (Cache Storage bytes + connection-gated prefetch).
 // three.js-free module, safe to import statically.
@@ -26,12 +31,15 @@ import {
   pruneDeprecatedModelCaches,
   whenIdle,
 } from "@/lib/map/model-manager";
-import type { ModelLayerHandle } from "@/lib/map/three-model-layer";
-// NOTE: the dev tuning tooling (ModelTuner + model-transform-storage) is kept
-// for aligning FUTURE models but is DISABLED — both 3D layers render the baked
-// defaults in lib/map/model-config.ts (the clock tower was aligned with the
-// tuner and its final values are baked in). Re-enable only while tuning (see
-// the 3D effect note below for what to restore).
+import type { ModelLayerHandle, ModelTransform } from "@/lib/map/three-model-layer";
+// Dev tuning tooling for the not-yet-aligned Nabawi model (see the render
+// block near the bottom + the workflow note in lib/map/model-config.ts).
+// Both modules are three.js-free; the tuner render itself is dev-only.
+import { ModelTuner, formatNabawiConfig } from "./ModelTuner";
+import {
+  loadTunedModelTransform,
+  saveTunedModelTransform,
+} from "@/lib/map/model-transform-storage";
 import {
   useMapStore,
   useLocationStore,
@@ -237,18 +245,35 @@ export function MapView({
   const modelHandlesRef = useRef<{
     masjid: ModelLayerHandle | null;
     tower: ModelLayerHandle | null;
-  }>({ masjid: null, tower: null });
-  const modelsBootingRef = useRef(false);
+    nabawi: ModelLayerHandle | null;
+  }>({ masjid: null, tower: null, nabawi: null });
+  // Serialized layer-boot chain. The layers are created via dynamic import, so
+  // two venue activations can race — a plain "booting" boolean would silently
+  // DROP the second request. Chaining serializes the boot sequences without
+  // dropping anything; the per-layer guards stay idempotent.
+  const modelsBootChainRef = useRef<Promise<void>>(Promise.resolve());
   // Async তৈরি শেষ হওয়ার মুহূর্তে সাম্প্রতিক টগল-অবস্থা জানতে (দ্রুত টগলে ভুল
   // করে মডেল ফ্ল্যাশ হওয়া এড়াতে)।
   const show3DModelRef = useRef(false);
 
-  // এই সেশনে মসজিদ মডেলের প্রথম লোডের ফলাফল। টগল অফ→অন-এ লেয়ার remove/add
-  // হয় না (শুধু visibility flip), তাই onLoadOK/onLoadError দ্বিতীয়বার ফায়ার
-  // করে না — এই ref ছাড়া দ্বিতীয় টগল-অন-এ overlay "লোড হচ্ছে 0%"-এ চিরকাল
-  // আটকে থাকত। unmount-এ ref-ও রিসেট হয়, তখন instance cache থেকে আবার
-  // onLoadOK ফায়ার হয়ে এটি ভরে যায়।
-  const modelLoadOutcomeRef = useRef<"ready" | "error" | null>(null);
+  // Currently active 3D venue (nearest to the camera while the toggle is on).
+  // ref = truth for async callbacks, state = reactive gate for the dev tuner.
+  const activeVenueRef = useRef<Venue3DKey | null>(null);
+  const [activeVenue, setActiveVenue] = useState<Venue3DKey | null>(null);
+
+  // এই সেশনে প্রতি ভিনিউ-এর প্রধান মডেলের প্রথম লোডের ফলাফল। টগল অফ→অন-এ
+  // লেয়ার remove/add হয় না (শুধু visibility flip), তাই onLoadOK/onLoadError
+  // দ্বিতীয়বার ফায়ার করে না — এই ref ছাড়া দ্বিতীয় টগল-অন-এ overlay
+  // "লোড হচ্ছে 0%"-এ চিরকাল আটকে থাকত। unmount-এ ref-ও রিসেট হয়, তখন
+  // instance cache থেকে আবার onLoadOK ফায়ার হয়ে এটি ভরে যায়।
+  const modelLoadOutcomeRef = useRef<Record<Venue3DKey, "ready" | "error" | null>>({
+    makkah: null,
+    madinah: null,
+  });
+
+  // Dev-only: the Nabawi layer's live transform, fed to the tuner once the
+  // layer handle exists (dev alignment workflow, see model-config.ts).
+  const [nabawiTransform, setNabawiTransform] = useState<ModelTransform | null>(null);
 
   // গাইডেড ক্যামেরা নিয়ন্ত্রক - programmatic মুভ ও user-gesture শনাক্তকরণ
   const { programmaticFlyTo, programmaticEaseTo, programmaticFitBounds } =
@@ -569,25 +594,27 @@ export function MapView({
     }
   }, [mapLoaded, showTerrain, programmaticEaseTo]);
 
-  // 3D models: the Masjid + clock tower custom three.js layers. Layers are
-  // CREATED ONCE on the first toggle-on (bytes cached in Cache Storage, parsed
-  // instances cached in three-model-layer), and from then on the 3D button only
-  // flips visibility via handle.setActive — the production toggle semantic. No
-  // re-download, re-parse or GPU rebuild per toggle. three.js is
-  // dynamic-imported so it stays out of the SSR bundle and only loads when the
-  // user opts in. While on, the basemap building layers are hidden so the
-  // models stand alone.
+  // 3D models: venue-aware custom three.js layers — Makkah (Masjid + clock
+  // tower) or Madinah (Masjid an-Nabawi). The toggle activates whichever
+  // venue the camera is nearest to (nearest3DVenue) and only that venue's
+  // layers are ever created/downloaded; crossing cities while the toggle is
+  // on swaps the active venue (moveend below). Layers are CREATED ONCE
+  // (bytes cached in Cache Storage, parsed instances cached in
+  // three-model-layer), and from then on only visibility flips via
+  // handle.setActive — the production toggle semantic. No re-download,
+  // re-parse or GPU rebuild per toggle. three.js is dynamic-imported so it
+  // stays out of the SSR bundle and only loads when the user opts in. While
+  // on, the basemap building layers are hidden so the models stand alone.
   //
-  // ALIGNING A MODEL (both are aligned; nothing to do right now)
-  // ------------------------------------------------------------
-  // Defaults are the baked constants in lib/map/model-config.ts; both layers
-  // render them every time (the dev tuner is DISABLED). To re-align a model or
-  // tune a future GLB, re-mount the dev tuner at the bottom of this component:
-  // pass the model's buildInitial*Transform / a formatConfig that emits its
-  // constant names, keep a transform state fed from handle.transform, and set
-  // the layer's `initial:` to loadTunedModelTransform(<model>) ?? the builder.
-  // Adjust live, click "Copy config", paste into model-config.ts, then remove
-  // the tuner again (it must not ship).
+  // ALIGNING A MODEL (Masjid + tower are aligned; the Nabawi is NOT yet)
+  // -------------------------------------------------------------------
+  // Defaults are the baked constants in lib/map/model-config.ts. For the
+  // in-progress Nabawi alignment the dev tuner is mounted at the bottom of
+  // this component (dev-only), its layer's `initial:` prefers
+  // loadTunedModelTransform("nabawi") over the builder so tuning survives
+  // reloads, and onChange persists to localStorage. Adjust live, click
+  // "Copy config", paste into model-config.ts, then remove the tuner again
+  // (it must not ship).
   useEffect(() => {
     if (!mapLoaded || !mapRef.current) return;
     const map = mapRef.current;
@@ -613,13 +640,29 @@ export function MapView({
     setBuildingLayersVisibility(!show3DModel);
     map.on("styledata", syncBuildingLayerVisibility);
 
-    // Create both layers if they don't exist yet (first toggle, or a remount
-    // after navigation — the parsed-instance cache makes that instant).
-    // Guarded by a booting flag so rapid toggles never double-create.
-    const ensure3DLayers = async () => {
-      if (modelsBootingRef.current) return;
-      modelsBootingRef.current = true;
-      try {
+    // Handles of one venue's layers (may be null before first creation).
+    const handlesForVenue = (venue: Venue3DKey): (ModelLayerHandle | null)[] =>
+      venue === "makkah"
+        ? [modelHandlesRef.current.masjid, modelHandlesRef.current.tower]
+        : [modelHandlesRef.current.nabawi];
+
+    // Always record the outcome; only the ACTIVE venue drives the overlay (a
+    // background-completing download of the other city must not move the bar).
+    const recordVenueOutcome = (venue: Venue3DKey, outcome: "ready" | "error") => {
+      modelLoadOutcomeRef.current[venue] = outcome;
+      if (show3DModelRef.current && activeVenueRef.current === venue) {
+        setModelLoadState(outcome);
+        if (outcome === "ready") setModelLoadProgress(1);
+      }
+    };
+
+    // Create a venue's layers if they don't exist yet (first visit, or a
+    // remount after navigation — the parsed-instance cache makes that
+    // instant). Serialized onto the boot chain so concurrent activations
+    // can't interleave across the dynamic-import await; the per-layer guards
+    // stay idempotent for StrictMode's dev double-invoke and rapid toggles.
+    const ensureVenue3DLayers = (venue: Venue3DKey): Promise<void> => {
+      const run = async () => {
         const [{ createModelLayer }, { prepareClockTower }] = await Promise.all([
           import("@/lib/map/three-model-layer"),
           import("@/lib/map/clock-tower"),
@@ -627,7 +670,7 @@ export function MapView({
         const currentMap = mapRef.current;
         if (!currentMap) return;
 
-        // Helper so both models insert at the same spot: just below the POI/label
+        // Helper so all models insert at the same spot: just below the POI/label
         // symbols so POIs, road names, place labels etc. render ON TOP. Anchor =
         // the last layer of the hidden building group (building-metro, index ~92
         // in the Barikoi style); everything after it stays above.
@@ -640,59 +683,118 @@ export function MapView({
           }
         };
 
-        // Idempotent guards for StrictMode's dev double-invoke and rapid toggles.
-        if (!modelHandlesRef.current.masjid && !currentMap.getLayer(MODEL_LAYER_ID)) {
-          const handle = createModelLayer({
-            id: MODEL_LAYER_ID,
-            url: MODEL_URL,
-            cacheKey: MODEL_LAYER_ID,
-            // Baked config only — the Masjid is already aligned.
-            initial: buildInitialModelTransform(),
-            onLoadProgress: (loaded, total) => setModelLoadProgress(total > 0 ? loaded / total : 0),
-            onLoadOK: () => {
-              modelLoadOutcomeRef.current = "ready";
-              setModelLoadState("ready");
-              setModelLoadProgress(1);
-            },
-            onLoadError: (err) => {
-              console.error("3D model failed to load:", err);
-              modelLoadOutcomeRef.current = "error";
-              setModelLoadState("error");
-            },
-          });
-          addBelowLabels(handle.layer);
-          modelHandlesRef.current.masjid = handle;
-        }
+        if (venue === "makkah") {
+          if (!modelHandlesRef.current.masjid && !currentMap.getLayer(MODEL_LAYER_ID)) {
+            const handle = createModelLayer({
+              id: MODEL_LAYER_ID,
+              url: MODEL_URL,
+              cacheKey: MODEL_LAYER_ID,
+              // Baked config only — the Masjid is already aligned.
+              initial: buildInitialModelTransform(),
+              onLoadProgress: (loaded, total) => {
+                if (activeVenueRef.current === "makkah" && show3DModelRef.current) {
+                  setModelLoadProgress(total > 0 ? loaded / total : 0);
+                }
+              },
+              onLoadOK: () => recordVenueOutcome("makkah", "ready"),
+              onLoadError: (err) => {
+                console.error("3D model failed to load:", err);
+                recordVenueOutcome("makkah", "error");
+              },
+            });
+            addBelowLabels(handle.layer);
+            modelHandlesRef.current.masjid = handle;
+          }
 
-        // Clock tower beside the mosque — baked config only (aligned with the
-        // dev tuner; final values live in model-config.ts).
-        if (!modelHandlesRef.current.tower && !currentMap.getLayer(CLOCK_TOWER_LAYER_ID)) {
-          const towerHandle = createModelLayer({
-            id: CLOCK_TOWER_LAYER_ID,
-            url: CLOCK_TOWER_URL,
-            cacheKey: CLOCK_TOWER_LAYER_ID,
-            initial: buildInitialClockTowerTransform(),
-            // The tower's flat Lambert materials need the brighter ambient the
-            // standalone prototype was tuned with.
-            lighting: { ambient: 2.0, directional: 0.55 },
-            onModelReady: prepareClockTower,
-            // The tower is a bonus beside the mosque — log failures instead of
-            // hijacking the masjid-driven progress overlay.
-            onLoadError: (err) => console.error("Clock tower model failed to load:", err),
-          });
-          addBelowLabels(towerHandle.layer);
-          modelHandlesRef.current.tower = towerHandle;
+          // Clock tower beside the mosque — baked config only (aligned with the
+          // dev tuner; final values live in model-config.ts).
+          if (!modelHandlesRef.current.tower && !currentMap.getLayer(CLOCK_TOWER_LAYER_ID)) {
+            const towerHandle = createModelLayer({
+              id: CLOCK_TOWER_LAYER_ID,
+              url: CLOCK_TOWER_URL,
+              cacheKey: CLOCK_TOWER_LAYER_ID,
+              initial: buildInitialClockTowerTransform(),
+              // The tower's flat Lambert materials need the brighter ambient the
+              // standalone prototype was tuned with.
+              lighting: { ambient: 2.0, directional: 0.55 },
+              onModelReady: prepareClockTower,
+              // The tower is a bonus beside the mosque — log failures instead of
+              // hijacking the masjid-driven progress overlay.
+              onLoadError: (err) => console.error("Clock tower model failed to load:", err),
+            });
+            addBelowLabels(towerHandle.layer);
+            modelHandlesRef.current.tower = towerHandle;
+          }
+        } else {
+          if (!modelHandlesRef.current.nabawi && !currentMap.getLayer(NABAWI_LAYER_ID)) {
+            const nabawiHandle = createModelLayer({
+              id: NABAWI_LAYER_ID,
+              url: NABAWI_URL,
+              cacheKey: NABAWI_LAYER_ID,
+              // Dev tuning survives reloads; loadTunedModelTransform no-ops in
+              // production, so production always gets the baked seed.
+              initial: loadTunedModelTransform("nabawi") ?? buildInitialNabawiTransform(),
+              onLoadProgress: (loaded, total) => {
+                if (activeVenueRef.current === "madinah" && show3DModelRef.current) {
+                  setModelLoadProgress(total > 0 ? loaded / total : 0);
+                }
+              },
+              onLoadOK: () => recordVenueOutcome("madinah", "ready"),
+              onLoadError: (err) => {
+                console.error("Nabawi model failed to load:", err);
+                recordVenueOutcome("madinah", "error");
+              },
+            });
+            addBelowLabels(nabawiHandle.layer);
+            modelHandlesRef.current.nabawi = nabawiHandle;
+            // Feed the dev tuner (it renders only while Madinah is active).
+            setNabawiTransform(nabawiHandle.transform);
+          }
         }
-      } finally {
-        modelsBootingRef.current = false;
+      };
+      // Chain instead of a boolean guard: a venue swap arriving while another
+      // venue is still booting must run after it, not be dropped.
+      modelsBootChainRef.current = modelsBootChainRef.current.then(run, run);
+      return modelsBootChainRef.current;
+    };
+
+    // Point the 3D mode at a venue: hide the previous venue's models, boot the
+    // new one if needed, reveal it, and optionally fly to its anchor.
+    const activateVenue = async (venue: Venue3DKey, opts: { flyTo: boolean }) => {
+      const prev = activeVenueRef.current;
+      activeVenueRef.current = venue;
+      setActiveVenue(venue);
+      if (prev && prev !== venue) {
+        for (const handle of handlesForVenue(prev)) handle?.setActive(false);
+      }
+      await ensureVenue3DLayers(venue);
+      // Toggle went off, or a newer venue swap superseded us — do nothing further.
+      if (!show3DModelRef.current || activeVenueRef.current !== venue) return;
+      // Seed the overlay from this venue's recorded outcome (covers the swap
+      // path, where the newly visited venue's callbacks haven't fired yet).
+      const outcome = modelLoadOutcomeRef.current[venue];
+      setModelLoadState(outcome ?? "loading");
+      setModelLoadProgress(outcome === "ready" ? 1 : 0);
+      for (const handle of handlesForVenue(venue)) handle?.setActive(true);
+      if (opts.flyTo) {
+        programmaticFlyTo({
+          center: VENUES_3D[venue].anchor,
+          zoom: 16.5,
+          pitch: 60,
+          duration: 1500,
+        });
       }
     };
 
     if (!show3DModel) {
-      // OFF: hide both models (they stay cached for instant re-activation) and
-      // ease the camera back to flat. The layers are NOT removed.
+      // OFF: hide every venue's models (they stay cached for instant
+      // re-activation) and ease the camera back to flat. The layers are NOT
+      // removed.
       modelHandlesRef.current.masjid?.setActive(false);
       modelHandlesRef.current.tower?.setActive(false);
+      modelHandlesRef.current.nabawi?.setActive(false);
+      activeVenueRef.current = null;
+      setActiveVenue(null);
       setModelLoadState("idle");
       setModelLoadProgress(0);
       programmaticEaseTo({ pitch: 0, duration: 1000 });
@@ -701,34 +803,38 @@ export function MapView({
       };
     }
 
-    // ON: create if needed (instant when cached), then reveal. Already loaded
-    // (or failed) this session → apply that outcome directly: the layers are
-    // NOT re-added on toggle, so no onLoadOK/onLoadError will fire again to
-    // clear a "loading" state — without this the overlay would sit at 0%
-    // forever while the model happily renders.
-    const outcome = modelLoadOutcomeRef.current;
-    setModelLoadState(outcome ?? "loading");
-    setModelLoadProgress(outcome === "ready" ? 1 : 0);
+    // ON: activate whichever venue the camera is nearest to (and fly there),
+    // then swap venues on the fly as the camera crosses cities while 3D stays
+    // on. Already loaded (or failed) this session → the venue's recorded
+    // outcome seeds the overlay directly: the layers are NOT re-added on
+    // toggle, so no onLoadOK/onLoadError will fire again to clear a "loading"
+    // state — without this the overlay would sit at 0% forever while the
+    // model happily renders.
+    const start = map.getCenter();
+    const startVenue = nearest3DVenue([start.lng, start.lat]);
+    const startOutcome = modelLoadOutcomeRef.current[startVenue];
+    setModelLoadState(startOutcome ?? "loading");
+    setModelLoadProgress(startOutcome === "ready" ? 1 : 0);
 
-    void ensure3DLayers().then(() => {
-      modelHandlesRef.current.masjid?.setActive(true);
-      modelHandlesRef.current.tower?.setActive(true);
-      // If the user toggled OFF while the first load was still booting, respect
-      // the latest state instead of flashing the models on.
-      if (!show3DModelRef.current) {
-        modelHandlesRef.current.masjid?.setActive(false);
-        modelHandlesRef.current.tower?.setActive(false);
-        return;
+    void activateVenue(startVenue, { flyTo: true });
+
+    // Venue swap while 3D is on: the camera crossed cities (user pan OR a
+    // guided flyTo) — hide the old venue's models, create/activate the new
+    // one. No flyTo here: the camera is already where the user wants it. The
+    // toggle-on flyTo targets the ACTIVE venue's anchor, so it never
+    // triggers a swap itself.
+    const onMoveEnd = () => {
+      if (!show3DModelRef.current) return;
+      const center = map.getCenter();
+      const venue = nearest3DVenue([center.lng, center.lat]);
+      if (venue !== activeVenueRef.current) {
+        void activateVenue(venue, { flyTo: false });
       }
-      programmaticFlyTo({
-        center: MODEL_ORIGIN,
-        zoom: 16.5,
-        pitch: 60,
-        duration: 1500,
-      });
-    });
+    };
+    map.on("moveend", onMoveEnd);
 
     return () => {
+      map.off("moveend", onMoveEnd);
       map.off("styledata", syncBuildingLayerVisibility);
     };
   }, [mapLoaded, show3DModel, programmaticFlyTo, programmaticEaseTo]);
@@ -1549,22 +1655,24 @@ export function MapView({
               )}
             </div>
           )}
-        {/* DEV-ONLY live tuner for aligning 3D models. Intentionally disabled —
-            both layers render the baked defaults in model-config.ts and
-            BASEMAP_3D_HIDDEN_LAYERS hides the basemap buildings. To re-align,
-            restore the ModelTuner import + a transform state fed from the
-            layer's handle.transform, and un-comment (clock tower shown as the
-            example; pass the matching buildInitial/formatConfig per model):
-        {show3DModel && clockTowerTransform && process.env.NODE_ENV !== "production" && (
-          <ModelTuner
-            title="Clock Tower Tuner"
-            transform={clockTowerTransform}
-            buildInitial={buildInitialClockTowerTransform}
-            formatConfig={formatClockTowerConfig}
-            onChange={(t) => saveTunedModelTransform("clock-tower", t)}
-            onRepaint={() => mapRef.current?.triggerRepaint()}
-          />
-        )} */}
+        {/* DEV-ONLY live tuner for the not-yet-aligned Nabawi model (workflow
+            in lib/map/model-config.ts). Renders only while Madinah is the
+            active 3D venue and the layer handle exists — the exact
+            hand-alignment state. Tune against the satellite basemap, "Copy
+            config", paste into model-config.ts, then remove this block. */}
+        {show3DModel &&
+          activeVenue === "madinah" &&
+          nabawiTransform &&
+          process.env.NODE_ENV !== "production" && (
+            <ModelTuner
+              title="Nabawi Tuner"
+              transform={nabawiTransform}
+              buildInitial={buildInitialNabawiTransform}
+              formatConfig={formatNabawiConfig}
+              onChange={(t) => saveTunedModelTransform("nabawi", t)}
+              onRepaint={() => mapRef.current?.triggerRepaint()}
+            />
+          )}
       </div>
     </MapInstanceProvider>
   );

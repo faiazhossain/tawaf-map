@@ -5,14 +5,13 @@
 // model updates instantly without re-loading its GLB. Parameterized per model
 // (buildInitial / formatConfig / title), so one widget tunes any GLB.
 //
-// DISABLED — kept for aligning FUTURE models. Both 3D layers (Masjid + clock
-// tower) render the baked defaults in lib/map/model-config.ts; the clock tower
-// was aligned with this widget and its final values are baked in. To use it on
-// the next model, mount it in MapView.tsx (see the commented render block at
-// the bottom of that component) and feed it the handle.transform from
-// createModelLayer.
+// Currently mounted in MapView.tsx for the Nabawi model (dev-only, gated by
+// NODE_ENV) while it awaits its first alignment. The Masjid + clock tower
+// render their baked defaults in lib/map/model-config.ts; the tower was
+// aligned with this widget and its final values are baked in. Once the Nabawi
+// values are baked too, remove the render block again.
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import type { ModelTransform } from "@/lib/map/three-model-layer";
 import { buildInitialModelTransform } from "@/lib/map/model-config";
 
@@ -86,6 +85,23 @@ function formatMasjidConfig(v: ModelTransform): string {
   ].join("\n");
 }
 
+/** "Copy config" output for the Nabawi model — emits its own constant names. */
+export function formatNabawiConfig(v: ModelTransform): string {
+  return [
+    `export const NABAWI_ORIGIN: [number, number] = [${v.originLng.toFixed(7)}, ${v.originLat.toFixed(7)}];`,
+    "",
+    "export const NABAWI_CONFIG = {",
+    `  altitudeMeters: ${v.altitudeMeters},`,
+    `  rotateX: ${v.rotateX.toFixed(4)},`,
+    `  rotateY: ${v.rotateY.toFixed(4)},`,
+    `  rotateZ: ${v.rotateZ.toFixed(4)},`,
+    `  scaleMultiplier: ${v.scaleMultiplier.toFixed(4)},`,
+    `  offsetEastMeters: ${v.offsetEastMeters},`,
+    `  offsetNorthMeters: ${v.offsetNorthMeters},`,
+    "} as const;",
+  ].join("\n");
+}
+
 export function ModelTuner({
   transform,
   onRepaint,
@@ -98,6 +114,19 @@ export function ModelTuner({
   // Local mirror drives the controlled inputs; the live transform drives the map.
   const [v, setV] = useState<ModelTransform>({ ...transform });
   const [copied, setCopied] = useState(false);
+  // The lng/lat slider window centers on THIS model's baked origin (the ranges
+  // used to be hardcoded to Makkah, pinning every model there). Half-spans
+  // preserve the original masjid window: ±0.0125° lng / ±0.015° lat
+  // (~1.3km × ~1.7km).
+  const initial = useMemo(() => buildInitial(), [buildInitial]);
+  const lngRange = {
+    min: Number((initial.originLng - 0.0125).toFixed(6)),
+    max: Number((initial.originLng + 0.0125).toFixed(6)),
+  };
+  const latRange = {
+    min: Number((initial.originLat - 0.015).toFixed(6)),
+    max: Number((initial.originLat + 0.015).toFixed(6)),
+  };
 
   function update(key: NumberTransformKey, value: number) {
     setV((prev) => ({ ...prev, [key]: value }) as ModelTransform);
@@ -162,8 +191,8 @@ export function ModelTuner({
           <Slider
             label="Longitude"
             value={v.originLng}
-            min={39.815}
-            max={39.84}
+            min={lngRange.min}
+            max={lngRange.max}
             step={0.000001}
             display={v.originLng.toFixed(6)}
             onChange={(val) => update("originLng", val)}
@@ -171,8 +200,8 @@ export function ModelTuner({
           <Slider
             label="Latitude"
             value={v.originLat}
-            min={21.405}
-            max={21.435}
+            min={latRange.min}
+            max={latRange.max}
             step={0.000001}
             display={v.originLat.toFixed(6)}
             onChange={(val) => update("originLat", val)}

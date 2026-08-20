@@ -13,8 +13,9 @@
 //   1. BACKGROUND: after the map settles, prefetch only the cheap models
 //      (PREFETCHABLE_MODEL_URLS) and only when the connection allows it
 //      (shouldBackgroundLoad: never with Data Saver / 2G / 3G).
-//   2. INTENT: touching the 3D button preloads everything the 3D mode needs
-//      (INTENT_PRELOAD_MODEL_URLS) — explicit user intent, so no gating.
+//   2. INTENT: touching the 3D button preloads what the 3D mode needs at the
+//      camera's nearest venue (intentPreloadModelUrls in model-config.ts) —
+//      explicit user intent, so no connection gating.
 //   3. CLICK: the layer itself fetches through here, streaming progress.
 
 const CACHE_NAME = "tawaf-3d-models-v2";
