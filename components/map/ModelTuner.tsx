@@ -5,11 +5,12 @@
 // model updates instantly without re-loading its GLB. Parameterized per model
 // (buildInitial / formatConfig / title), so one widget tunes any GLB.
 //
-// Currently mounted in MapView.tsx for the Nabawi model (dev-only, gated by
-// NODE_ENV) while it awaits its first alignment. The Masjid + clock tower
-// render their baked defaults in lib/map/model-config.ts; the tower was
-// aligned with this widget and its final values are baked in. Once the Nabawi
-// values are baked too, remove the render block again.
+// DISABLED — kept for aligning FUTURE models. All 3D layers (Masjid + clock
+// tower + Nabawi) render the baked defaults in lib/map/model-config.ts; the
+// Nabawi was aligned with this widget (2026-08-20) and its final values are
+// baked in. To use it on the next model, mount it in MapView.tsx (see the
+// commented render block at the bottom of that component) and feed it the
+// handle.transform from createModelLayer.
 
 import { useMemo, useState } from "react";
 import type { ModelTransform } from "@/lib/map/three-model-layer";
@@ -228,7 +229,7 @@ export function ModelTuner({
             label="Offset North (m)"
             value={v.offsetNorthMeters}
             min={-400}
-            max={400}
+            max={500}
             step={1}
             display={`${v.offsetNorthMeters} m`}
             onChange={(val) => update("offsetNorthMeters", val)}

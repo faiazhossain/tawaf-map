@@ -31,15 +31,12 @@ import {
   pruneDeprecatedModelCaches,
   whenIdle,
 } from "@/lib/map/model-manager";
-import type { ModelLayerHandle, ModelTransform } from "@/lib/map/three-model-layer";
-// Dev tuning tooling for the not-yet-aligned Nabawi model (see the render
-// block near the bottom + the workflow note in lib/map/model-config.ts).
-// Both modules are three.js-free; the tuner render itself is dev-only.
-import { ModelTuner, formatNabawiConfig } from "./ModelTuner";
-import {
-  loadTunedModelTransform,
-  saveTunedModelTransform,
-} from "@/lib/map/model-transform-storage";
+import type { ModelLayerHandle } from "@/lib/map/three-model-layer";
+// NOTE: the dev tuning tooling (ModelTuner + model-transform-storage) is kept
+// for aligning FUTURE models but is DISABLED — all 3D layers render the baked
+// defaults in lib/map/model-config.ts (the Nabawi was aligned with the tuner
+// and its final values are baked in). Re-enable only while tuning (see the
+// commented render block at the bottom of this component).
 import {
   useMapStore,
   useLocationStore,
@@ -257,9 +254,7 @@ export function MapView({
   const show3DModelRef = useRef(false);
 
   // Currently active 3D venue (nearest to the camera while the toggle is on).
-  // ref = truth for async callbacks, state = reactive gate for the dev tuner.
   const activeVenueRef = useRef<Venue3DKey | null>(null);
-  const [activeVenue, setActiveVenue] = useState<Venue3DKey | null>(null);
 
   // এই সেশনে প্রতি ভিনিউ-এর প্রধান মডেলের প্রথম লোডের ফলাফল। টগল অফ→অন-এ
   // লেয়ার remove/add হয় না (শুধু visibility flip), তাই onLoadOK/onLoadError
@@ -270,10 +265,6 @@ export function MapView({
     makkah: null,
     madinah: null,
   });
-
-  // Dev-only: the Nabawi layer's live transform, fed to the tuner once the
-  // layer handle exists (dev alignment workflow, see model-config.ts).
-  const [nabawiTransform, setNabawiTransform] = useState<ModelTransform | null>(null);
 
   // গাইডেড ক্যামেরা নিয়ন্ত্রক - programmatic মুভ ও user-gesture শনাক্তকরণ
   const { programmaticFlyTo, programmaticEaseTo, programmaticFitBounds } =
@@ -606,13 +597,15 @@ export function MapView({
   // stays out of the SSR bundle and only loads when the user opts in. While
   // on, the basemap building layers are hidden so the models stand alone.
   //
-  // ALIGNING A MODEL (Masjid + tower are aligned; the Nabawi is NOT yet)
-  // -------------------------------------------------------------------
-  // Defaults are the baked constants in lib/map/model-config.ts. For the
-  // in-progress Nabawi alignment the dev tuner is mounted at the bottom of
-  // this component (dev-only), its layer's `initial:` prefers
-  // loadTunedModelTransform("nabawi") over the builder so tuning survives
-  // reloads, and onChange persists to localStorage. Adjust live, click
+  // ALIGNING A MODEL (all three are aligned; nothing to do right now)
+  // ------------------------------------------------------------------
+  // Defaults are the baked constants in lib/map/model-config.ts; every layer
+  // renders them every time (the dev tuner is DISABLED). To re-align a model
+  // or tune a future GLB, re-mount the dev tuner at the bottom of this
+  // component: pass the model's buildInitial*Transform / a formatConfig that
+  // emits its constant names, keep a transform state fed from
+  // handle.transform, and set the layer's `initial:` to
+  // loadTunedModelTransform(<model>) ?? the builder. Adjust live, click
   // "Copy config", paste into model-config.ts, then remove the tuner again
   // (it must not ship).
   useEffect(() => {
@@ -731,9 +724,9 @@ export function MapView({
               id: NABAWI_LAYER_ID,
               url: NABAWI_URL,
               cacheKey: NABAWI_LAYER_ID,
-              // Dev tuning survives reloads; loadTunedModelTransform no-ops in
-              // production, so production always gets the baked seed.
-              initial: loadTunedModelTransform("nabawi") ?? buildInitialNabawiTransform(),
+              // Baked config only — the Nabawi is aligned (dev tuner values
+              // baked into model-config.ts).
+              initial: buildInitialNabawiTransform(),
               onLoadProgress: (loaded, total) => {
                 if (activeVenueRef.current === "madinah" && show3DModelRef.current) {
                   setModelLoadProgress(total > 0 ? loaded / total : 0);
@@ -747,8 +740,6 @@ export function MapView({
             });
             addBelowLabels(nabawiHandle.layer);
             modelHandlesRef.current.nabawi = nabawiHandle;
-            // Feed the dev tuner (it renders only while Madinah is active).
-            setNabawiTransform(nabawiHandle.transform);
           }
         }
       };
@@ -763,7 +754,6 @@ export function MapView({
     const activateVenue = async (venue: Venue3DKey, opts: { flyTo: boolean }) => {
       const prev = activeVenueRef.current;
       activeVenueRef.current = venue;
-      setActiveVenue(venue);
       if (prev && prev !== venue) {
         for (const handle of handlesForVenue(prev)) handle?.setActive(false);
       }
@@ -794,7 +784,6 @@ export function MapView({
       modelHandlesRef.current.tower?.setActive(false);
       modelHandlesRef.current.nabawi?.setActive(false);
       activeVenueRef.current = null;
-      setActiveVenue(null);
       setModelLoadState("idle");
       setModelLoadProgress(0);
       programmaticEaseTo({ pitch: 0, duration: 1000 });
@@ -1655,24 +1644,24 @@ export function MapView({
               )}
             </div>
           )}
-        {/* DEV-ONLY live tuner for the not-yet-aligned Nabawi model (workflow
-            in lib/map/model-config.ts). Renders only while Madinah is the
-            active 3D venue and the layer handle exists — the exact
-            hand-alignment state. Tune against the satellite basemap, "Copy
-            config", paste into model-config.ts, then remove this block. */}
-        {show3DModel &&
-          activeVenue === "madinah" &&
-          nabawiTransform &&
-          process.env.NODE_ENV !== "production" && (
-            <ModelTuner
-              title="Nabawi Tuner"
-              transform={nabawiTransform}
-              buildInitial={buildInitialNabawiTransform}
-              formatConfig={formatNabawiConfig}
-              onChange={(t) => saveTunedModelTransform("nabawi", t)}
-              onRepaint={() => mapRef.current?.triggerRepaint()}
-            />
-          )}
+        {/* DEV-ONLY live tuner for aligning 3D models. Intentionally disabled —
+            all layers render the baked defaults in model-config.ts (the Nabawi
+            was aligned with this tuner and its final values are baked in). To
+            re-align, restore the ModelTuner import + a transform state fed
+            from the layer's handle.transform, and un-comment (Nabawi shown as
+            the example; pass the matching buildInitial/formatConfig per
+            model, and set the layer's initial: to
+            loadTunedModelTransform(<model>) ?? the builder):
+        {show3DModel && nabawiTransform && process.env.NODE_ENV !== "production" && (
+          <ModelTuner
+            title="Nabawi Tuner"
+            transform={nabawiTransform}
+            buildInitial={buildInitialNabawiTransform}
+            formatConfig={formatNabawiConfig}
+            onChange={(t) => saveTunedModelTransform("nabawi", t)}
+            onRepaint={() => mapRef.current?.triggerRepaint()}
+          />
+        )} */}
       </div>
     </MapInstanceProvider>
   );

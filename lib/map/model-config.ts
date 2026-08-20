@@ -12,11 +12,11 @@ import { haversineDistance } from "@/lib/utils/distance";
 // HOW TO ALIGN A MODEL
 // --------------------
 // These constants are the source of truth — every layer renders the baked
-// defaults in production. The Masjid + clock tower are ALIGNED; the Nabawi
-// constants are the seed, with the dev tuner currently mounted for it in
-// MapView.tsx (dev-only). Workflow to align a model: mount the dev tuner
-// (components/map/ModelTuner.tsx — parameterized per model) in MapView.tsx,
-// adjust the sliders live against the satellite basemap, click
+// defaults in production (the Masjid, clock tower and Nabawi are all
+// ALIGNED; the dev tuner widget + localStorage persistence are disabled).
+// Workflow to re-align a model or tune a future GLB: temporarily mount the
+// dev tuner (components/map/ModelTuner.tsx — parameterized per model) in
+// MapView.tsx, adjust the sliders live against the satellite basemap, click
 // "Copy config", paste the values into the model's constants below, then
 // remove the tuner render block again. "Reset" in the tuner reverts to the
 // baked values here.
@@ -172,10 +172,9 @@ export function buildInitialClockTowerTransform(): ModelTransform {
 }
 
 // ---------------------------------------------------------------------------
-// Masjid an-Nabawi (Madinah) — the second hero venue. NOT YET ALIGNED: the
-// constants below are the seed; align with the dev tuner per the workflow at
-// the top of this file (mounted for "nabawi" in MapView.tsx, dev-only), then
-// bake the final values here.
+// Masjid an-Nabawi (Madinah) — the second hero venue. ALIGNED: the constants
+// below are the final values tuned live with the dev tuner against the
+// satellite basemap (2026-08-20) — the workflow at the top of this file.
 //
 // GLB facts (measured from the file): 79,462,760 bytes, Draco-compressed
 // (decoder at /draco/), 122 meshes / 15 textured materials, uses
@@ -183,9 +182,11 @@ export function buildInitialClockTowerTransform(): ModelTransform {
 // "Sketchfab_model" carries its own rotation + translation, so the effective
 // bbox is the root-rotated one: min [-368.78, -127.48, -719.09],
 // max [455.22, 295.24, 47.3] (size 824 x 423 x 766), center
-// [43.22, 83.88, -335.89] — the pre-load CENTER seed below. Units are likely
-// NOT meters (423 units of height vs the ~105m real minarets), so expect
-// scaleMultiplier well below 1 after tuning.
+// [43.22, 83.88, -335.89] — the pre-load CENTER seed below. The tuned
+// scaleMultiplier of 1.0 confirms the root-rotated units are effectively
+// meters (the 423-unit height includes minarets/umbrellas above the roof
+// line; the bbox overestimates the ~105m minaret height because the model
+// also spans the full excavated complex below ground).
 // ---------------------------------------------------------------------------
 
 // maplibre custom-layer id. Stable for idempotent getLayer/addLayer checks.
@@ -198,30 +199,28 @@ export const NABAWI_LAYER_ID = "nabawi-3d-model";
 export const NABAWI_URL =
   "https://raw.githubusercontent.com/golamrabbii/3d-models/main/masjid_al_nababi.glb";
 
-// Anchored on the Nabawi POI coordinate (id "madinah-al-masjid-al-nabawi" in
-// lib/data/tourist-places.ts).
-export const NABAWI_ORIGIN: [number, number] = [39.6147, 24.4672];
+// Tuned anchor ([lng, lat]) — the transform origin the tuner converged on.
+export const NABAWI_ORIGIN: [number, number] = [39.612262, 24.464793];
 
 // Root-rotated bbox center seed (see above). The layer re-captures the real
 // bbox center after load, so this is only the pre-load seed.
 export const NABAWI_CENTER: [number, number, number] = [43.22, 83.88, -335.89];
 
-// Seed tunables — first-time alignment pending (dev tuner, see MapView.tsx).
+// Tuned placement (dev tuner, 2026-08-20).
 export const NABAWI_CONFIG = {
-  altitudeMeters: 0,
-  rotateX: 0,
-  rotateY: 0,
-  rotateZ: 0,
+  altitudeMeters: -299,
+  rotateX: 1.115,
+  rotateY: -0.3216,
+  rotateZ: -0.1716,
   scaleMultiplier: 1.0,
-  offsetEastMeters: 0,
-  offsetNorthMeters: 0,
+  offsetEastMeters: -124,
+  offsetNorthMeters: 407,
 } as const;
 
 /**
- * Build the initial (mutable) transform for the Nabawi layer, seeded from the
- * constants above. In dev, MapView prefers loadTunedModelTransform("nabawi")
- * over this so in-progress tuning survives reloads; production always gets
- * these baked defaults (the storage helper no-ops there).
+ * Build the initial (mutable) transform for the Nabawi layer. The layer
+ * renders these baked defaults on every load; the dev tuner's "Reset" builds
+ * from here too if it is ever re-enabled.
  */
 export function buildInitialNabawiTransform(): ModelTransform {
   return toTransform(NABAWI_ORIGIN, NABAWI_CONFIG, NABAWI_CENTER);
