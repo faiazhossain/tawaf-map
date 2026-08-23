@@ -13,6 +13,13 @@ export interface RouteStep {
   maneuver?: string;
 }
 
+export interface NavigationDestination {
+  /** [lng, lat] — MapLibre GeoJSON ক্রম */
+  coordinates: [number, number];
+  /** ব্যানারে দেখানোর বাংলা নাম */
+  name: string;
+}
+
 export interface LocationState {
   latitude: number | null;
   longitude: number | null;

@@ -31,7 +31,12 @@ import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useMapRouting } from "@/lib/hooks";
-import { usePanelStore, useTouristPlaceStore } from "@/lib/store";
+import {
+  usePanelStore,
+  useTouristPlaceStore,
+  useNavigationStore,
+  useRouteStore,
+} from "@/lib/store";
 import type { TouristPlace } from "@/types/tourist-place";
 
 interface TouristPlaceInfoPanelProps {
@@ -409,9 +414,21 @@ export function TouristPlaceInfoPanel({ place, onClose }: TouristPlaceInfoPanelP
   };
 
   const handleGetDirections = async () => {
+    // নেভিগেশনের গন্তব্য আগেই বসে যায় — RoutePanel-এর "শুরু" বোতাম এটিই ব্যবহার করে।
+    useNavigationStore
+      .getState()
+      .setDestination({
+        coordinates: place.location.coordinates,
+        name: place.nameBn ?? place.name,
+      });
     setIsRouting(true);
     await calculateRoute(place.location.coordinates);
     setIsRouting(false);
+    // সফল হলে রুট প্যানেলেই সুইচ — ব্যর্থতায় এই প্যানেল থেকে যায় যেন পুনরায় চেষ্টা করা যায়।
+    const { activeRoute, routeError } = useRouteStore.getState();
+    if (activeRoute !== null && routeError === null) {
+      setActivePanel("route");
+    }
   };
 
   // মোবাইল বটম শীট

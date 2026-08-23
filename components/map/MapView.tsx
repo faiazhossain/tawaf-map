@@ -42,11 +42,13 @@ import {
   useLocationStore,
   useGateStore,
   useRouteStore,
+  useNavigationStore,
   useHotelStore,
   useTouristPlaceStore,
   useUmrahGuideStore,
   useGuideSheetStore,
 } from "@/lib/store";
+import { NAV_FOLLOW_ZOOM, NAV_FOLLOW_EASE_MS } from "@/lib/hooks/useNavigation";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { guideOverlayBottomPx, withGuidePadding } from "@/lib/utils/guide-sheet";
 import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
@@ -62,6 +64,7 @@ import {
 import { nearbyCameraPadding } from "@/lib/utils/nearby-sheet";
 import { haversineDistance } from "@/lib/utils/distance";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
+import type { Route } from "@/types/navigation";
 import { HARAM_GATES } from "@/lib/data/gates";
 import { getActiveGates } from "@/lib/gates/active";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
@@ -73,6 +76,7 @@ import {
   GATES_PMTILES_SELECTED_ID,
   gatesPmtilesSource,
   gatesCircleLayer,
+  gateSelectionFilter,
   gatesLabelLayer,
   gatesSelectedLayer,
 } from "@/components/map/gates/gates-layers";
@@ -341,6 +345,12 @@ export function MapView({
 
   const selectedGate = useGateStore((state) => state.selectedGate.gate);
   const activeRoute = useRouteStore((state) => state.activeRoute);
+  // লাইভ নেভিগেশন — অবশিষ্ট জ্যামিতি, স্ন্যাপড অবস্থান ও ক্যামেরা ফলো
+  const isNavigating = useNavigationStore((state) => state.isNavigating);
+  const navRemainingGeometry = useNavigationStore((state) => state.remainingGeometry);
+  const navSnapped = useNavigationStore((state) => state.snappedPosition);
+  const navFollowEnabled = useNavigationStore((state) => state.followEnabled);
+  const navHasArrived = useNavigationStore((state) => state.hasArrived);
   const selectedHotel = useHotelStore((state) => state.selectedHotel);
   const selectedTouristPlace = useTouristPlaceStore((state) => state.selectedPlace.place);
 
@@ -367,6 +377,8 @@ export function MapView({
   const tawafCounter = useUmrahGuideStore((s) => s.counters["tawaf"] ?? 1);
   const saiCounter = useUmrahGuideStore((s) => s.counters["sai"] ?? 1);
   const prevTawafCounterRef = useRef<number | null>(null);
+  // রুট-ইফেক্টে fitBounds যে রুট id-তে ইতিমধ্যে ক্যামেরা মিলিয়েছে তার হিসাব
+  const lastFittedRouteIdRef = useRef<string | null>(null);
   const prevSaiCounterRef = useRef<number | null>(null);
 
   const [hintDismissed, setHintDismissed] = useState(false);
@@ -975,7 +987,9 @@ export function MapView({
       map.addLayer(gatesLabelLayer(), GATES_PMTILES_LAYER_ID);
     }
     if (!map.getLayer(GATES_PMTILES_SELECTED_ID)) {
-      map.addLayer(gatesSelectedLayer(), GATES_PMTILES_LAYER_ID);
+      // বেস সার্কেলের উপরে (কোনো beforeId ছাড়া = স্ট্যাকের একদম উপরে) —
+      // আগে beforeId=বেস-লেয়ার দিলে হাইলাইট ধূসর বিন্দুর নিচে চাপা পড়ত।
+      map.addLayer(gatesSelectedLayer());
     }
 
     // গেট ক্লিক → পপআপ (বাংলা/আরবি/ইংরেজি নাম)। টাইল-প্রোপার্টি Latin-শুধু তাই
@@ -1015,6 +1029,15 @@ export function MapView({
       removeProtocol?.();
     };
   }, [mapLoaded, showGates]);
+
+  // নির্বাচিত গেটের হাইলাইট ফিল্টার — সার্চ বা মার্কার যে-পথেই নির্বাচন হোক।
+  // লেয়ার-স্ট্যাক শো-টগলে নতুন করে যোগ হয়, তাই showGates-ও ডিপেন্ডেন্সিতে।
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || isDemoWorldActive()) return;
+    if (!map.getLayer(GATES_PMTILES_SELECTED_ID)) return;
+    map.setFilter(GATES_PMTILES_SELECTED_ID, gateSelectionFilter(selectedGate?.id));
+  }, [mapLoaded, showGates, selectedGate?.id]);
 
   // Add/update hotel markers
   useEffect(() => {
@@ -1371,6 +1394,30 @@ export function MapView({
     );
   }, [latitude, longitude, accuracy]);
 
+  // নেভিগেশন ফলো-ক্যামেরা: প্রতি গৃহীত ফিক্সে স্ন্যাপড অবস্থানে north-up ease।
+  // userTookControl চেক-ই ম্যানুয়াল ড্র্যাগকে জেতায় — Recenter চাপলে ফলো
+  // আবার চালু হয় (নিচের handleRecenter-এ)।
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !isNavigating || navHasArrived) return;
+    if (!navFollowEnabled || userTookControl || !navSnapped) return;
+
+    programmaticEaseTo({
+      center: navSnapped,
+      zoom: NAV_FOLLOW_ZOOM,
+      bearing: 0,
+      pitch: 0,
+      duration: NAV_FOLLOW_EASE_MS,
+    });
+  }, [
+    navSnapped,
+    isNavigating,
+    navHasArrived,
+    navFollowEnabled,
+    userTookControl,
+    mapLoaded,
+    programmaticEaseTo,
+  ]);
+
   // Fly to selected gate
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !selectedGate) return;
@@ -1404,7 +1451,9 @@ export function MapView({
     });
   }, [selectedTouristPlace, mapLoaded, programmaticFlyTo]);
 
-  // Update route
+  // Update route — নেভিগেশন চলাকালীন ভ্রমণকৃত অংশ বাদ দিয়ে অবশিষ্ট জ্যামিতি
+  // আঁকা হয়; fitBounds শুধু প্রথমবার দেখানোর সময়, যাতে রিয়ারাউটে ক্যামেরা
+  // পুরো রুট দেখাতে ছিটকে না যায়।
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -1413,7 +1462,20 @@ export function MapView({
     if (!map.getSource("route")) {
       map.addSource("route", createRouteSource(null));
     }
-    (map.getSource("route") as any)?.setData(createRouteSource(activeRoute).data);
+
+    const navRemaining = isNavigating ? navRemainingGeometry : null;
+    // শেষ বিন্দুতে (১টি পয়েন্ট) LineString অবৈধ — খালি আঁকাই সঠিক।
+    const lineGeometry =
+      navRemaining && navRemaining.length > 1
+        ? navRemaining
+        : navRemaining
+          ? null
+          : (activeRoute?.geometry ?? null);
+    const lineRoute =
+      lineGeometry && lineGeometry.length > 1
+        ? ({ ...activeRoute, geometry: lineGeometry } as Route)
+        : null;
+    (map.getSource("route") as any)?.setData(createRouteSource(lineRoute).data);
 
     const layerConfigs = getLayerConfigs();
 
@@ -1438,8 +1500,13 @@ export function MapView({
         });
       }
 
-      // Fit bounds to show route
-      if (activeRoute.geometry.length > 0) {
+      // Fit bounds to show route (শুধু নতুন রুট id-তে, নেভিগেশনে নয়)
+      if (
+        !isNavigating &&
+        lastFittedRouteIdRef.current !== activeRoute.id &&
+        activeRoute.geometry.length > 0
+      ) {
+        lastFittedRouteIdRef.current = activeRoute.id;
         const coords = activeRoute.geometry;
         const bounds: LngLatBoundsLike = [
           [Math.min(...coords.map((c) => c[0])), Math.min(...coords.map((c) => c[1]))],
@@ -1451,6 +1518,7 @@ export function MapView({
         });
       }
     } else {
+      lastFittedRouteIdRef.current = null;
       if (map.getLayer(ROUTE_LAYER_ID)) {
         map.removeLayer(ROUTE_LAYER_ID);
       }
@@ -1458,7 +1526,7 @@ export function MapView({
         map.removeLayer(ROUTE_CASING_LAYER_ID);
       }
     }
-  }, [activeRoute, mapLoaded, programmaticFitBounds]);
+  }, [activeRoute, isNavigating, navRemainingGeometry, mapLoaded, programmaticFitBounds]);
 
   // ----- ওমরাহ: আনুষ্ঠানিক ওভারলে ও পবিত্র বিন্দু -----
   useEffect(() => {
@@ -1737,8 +1805,14 @@ export function MapView({
     };
   })();
 
-  // Recenter টার্গেট - বর্তমান গাইড ধাপের অ্যাংকর (মিকাত সারসংক্ষেপ বা অ্যাংকরহীন ধাপে null)
-  const recenterTarget = (() => {
+  // Recenter টার্গেট — নেভিগেশন চলাকালীন ব্যবহারকারীর অবস্থানই লক্ষ্য (ফলো
+  // আবার চালু হয়); নাহলে বর্তমান গাইড ধাপের অ্যাংকর (মিকাত সারসংক্ষেপ বা
+  // অ্যাংকরহীন ধাপে null)।
+  const navRecenterTarget =
+    isNavigating && latitude !== null && longitude !== null
+      ? { coords: [longitude, latitude] as [number, number] }
+      : null;
+  const guideRecenterTarget = (() => {
     if (!showUmrah || showMiqatOverview) return null;
     const activeId = umrahStepIds[umrahCurrentIndex];
     const step = activeId ? getStepById(activeId) : null;
@@ -1746,17 +1820,34 @@ export function MapView({
     if (!step || !anchor) return null;
     return { coords: anchor.location.coordinates, stage: step.stage };
   })();
+  const recenterTarget = navRecenterTarget ?? guideRecenterTarget;
 
   const handleRecenter = () => {
-    if (!recenterTarget) return;
-    const targetZoom = recenterTarget.stage === "tawaf" || recenterTarget.stage === "sai" ? 18 : 16;
+    if (navRecenterTarget) {
+      // নেভিগেশন-রিসেন্টার: ফলো পুনরায় চালু + north-up ফ্লাই।
+      useNavigationStore.getState().setFollowEnabled(true);
+      useMapStore.getState().markUserControl(false);
+      programmaticFlyTo({
+        center: navRecenterTarget.coords,
+        zoom: NAV_FOLLOW_ZOOM,
+        bearing: 0,
+        duration: 1000,
+      });
+      return;
+    }
+    if (!guideRecenterTarget) return;
+    const targetZoom =
+      guideRecenterTarget.stage === "tawaf" || guideRecenterTarget.stage === "sai" ? 18 : 16;
     // Recenter-এ ধাপ বদলায় না, তাই ব্যবহারকারীর বর্তমান স্ন্যাপই মানানসই - রিঅ্যাক্টিভ মান।
     // কম্পোজড প্যাডিং — কাছাকাছি ডিটেইল শিট খোলা থাকলে সেটিও হিসাবে।
     const padding = mdUp
       ? undefined
       : nearbyCameraPadding(guideSheetSnap, nearbySelectedItemId !== null, window.innerHeight);
     programmaticFlyTo(
-      withGuidePadding({ center: recenterTarget.coords, zoom: targetZoom, duration: 1000 }, padding)
+      withGuidePadding(
+        { center: guideRecenterTarget.coords, zoom: targetZoom, duration: 1000 },
+        padding
+      )
     );
   };
 

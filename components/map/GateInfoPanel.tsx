@@ -1,7 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useGateStore, useLocationStore, usePanelStore } from "@/lib/store";
+import {
+  useGateStore,
+  useLocationStore,
+  usePanelStore,
+  useNavigationStore,
+  useRouteStore,
+} from "@/lib/store";
 import { Button } from "@/components/ui/button";
 import { MapPin, Navigation, X, Accessibility, Droplet, Zap } from "lucide-react";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
@@ -220,9 +226,18 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
 
   const handleGetDirections = async () => {
     if (!gate || latitude === null || longitude === null) return;
+    // নেভিগেশনের গন্তব্য আগেই বসে যায় — RoutePanel-এর "শুরু" বোতাম এটিই ব্যবহার করে।
+    useNavigationStore
+      .getState()
+      .setDestination({ coordinates: gate.location.coordinates, name: gate.nameBn ?? gate.name });
     setIsRouting(true);
     await calculateRoute(gate.location.coordinates);
     setIsRouting(false);
+    // সফল হলে রুট প্যানেলেই সুইচ — ব্যর্থতায় এই প্যানেল থেকে যায় যেন পুনরায় চেষ্টা করা যায়।
+    const { activeRoute, routeError } = useRouteStore.getState();
+    if (activeRoute !== null && routeError === null) {
+      setActivePanel("route");
+    }
   };
 
   if (!gate) return null;

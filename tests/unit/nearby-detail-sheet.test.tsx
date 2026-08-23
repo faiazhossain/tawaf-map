@@ -1,16 +1,22 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent, act } from "@testing-library/react";
 import { NearbyDetailSheet } from "@/components/map/nearby/NearbyDetailSheet";
-import { useLocationStore } from "@/lib/store";
+import { useLocationStore, useRouteStore, useNavigationStore, usePanelStore } from "@/lib/store";
 import { useNearbyStore, NEARBY_RADIUS_DEFAULT } from "@/lib/store/nearbyStore";
 import { getNearbyItems } from "@/lib/nearby/query";
 import { haversineDistance, formatDistance } from "@/lib/utils/distance";
 import { DEFAULT_ENABLED_CATEGORIES } from "@/lib/nearby/categories";
 import { MAKKAH_CENTER } from "@/lib/utils/constants";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import type { Route } from "@/types/navigation";
 
 vi.mock("@/lib/hooks/useMediaQuery", () => ({
   useMediaQuery: vi.fn(() => false),
+}));
+
+const fetchWalkingRouteMock = vi.hoisted(() => vi.fn());
+vi.mock("@/lib/routing/fetchRoute", () => ({
+  fetchWalkingRoute: fetchWalkingRouteMock,
 }));
 
 const LAT = MAKKAH_CENTER.lat;
@@ -154,5 +160,81 @@ describe("NearbyDetailSheet deselect", () => {
     useNearbyStore.getState().clearSelection();
     expect(useNearbyStore.getState().selectedItem).toBeNull();
     expect(useNearbyStore.getState().detailModalOpen).toBe(false);
+  });
+});
+
+describe("NearbyDetailSheet directions", () => {
+  const ROUTE: Route = {
+    id: "test-route",
+    geometry: [[LNG, LAT], GATE.coordinates],
+    distance: GATE.distance,
+    duration: GATE.walkingTime * 60,
+    steps: [
+      { instruction: "সোজা হাঁটুন", distance: GATE.distance, duration: GATE.walkingTime * 60 },
+    ],
+  };
+
+  beforeEach(() => {
+    resetStores();
+    useRouteStore.getState().clearRoute();
+    useNavigationStore.setState({ destination: null, isNavigating: false });
+    usePanelStore.setState({ activePanel: null });
+    fetchWalkingRouteMock.mockReset();
+  });
+
+  afterEach(() => {
+    fetchWalkingRouteMock.mockReset();
+    resetStores();
+    useRouteStore.getState().clearRoute();
+    useNavigationStore.setState({ destination: null, isNavigating: false });
+    usePanelStore.setState({ activePanel: null });
+  });
+
+  it("গন্তব্য বসে, রুট আসে, নির্বাচন মুছে রুট প্যানেল খোলে", async () => {
+    fetchWalkingRouteMock.mockResolvedValue(ROUTE);
+    useLocationStore.getState().setLocation(LAT, LNG, 10);
+    useNearbyStore.getState().selectItem(GATE);
+    await renderSheet();
+
+    fireEvent.click(screen.getByTestId("nearby-get-directions-button"));
+    await act(async () => {});
+
+    expect(fetchWalkingRouteMock).toHaveBeenCalledTimes(1);
+    expect(fetchWalkingRouteMock).toHaveBeenCalledWith([LNG, LAT], GATE.coordinates);
+    expect(useNavigationStore.getState().destination).toEqual({
+      coordinates: GATE.coordinates,
+      name: GATE.name,
+    });
+    expect(useRouteStore.getState().activeRoute?.id).toBe("test-route");
+    expect(useNearbyStore.getState().selectedItem).toBeNull();
+    expect(usePanelStore.getState().activePanel).toBe("route");
+  });
+
+  it("রুট ব্যর্থ হলে শিট থেকে যায় — এরর দেখায়, প্যানেল বদলায় না", async () => {
+    fetchWalkingRouteMock.mockRejectedValue(new Error("নেটওয়ার্ক সমস্যা — রুট বের করা যায়নি।"));
+    useLocationStore.getState().setLocation(LAT, LNG, 10);
+    await renderSheet();
+
+    fireEvent.click(screen.getByTestId("nearby-get-directions-button"));
+    await act(async () => {});
+
+    expect(screen.getByTestId("nearby-route-error").textContent).toBe(
+      "নেটওয়ার্ক সমস্যা — রুট বের করা যায়নি।"
+    );
+    expect(usePanelStore.getState().activePanel).toBeNull();
+    expect(useRouteStore.getState().routeError).not.toBeNull();
+  });
+
+  it("লোকেশন ছাড়া চাপলে বাংলা এরর — ফেচই হয় না", async () => {
+    await renderSheet();
+
+    fireEvent.click(screen.getByTestId("nearby-get-directions-button"));
+    await act(async () => {});
+
+    expect(fetchWalkingRouteMock).not.toHaveBeenCalled();
+    expect(screen.getByTestId("nearby-route-error").textContent).toBe(
+      "লোকেশন পাওয়া যায়নি — লোকেশন সার্ভিস চালু করুন।"
+    );
+    expect(usePanelStore.getState().activePanel).toBeNull();
   });
 });

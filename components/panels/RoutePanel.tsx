@@ -1,7 +1,8 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { MapPin, Clock, Navigation, Footprints, X, Route } from "lucide-react";
-import { useRouteStore, usePanelStore } from "@/lib/store";
+import { useRouteStore, useNavigationStore, usePanelStore } from "@/lib/store";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 
@@ -46,14 +47,24 @@ function RouteStepContent({
   distance,
   duration,
   index,
+  isActive = false,
+  isPast = false,
 }: {
   instruction: string;
   distance: number;
   duration: number;
   index: number;
+  isActive?: boolean;
+  isPast?: boolean;
 }) {
   return (
-    <div className="px-4 py-3 hover:bg-muted transition-colors -mx-4">
+    <div
+      data-active={isActive ? "true" : undefined}
+      aria-current={isActive ? "step" : undefined}
+      className={`px-4 py-3 hover:bg-muted transition-colors -mx-4 border-l-4 ${
+        isActive ? "border-primary bg-primary-soft/30" : "border-transparent"
+      } ${isPast ? "opacity-50" : ""}`}
+    >
       <div className="flex items-start gap-3">
         <div className="flex-shrink-0 w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground">
           {index + 1}
@@ -71,8 +82,81 @@ function RouteStepContent({
   );
 }
 
+function RouteSummaryGrid({ distance, duration }: { distance: number; duration: number }) {
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <div className="flex items-center gap-2">
+        <div className="p-2 bg-primary-soft rounded-lg">
+          <Footprints className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">দূরত্ব</p>
+          <p className="font-semibold text-foreground">{formatDistance(distance)}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2">
+        <div className="p-2 bg-primary-soft rounded-lg">
+          <Clock className="w-4 h-4 text-primary" />
+        </div>
+        <div>
+          <p className="text-xs text-muted-foreground">সময়</p>
+          <p className="font-semibold text-foreground">{formatWalkingTime(duration)}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** ফুটার: নেভিগেশন শুরুর বোতাম, চলাকালীন বন্ধের বোতাম, নাহলে গতি-নোট। */
+function RouteFooter({
+  isNavigating,
+  onStart,
+  onExit,
+}: {
+  isNavigating: boolean;
+  onStart: () => void;
+  onExit: () => void;
+}) {
+  if (isNavigating) {
+    return (
+      <div className="px-4 py-3 bg-muted/30 border-t border-border/50 -mx-4 mt-auto">
+        <button
+          onClick={onExit}
+          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-sm font-medium hover:bg-rose-500/20 transition-colors"
+        >
+          <X className="w-4 h-4" />
+          নেভিগেশন বন্ধ করুন
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="px-4 py-3 bg-muted/30 border-t border-border/50 -mx-4 mt-auto">
+      <button
+        onClick={onStart}
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+      >
+        <Navigation className="w-4 h-4" />
+        নেভিগেশন শুরু করুন
+      </button>
+      <p className="text-xs text-muted-foreground text-center mt-2">
+        গড় হাঁটার গতি ৫ কিমি/ঘণ্টা ধরে হিসাব করা হয়েছে
+      </p>
+    </div>
+  );
+}
+
+interface NavigationMode {
+  isNavigating: boolean;
+  currentStepIndex: number;
+  isRerouting: boolean;
+  onStart: () => void;
+  onExit: () => void;
+}
+
 function RoutePanelContent({
   route,
+  navigation,
   onClose,
 }: {
   route: {
@@ -80,12 +164,24 @@ function RoutePanelContent({
     duration: number;
     steps: Array<{ instruction: string; distance: number; duration: number }>;
   };
+  navigation: NavigationMode;
   onClose: () => void;
 }) {
+  const { isNavigating, currentStepIndex, isRerouting } = navigation;
+  const stepsContainerRef = useRef<HTMLDivElement | null>(null);
+
+  // ধাপ বদলালে সক্রিয় সারি দৃশ্যের ভেতরে রাখা (হঠাৎ লাফ নয়, nearest-ই)।
+  useEffect(() => {
+    if (!isNavigating) return;
+    stepsContainerRef.current
+      ?.querySelector('[data-active="true"]')
+      ?.scrollIntoView({ block: "nearest" });
+  }, [currentStepIndex, isNavigating]);
+
   return (
     <>
       {/* Header */}
-      <div className="bg-primary px-4 py-4 flex items-center justify-between -mx-4 sm:mx-0 rounded-t-3xl">
+      <div className="bg-primary px-4 py-4 flex items-center justify-between -mx-4 rounded-t-3xl">
         <div className="flex items-center gap-2">
           <Route className="w-5 h-5 text-foreground" />
           <h3 className="font-semibold text-foreground">হাঁটার রুট</h3>
@@ -101,30 +197,17 @@ function RoutePanelContent({
 
       {/* Route Summary */}
       <div className="p-4 border-b border-border/50">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary-soft rounded-lg">
-              <Footprints className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">দূরত্ব</p>
-              <p className="font-semibold text-foreground">{formatDistance(route.distance)}</p>
-            </div>
+        <RouteSummaryGrid distance={route.distance} duration={route.duration} />
+        {isRerouting && (
+          <div className="flex items-center gap-2 mt-3 text-sm text-amber-600">
+            <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+            রুট পুনর্গণনা হচ্ছে...
           </div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 bg-primary-soft rounded-lg">
-              <Clock className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">সময়</p>
-              <p className="font-semibold text-foreground">{formatWalkingTime(route.duration)}</p>
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Turn-by-turn Instructions */}
-      <div>
+      {/* Turn-by-turn Instructions — ডেস্কটপে স্ক্রল-সীমিত, মোবাইলে শিট নিজেই স্ক্রল করে */}
+      <div ref={stepsContainerRef} className="sm:max-h-64 sm:overflow-y-auto">
         <div className="px-4 py-2 bg-muted/50 border-b border-border/50 sticky top-0 -mx-4">
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
             দিক নির্দেশনা
@@ -138,17 +221,18 @@ function RoutePanelContent({
               distance={step.distance}
               duration={step.duration}
               index={index}
+              isActive={isNavigating && index === currentStepIndex}
+              isPast={isNavigating && index < currentStepIndex}
             />
           ))}
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="px-4 py-3 bg-muted/30 border-t border-border/50 -mx-4 mt-auto">
-        <p className="text-xs text-muted-foreground text-center">
-          গড় হাঁটার গতি ৫ কিমি/ঘণ্টা ধরে হিসাব করা হয়েছে
-        </p>
-      </div>
+      <RouteFooter
+        isNavigating={isNavigating}
+        onStart={navigation.onStart}
+        onExit={navigation.onExit}
+      />
     </>
   );
 }
@@ -156,11 +240,55 @@ function RoutePanelContent({
 export function RoutePanel({ onClose }: RoutePanelProps) {
   const { activeRoute, isRouting, routeError, clearRoute } = useRouteStore();
   const { activePanel, setActivePanel } = usePanelStore();
+  const isNavigating = useNavigationStore((state) => state.isNavigating);
+  const destination = useNavigationStore((state) => state.destination);
+  const currentStepIndex = useNavigationStore((state) => state.currentStepIndex);
+  const remainingDistance = useNavigationStore((state) => state.remainingDistance);
+  const remainingDuration = useNavigationStore((state) => state.remainingDuration);
+  const isRerouting = useNavigationStore((state) => state.isRerouting);
 
   const handleClose = () => {
+    if (isNavigating) {
+      useNavigationStore.getState().stopNavigation();
+    } else {
+      useNavigationStore.getState().clearDestination();
+    }
     clearRoute();
     setActivePanel(null);
     onClose?.();
+  };
+
+  const handleStartNavigation = () => {
+    if (destination) {
+      useNavigationStore.getState().startNavigation(destination);
+      return;
+    }
+    // পুরনো রুটে গন্তব্য-স্টোর খালি থাকলে জ্যামিতির শেষ বিন্দুই গন্তব্য।
+    const last = activeRoute?.geometry[activeRoute.geometry.length - 1];
+    if (last) {
+      useNavigationStore
+        .getState()
+        .startNavigation({ coordinates: [last[0], last[1]], name: "গন্তব্য" });
+    }
+  };
+
+  // নেভিগেশনে লাইভ অবশিষ্ট মান, নাহলে রুটের মোট মান।
+  const summaryRoute = activeRoute
+    ? {
+        ...activeRoute,
+        distance:
+          isNavigating && remainingDistance !== null ? remainingDistance : activeRoute.distance,
+        duration:
+          isNavigating && remainingDuration !== null ? remainingDuration : activeRoute.duration,
+      }
+    : null;
+
+  const navigation: NavigationMode = {
+    isNavigating,
+    currentStepIndex,
+    isRerouting,
+    onStart: handleStartNavigation,
+    onExit: handleClose,
   };
 
   // Mobile bottom sheet
@@ -178,8 +306,8 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
       <div className="px-4">
         {isRouting && <RouteLoadingContent />}
         {routeError && <RouteErrorContent error={routeError} onDismiss={handleClose} />}
-        {!isRouting && !routeError && activeRoute && (
-          <RoutePanelContent route={activeRoute} onClose={handleClose} />
+        {!isRouting && !routeError && summaryRoute && (
+          <RoutePanelContent route={summaryRoute} navigation={navigation} onClose={handleClose} />
         )}
       </div>
     </BottomSheet>
@@ -199,78 +327,10 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
             <RouteErrorContent error={routeError} onDismiss={handleClose} />
           </div>
         )}
-        {!isRouting && !routeError && activeRoute && (
-          <>
-            {/* Header */}
-            <div className="bg-primary px-4 py-3 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Route className="w-5 h-5 text-foreground" />
-                <h3 className="font-semibold text-foreground">হাঁটার রুট</h3>
-              </div>
-              <button
-                onClick={handleClose}
-                className="text-foreground/80 hover:text-foreground transition-colors"
-                aria-label="Close route"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* Route Summary */}
-            <div className="p-4 border-b border-border/50">
-              <div className="grid grid-cols-2 gap-4">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary-soft rounded-lg">
-                    <Footprints className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">দূরত্ব</p>
-                    <p className="font-semibold text-foreground">
-                      {formatDistance(activeRoute.distance)}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-primary-soft rounded-lg">
-                    <Clock className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">সময়</p>
-                    <p className="font-semibold text-foreground">
-                      {formatWalkingTime(activeRoute.duration)}
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Turn-by-turn Instructions */}
-            <div className="max-h-64 overflow-y-auto">
-              <div className="px-4 py-2 bg-muted/50 border-b border-border/50 sticky top-0">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  দিক নির্দেশনা
-                </p>
-              </div>
-              <div className="divide-y divide-border/50">
-                {activeRoute.steps.map((step, index) => (
-                  <RouteStepContent
-                    key={index}
-                    instruction={step.instruction}
-                    distance={step.distance}
-                    duration={step.duration}
-                    index={index}
-                  />
-                ))}
-              </div>
-            </div>
-
-            {/* Footer */}
-            <div className="px-4 py-3 bg-muted/30 border-t border-border/50">
-              <p className="text-xs text-muted-foreground text-center">
-                গড় হাঁটার গতি ৫ কিমি/ঘণ্টা ধরে হিসাব করা হয়েছে
-              </p>
-            </div>
-          </>
+        {!isRouting && !routeError && summaryRoute && (
+          <div className="px-4">
+            <RoutePanelContent route={summaryRoute} navigation={navigation} onClose={handleClose} />
+          </div>
         )}
       </div>
     </div>

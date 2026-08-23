@@ -7,13 +7,12 @@ import type { Hotel, HotelAmenity } from "@/types/hotel";
 import { Button } from "@/components/ui/button";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { useMapRouting } from "@/lib/hooks";
-import { usePanelStore } from "@/lib/store";
+import { usePanelStore, useNavigationStore, useRouteStore } from "@/lib/store";
 
 interface HotelInfoPanelProps {
   hotel: Hotel;
   onClose?: () => void;
   onShowOnMap?: () => void;
-  onStartRoute?: () => void;
 }
 
 const AMENITY_ICONS: Record<HotelAmenity, string> = {
@@ -203,16 +202,27 @@ function HotelInfoContent({
   );
 }
 
-export function HotelInfoPanel({ hotel, onClose, onShowOnMap, onStartRoute }: HotelInfoPanelProps) {
+export function HotelInfoPanel({ hotel, onClose, onShowOnMap }: HotelInfoPanelProps) {
   const { calculateRoute, isCalculating } = useMapRouting();
   const { activePanel, setActivePanel } = usePanelStore();
   const [isRouting, setIsRouting] = useState(false);
 
   const handleGetDirections = async () => {
+    // নেভিগেশনের গন্তব্য আগেই বসে যায় — RoutePanel-এর "শুরু" বোতাম এটিই ব্যবহার করে।
+    useNavigationStore
+      .getState()
+      .setDestination({
+        coordinates: hotel.location.coordinates,
+        name: hotel.nameBn ?? hotel.name,
+      });
     setIsRouting(true);
     await calculateRoute(hotel.location.coordinates);
     setIsRouting(false);
-    onStartRoute?.();
+    // সফল হলে রুট প্যানেলেই সুইচ — ব্যর্থতায় এই প্যানেল থেকে যায় যেন পুনরায় চেষ্টা করা যায়।
+    const { activeRoute, routeError } = useRouteStore.getState();
+    if (activeRoute !== null && routeError === null) {
+      setActivePanel("route");
+    }
   };
 
   const handleClose = () => {

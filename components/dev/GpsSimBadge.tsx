@@ -11,14 +11,16 @@
 
 import { useEffect, useState } from "react";
 import { Database, Footprints, Minus, Plus, Satellite, X } from "lucide-react";
-import { useLocationStore } from "@/lib/store";
+import { useLocationStore, useRouteStore, useNavigationStore } from "@/lib/store";
 import {
   getGpsSimRuntime,
+  setGpsSimRoutePathProvider,
   storeGpsSimPrefs,
   type GpsSimMode,
   type GpsSimRuntime,
 } from "@/lib/dev/gps-sim";
 import { isDemoWorldActive, storeDemoWorldActive } from "@/lib/dev/demo-world";
+import { toBengaliNumber } from "@/lib/utils/bengali-number";
 
 // Reload without the query string so a disable is not immediately
 // re-enabled by a lingering ?gps-sim=1 param.
@@ -31,14 +33,26 @@ export function GpsSimBadge() {
   const [demoWorld, setDemoWorld] = useState(false);
   const [expanded, setExpanded] = useState(false);
   const [raw, setRaw] = useState<{ lng: number; lat: number } | null>(null);
+  const [veer, setVeer] = useState(0);
 
   const latitude = useLocationStore((state) => state.latitude);
   const longitude = useLocationStore((state) => state.longitude);
 
   useEffect(() => {
+    // অটো-ওয়াকারকে সক্রিয় নেভিগেশন রুট সরবরাহ — getState() দিয়ে পড়ে বলে
+    // প্রতি টিকে তাজা মান পায়, আর একই রুটে একই রেফারেন্স ফেরায় (zustand)।
+    setGpsSimRoutePathProvider(() => {
+      const nav = useNavigationStore.getState();
+      const route = useRouteStore.getState().activeRoute;
+      return nav.isNavigating && route ? (route.geometry as [number, number][]) : null;
+    });
+  }, []);
+
+  useEffect(() => {
     const rt = getGpsSimRuntime();
     if (rt?.enabled) {
       setRuntime(rt);
+      setVeer(rt.veerOffsetM);
       const id = window.setInterval(() => setRaw(rt.lastRaw), 1000);
       return () => window.clearInterval(id);
     }
@@ -56,6 +70,20 @@ export function GpsSimBadge() {
     const changeScale = (delta: number) => {
       const next = Math.min(50, Math.max(1, Math.round(runtime.scale + delta)));
       updatePrefs(runtime.mode, next);
+    };
+
+    // লম্ব বিচ্যুতি: রানটাইমে সরাসরি লেখা হয় — ওয়াকার প্রতি টিকে পড়ে।
+    // ২ চাপ (৩০ মি) = নিশ্চিত অফ-রুট; ১ চাপ (১৫ মি) = হিস্টেরিসিস ব্যান্ডের
+    // ভেতরে — "কোনো মিথ্যা রিয়ারাউট নয়" ডেমো করতে।
+    const changeVeer = (delta: number) => {
+      const next = Math.min(60, Math.max(-60, runtime.veerOffsetM + delta));
+      runtime.veerOffsetM = next;
+      setVeer(next);
+    };
+
+    const resetVeer = () => {
+      runtime.veerOffsetM = 0;
+      setVeer(0);
     };
 
     return (
@@ -103,6 +131,42 @@ export function GpsSimBadge() {
                   <p className="font-mono text-[11px] text-muted-foreground truncate">
                     {raw ? `${raw.lat.toFixed(6)}, ${raw.lng.toFixed(6)}` : "অপেক্ষমাণ"}
                   </p>
+                </div>
+              )}
+
+              {/* Veer control (auto mode): demo off-route + reroute */}
+              {runtime.mode === "auto" && (
+                <div>
+                  <p className="text-[10px] font-medium text-muted-foreground mb-1">
+                    রুট থেকে সরান (অফ-রুট পরীক্ষা)
+                  </p>
+                  <div className="flex items-center gap-1.5">
+                    <button
+                      onClick={() => changeVeer(-15)}
+                      className="px-2 py-1 rounded-lg bg-muted/60 hover:bg-amber-500/15 border border-border text-[11px] text-foreground transition-colors"
+                      aria-label="বাঁয়ে ১৫ মিটার সরান"
+                    >
+                      -১৫ মি
+                    </button>
+                    <span className="px-1 text-[11px] text-muted-foreground tabular-nums min-w-[3rem] text-center">
+                      {toBengaliNumber(veer)} মি
+                    </span>
+                    <button
+                      onClick={() => changeVeer(15)}
+                      className="px-2 py-1 rounded-lg bg-muted/60 hover:bg-amber-500/15 border border-border text-[11px] text-foreground transition-colors"
+                      aria-label="ডানে ১৫ মিটার সরান"
+                    >
+                      +১৫ মি
+                    </button>
+                    <button
+                      onClick={resetVeer}
+                      disabled={runtime.veerOffsetM === 0}
+                      className="px-2 py-1 rounded-lg bg-muted/60 hover:bg-amber-500/15 border border-border text-[11px] text-muted-foreground transition-colors disabled:opacity-40"
+                      aria-label="বিচ্যুতি রিসেট"
+                    >
+                      রিসেট
+                    </button>
+                  </div>
                 </div>
               )}
 

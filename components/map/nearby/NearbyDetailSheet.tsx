@@ -1,12 +1,13 @@
 "use client";
 
-import { Star, Maximize2, TrendingDown, TrendingUp, Footprints, X } from "lucide-react";
+import { Star, Maximize2, TrendingDown, TrendingUp, Footprints, Navigation, X } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
 import { useLiveNearbyItem } from "@/lib/hooks/useLiveNearbyItem";
+import { useNearbyDirections } from "@/lib/hooks/useNearbyDirections";
 import { cn } from "@/lib/utils";
 import type { NearbyItem } from "@/types/nearby";
 
@@ -32,6 +33,8 @@ function DetailContent({
   const Icon = meta.icon;
   // লাইভ দূরত্ব — স্ন্যাপশট নয়; চলাচলে প্রতি ~২ মিটারে বদলায় (ব্যাসার্ধ-নিরপেক্ষ)
   const live = useLiveNearbyItem(item);
+  // দিক নির্দেশনা — ইনফো প্যানেলের (গেট/হোটেল/স্থান) মতো একই রুট-প্রবাহ
+  const { getDirections, isRouting, error: routeError } = useNearbyDirections(item);
 
   return (
     <div className="space-y-3">
@@ -105,14 +108,38 @@ function DetailContent({
         </span>
       </div>
 
-      <Button
-        onClick={onShowDetails}
-        data-testid="nearby-show-details-button"
-        className="h-11 w-full bg-primary text-primary-foreground hover:bg-primary-hover"
-      >
-        <Maximize2 className="mr-1.5 h-4 w-4" aria-hidden />
-        বিস্তারিত
-      </Button>
+      {/* অ্যাকশন-সারি — দিক নির্দেশনা (প্রাথমিক) + বিস্তারিত (আউটলাইন) */}
+      <div className="flex gap-2">
+        <Button
+          onClick={() => void getDirections()}
+          disabled={isRouting}
+          data-testid="nearby-get-directions-button"
+          className="h-11 flex-1 bg-primary text-primary-foreground hover:bg-primary-hover"
+        >
+          {isRouting ? (
+            <div className="mr-1.5 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <Navigation className="mr-1.5 h-4 w-4" aria-hidden />
+          )}
+          {isRouting ? "রুট বের করা হচ্ছে..." : "দিক নির্দেশনা"}
+        </Button>
+        <Button
+          onClick={onShowDetails}
+          data-testid="nearby-show-details-button"
+          variant="outline"
+          className="h-11 flex-1"
+        >
+          <Maximize2 className="mr-1.5 h-4 w-4" aria-hidden />
+          বিস্তারিত
+        </Button>
+      </div>
+
+      {/* রুট ব্যর্থ — শিট খোলা থাকে, আবার চেষ্টা করা যায় */}
+      {routeError && (
+        <p className="text-xs text-error" data-testid="nearby-route-error" role="alert">
+          {routeError}
+        </p>
+      )}
     </div>
   );
 }

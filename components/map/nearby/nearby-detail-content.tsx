@@ -1,10 +1,12 @@
 "use client";
 
-import { Check, Star, Phone, Clock, MapPin, BadgeCheck } from "lucide-react";
+import { Check, Star, Phone, Clock, MapPin, Navigation, BadgeCheck } from "lucide-react";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
 import { HOTEL_AMENITIES_LABELS } from "@/lib/data/hotels";
 import { toBengaliNumber } from "@/lib/utils/bengali-number";
 import { useLiveNearbyItem } from "@/lib/hooks/useLiveNearbyItem";
+import { useNearbyDirections } from "@/lib/hooks/useNearbyDirections";
+import { Button } from "@/components/ui/button";
 import type { NearbyItem } from "@/types/nearby";
 import type { Gate } from "@/types/gate";
 import type { Hotel } from "@/types/hotel";
@@ -37,6 +39,7 @@ function InfoChip({
 export function NearbyDetailFullContent({ item }: { item: NearbyItem }) {
   const meta = NEARBY_CATEGORY_META[item.category];
   const live = useLiveNearbyItem(item);
+  const { getDirections, isRouting, error: routeError } = useNearbyDirections(item);
 
   return (
     <div className="space-y-4">
@@ -60,6 +63,28 @@ export function NearbyDetailFullContent({ item }: { item: NearbyItem }) {
       {item.category !== "gate" && item.category !== "hotel" && item.category !== "historical" && (
         <PoiDetails poi={item.source as POI} />
       )}
+
+      {/* ফুটার অ্যাকশন — ইনফো প্যানেলের মতো দিক নির্দেশনা */}
+      <div className="space-y-2 pt-1">
+        <Button
+          onClick={() => void getDirections()}
+          disabled={isRouting}
+          data-testid="nearby-full-get-directions-button"
+          className="w-full gap-2 bg-primary text-primary-foreground hover:bg-primary-hover"
+        >
+          {isRouting ? (
+            <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+          ) : (
+            <Navigation className="h-4 w-4" aria-hidden />
+          )}
+          {isRouting ? "রুট বের করা হচ্ছে..." : "দিক নির্দেশনা দেখুন"}
+        </Button>
+        {routeError && (
+          <p className="text-xs text-error" data-testid="nearby-full-route-error" role="alert">
+            {routeError}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

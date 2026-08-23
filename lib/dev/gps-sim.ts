@@ -58,16 +58,17 @@ export const DEFAULT_GPS_SIM_SCALE = 3;
 // Pure geo helpers (meters <-> degrees, small-distance local frame)
 // ---------------------------------------------------------------------------
 
-const DEG_PER_M_LAT = 1 / 110540;
-
-function degPerMLng(lat: number): number {
-  return 1 / (111320 * Math.cos((lat * Math.PI) / 180));
-}
-
-export interface LngLat {
-  lng: number;
-  lat: number;
-}
+// The local-plane primitives live in `lib/geo/plane` so production code (the
+// route progress engine) can share them without activating the simulator.
+// Re-exported here to keep existing consumers (tests, demo-world) working.
+export { metersOffset, offsetToLngLat, type LngLat } from "@/lib/geo/plane";
+import {
+  DEG_PER_M_LAT,
+  degPerMLng,
+  metersOffset,
+  offsetToLngLat,
+  type LngLat,
+} from "@/lib/geo/plane";
 
 /** Centroid (arithmetic mean) of a set of [lng, lat] points. */
 export function centroidLngLat(points: [number, number][]): LngLat {
@@ -81,19 +82,6 @@ export function centroidLngLat(points: [number, number][]): LngLat {
     lat += pLat;
   }
   return { lng: lng / points.length, lat: lat / points.length };
-}
-
-/** Local-plane offset from `from` to `to` in meters (east/north). */
-export function metersOffset(from: LngLat, to: LngLat): { east: number; north: number } {
-  return {
-    east: (to.lng - from.lng) / degPerMLng(from.lat),
-    north: (to.lat - from.lat) / DEG_PER_M_LAT,
-  };
-}
-
-/** Convert an east/north meter offset from `base` back to [lng, lat]. */
-export function offsetToLngLat(base: LngLat, eastM: number, northM: number): [number, number] {
-  return [base.lng + eastM * degPerMLng(base.lat), base.lat + northM * DEG_PER_M_LAT];
 }
 
 function dropClosingPoint(ring: number[][]): [number, number][] {
@@ -211,6 +199,152 @@ export function autoWalkFix(elapsedSeconds: number, speed = WALKING_SPEED): SimF
 }
 
 // ---------------------------------------------------------------------------
+// Route walk: synthetic pilgrim following the active navigation route
+// ---------------------------------------------------------------------------
+
+/** Open (non-wrapping) polyline-এর প্রতিটি সেগমেন্টের দৈর্ঘ্য, মিটারে। */
+export function polylineArcLengths(polyline: [number, number][]): number[] {
+  const lengths: number[] = [];
+  for (let i = 0; i + 1 < polyline.length; i++) {
+    const offset = metersOffset(
+      { lng: polyline[i][0], lat: polyline[i][1] },
+      { lng: polyline[i + 1][0], lat: polyline[i + 1][1] }
+    );
+    lengths.push(Math.hypot(offset.east, offset.north));
+  }
+  return lengths;
+}
+
+/**
+ * খোলা পলিলাইনে `travelledMeters` অতিক্রম করার পরের অবস্থান; শেষে পৌঁছে
+ * থেমে থাকে (রিং-এর মতো ঘোরে না)। হেডিং চলার সেগমেন্টের দিকে।
+ */
+export function walkPolyline(
+  polyline: [number, number][],
+  travelledMeters: number,
+  speed = WALKING_SPEED
+): SimFix {
+  if (polyline.length < 2) {
+    throw new Error("walkPolyline requires at least two points");
+  }
+
+  const lengths = polylineArcLengths(polyline);
+  let remaining = Math.max(0, travelledMeters);
+
+  let index = 0;
+  while (index < lengths.length - 1 && remaining > lengths[index]) {
+    remaining -= lengths[index];
+    index++;
+  }
+
+  const from = polyline[index];
+  const to = polyline[index + 1];
+  const fraction = lengths[index] === 0 ? 0 : Math.min(1, remaining / lengths[index]);
+  const lng = from[0] + (to[0] - from[0]) * fraction;
+  const lat = from[1] + (to[1] - from[1]) * fraction;
+
+  return {
+    latitude: lat,
+    longitude: lng,
+    accuracy: 8,
+    heading: bearingDeg(from, to),
+    speed,
+  };
+}
+
+/**
+ * ফিক্সকে চলার দিকের সাথে লম্বভাবে `meters` সরায় (ধনাত্মক = ডানে)।
+ * অফ-রুট/রিয়ারাউট ডেমো করার জন্য — হেডিং অপরিবর্তিত থাকে।
+ */
+export function applyPerpendicularVeer(fix: SimFix, meters: number): SimFix {
+  if (meters === 0 || fix.heading === null) return fix;
+  const rad = (fix.heading * Math.PI) / 180;
+  // হেডিং +৯০° দিক (ডানে): পূর্ব = cos, উত্তর = -sin।
+  const east = meters * Math.cos(rad);
+  const north = -meters * Math.sin(rad);
+  const [lng, lat] = offsetToLngLat({ lng: fix.longitude, lat: fix.latitude }, east, north);
+  return { ...fix, longitude: lng, latitude: lat };
+}
+
+export interface RouteWalkerOptions {
+  now: () => number;
+  speed?: number;
+  /**
+   * সক্রিয় নেভিগেশন রুটের জ্যামিতি, না থাকলে null (রিং-এ ফিরে যায়)।
+   * একই রুটে স্থিতিশীল রেফারেন্স ফেরাতে হবে — নতুন অ্যারে এলে হাঁটা
+   * শূন্য থেকে শুরু হয়ে যাবে (রিয়ারাউটে ঠিক এটাই চাই)।
+   */
+  getRoutePath: () => [number, number][] | null;
+  /** লম্ব বিচ্যুতি মিটারে, প্রতি টিকে পড়া হয় — শুধু রুট-হাঁটায় প্রযোজ্য। */
+  getVeerM?: () => number;
+}
+
+/**
+ * স্টেটফুল অটো-ওয়াকার: রুট পাথ দিলে তা ধরে হাঁটে, নাহলে তওয়াফ রিং।
+ * রুটের রেফারেন্স বদলালে (রিয়ারাউট) যাত্রা শূন্য থেকে শুরু — OSRM-এর
+ * নতুন জ্যামিতি রিকোয়েস্ট-অরিজিন (বর্তমান অবস্থান) থেকেই শুরু হয়।
+ */
+export function createRouteWalker(options: RouteWalkerOptions): { nextFix: () => SimFix } {
+  const speed = options.speed ?? WALKING_SPEED;
+  const getVeerM = options.getVeerM ?? defaultVeerM;
+
+  let currentPath: [number, number][] | null = null;
+  let pathStartedAt = 0;
+  let ringStartedAt = options.now();
+
+  return {
+    nextFix(): SimFix {
+      const now = options.now();
+      const path = options.getRoutePath();
+      const usable = path && path.length >= 2 ? path : null;
+
+      if (usable !== currentPath) {
+        currentPath = usable;
+        if (usable) {
+          pathStartedAt = now;
+        } else {
+          ringStartedAt = now;
+        }
+      }
+
+      if (currentPath) {
+        const travelled = ((now - pathStartedAt) / 1000) * speed;
+        const fix = walkPolyline(currentPath, travelled, speed);
+        const veerM = getVeerM();
+        return veerM === 0 ? fix : applyPerpendicularVeer(fix, veerM);
+      }
+
+      return autoWalkFix((now - ringStartedAt) / 1000, speed);
+    },
+  };
+}
+
+// ---------------------------------------------------------------------------
+// Route-path provider: dev UI (GpsSimBadge) এখানে নেভিগেশন রুট জোড়ে
+// ---------------------------------------------------------------------------
+
+let routePathProvider: () => [number, number][] | null = () => null;
+
+/**
+ * অটো-ওয়াকারকে সক্রিয় নেভিগেশন রুট সরবরাহকারী সেট করে (GpsSimBadge মাউন্টে
+ * একবার ডাকে)। রেফারেন্স-স্থিতিশীল জ্যামিতি ফেরাতে হবে (উপরের নোট দেখুন)।
+ */
+export function setGpsSimRoutePathProvider(fn: () => [number, number][] | null): void {
+  routePathProvider = fn;
+}
+
+/** ডিফল্ট: কোনো রুট নেই — ওয়াকার রিং-এ থাকে। */
+export function getGpsSimRoutePath(): [number, number][] | null {
+  return routePathProvider();
+}
+
+/** ডিফল্ট বিচ্যুতি: রানটাইম থেকে প্রতি টিকে পড়া (ব্যাজ সরাসরি মিউটেট করে)। */
+function defaultVeerM(): number {
+  if (typeof window === "undefined") return 0;
+  return window.__TAWAF_GPS_SIM__?.veerOffsetM ?? 0;
+}
+
+// ---------------------------------------------------------------------------
 // Geolocation patch (injectable geolocation object for testability)
 // ---------------------------------------------------------------------------
 
@@ -239,7 +373,8 @@ const noop = () => {};
 /**
  * Wrap a geolocation object so every fix it reports is a simulated one.
  * `mode: "live"` transforms real fixes; `mode: "auto"` ignores them and
- * synthesizes the ring walk. Errors pass through untouched in live mode.
+ * synthesizes the walk (route-following while navigating, ring otherwise).
+ * Errors pass through untouched in live mode.
  */
 export function createSimulatedGeolocation(
   real: Pick<Geolocation, "getCurrentPosition" | "watchPosition" | "clearWatch">,
@@ -248,11 +383,12 @@ export function createSimulatedGeolocation(
   now: () => number = () => Date.now(),
   onRaw?: (fix: SimFix) => void
 ): Geolocation {
-  const startedAt = now();
+  // অটো-ওয়াকার: রুট-প্রোভাইডার (GpsSimBadge সেট করে) রুট দিলে তা ধরে হাঁটে।
+  const walker = createRouteWalker({ now, getRoutePath: getGpsSimRoutePath });
 
   const simulateSuccess = (raw: PositionLike, report: (p: GeolocationPosition) => void) => {
     if (mode === "auto") {
-      report(toPosition(autoWalkFix((now() - startedAt) / 1000), now()));
+      report(toPosition(walker.nextFix(), now()));
       return;
     }
     onRaw?.(raw.coords);
@@ -274,7 +410,7 @@ export function createSimulatedGeolocation(
       _options?: PositionOptions
     ) {
       if (mode === "auto") {
-        success(toPosition(autoWalkFix((now() - startedAt) / 1000), now()));
+        success(toPosition(walker.nextFix(), now()));
         return;
       }
       real.getCurrentPosition(
@@ -291,11 +427,8 @@ export function createSimulatedGeolocation(
       if (mode === "auto") {
         // No real GPS involved: tick the synthetic walker ourselves.
         const report = (p: GeolocationPosition) => success(p);
-        report(toPosition(autoWalkFix((now() - startedAt) / 1000), now()));
-        const id = window.setInterval(
-          () => report(toPosition(autoWalkFix((now() - startedAt) / 1000), now())),
-          1000
-        );
+        report(toPosition(walker.nextFix(), now()));
+        const id = window.setInterval(() => report(toPosition(walker.nextFix(), now())), 1000);
         return id;
       }
       return real.watchPosition(
@@ -333,6 +466,12 @@ export interface GpsSimRuntime extends GpsSimPrefs {
   target: LngLat;
   /** Latest raw device fix (live mode), for the badge readout. */
   lastRaw: LngLat | null;
+  /**
+   * Perpendicular offset from the walked route, meters (positive = right of
+   * travel). Mutated live by the badge's veer control so the auto walker can
+   * demo off-route detection + rerouting. Only affects route-following.
+   */
+  veerOffsetM: number;
 }
 
 const STORAGE_KEY = "tawaf:gps-sim";
@@ -444,6 +583,7 @@ export function activateGpsSimulator(): GpsSimRuntime | null {
       origin: { lng: 0, lat: 0 },
       target: { lng: 0, lat: 0 },
       lastRaw: null,
+      veerOffsetM: 0,
     };
     return window.__TAWAF_GPS_SIM__;
   }
@@ -459,6 +599,7 @@ export function activateGpsSimulator(): GpsSimRuntime | null {
     origin,
     target: { lng: RING_START[0], lat: RING_START[1] },
     lastRaw: null,
+    veerOffsetM: 0,
   };
   window.__TAWAF_GPS_SIM__ = runtime;
 

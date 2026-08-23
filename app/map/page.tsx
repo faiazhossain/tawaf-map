@@ -19,7 +19,14 @@ import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
-import { useGateProximity, useGeolocation, useMediaQuery, useNearbyPlaces } from "@/lib/hooks";
+import {
+  useGateProximity,
+  useGeolocation,
+  useMediaQuery,
+  useNearbyPlaces,
+  useNavigation,
+} from "@/lib/hooks";
+import { NavigationBanner } from "@/components/navigation/NavigationBanner";
 import {
   useGateStore,
   useHotelStore,
@@ -155,6 +162,9 @@ export default function MapPage() {
     permission: userPermission,
     requestLocation,
   } = useGeolocation();
+  // লাইভ নেভিগেশন অর্কেস্ট্রেশন — পেজে ঠিক একবারই মাউন্ট হয় (দ্বিতীয়বার হলে
+  // প্রতি ফিক্সে ডাবল হিসাব/ডাবল রিয়ারাউট হবে)।
+  useNavigation();
   const { setGate, setGateDistance, clearGate } = useGateStore();
   const { selectedHotel, setSelectedHotel, clearSelectedHotel } = useHotelStore();
   const { activeRoute } = useRouteStore();
@@ -404,6 +414,23 @@ export default function MapPage() {
     }
   };
 
+  // সার্চ থেকে গেট বাছাই: গেট-লেয়ার বন্ধ থাকলে চালু হয় (টগল-কনভেনশন মতো
+  // হোটেল/স্থান বন্ধ), তারপর মার্কার ক্লিকের মতোই একই পথে ইনফো প্যানেল খোলে।
+  const handleSearchGateSelect = useCallback(
+    (gateId: string) => {
+      if (!showGates) {
+        setShowGates(true);
+        setShowHotels(false);
+        setShowTouristPlaces(false);
+      }
+      // মোবাইল: হ্যামবার্গার মেনুর ভেতর থেকে বাছলে মেনু বন্ধ, নইলে ইনফো
+      // শীটের সাথে ওভারল্যাপ করে পুরো স্ক্রিন ভরিয়ে রাখে।
+      setToolbarMenuOpen(false);
+      handleGateClick(gateId);
+    },
+    [showGates, handleGateClick]
+  );
+
   const handleCloseGatePanel = () => {
     clearGate();
     setActivePanel(null);
@@ -572,7 +599,7 @@ export default function MapPage() {
                     <DoorOpen className="hidden sm:inline-block w-4 h-4" />
                     <span className="inline whitespace-nowrap">{showGates ? "On" : "Gates"}</span>
                   </Button>
-                  <GateSelector />
+                  <GateSelector onSelectGate={handleSearchGateSelect} />
                 </div>
               </div>
             </div>
@@ -637,7 +664,7 @@ export default function MapPage() {
                 />
               </div>
               <div className="mt-1.5 flex items-center justify-end gap-3 border-t border-border pt-2.5">
-                <GateSelector showLabel />
+                <GateSelector showLabel onSelectGate={handleSearchGateSelect} />
                 {userLocationItem}
               </div>
             </div>
@@ -705,6 +732,9 @@ export default function MapPage() {
 
         {/* Route Panel */}
         {showRoutePanel && <RoutePanel onClose={handleCloseRoutePanel} />}
+
+        {/* লাইভ নেভিগেশন ব্যানার — নেভিগেশন চালু না থাকলে নিজেই লুকায় */}
+        <NavigationBanner />
 
         {/* Debug Location Panel */}
         {!hasActivePanel && <DebugLocationPanel />}
