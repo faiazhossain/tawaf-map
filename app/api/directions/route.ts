@@ -116,6 +116,15 @@ export async function POST(request: NextRequest) {
   } | null;
 
   if (!upstream.ok || !data || data.code !== "Ok" || !data.routes?.length) {
+    // NoRoute (বা Ok হয়েও ফাঁকা routes) মানে ইঞ্জিন সত্যিই হাঁটার পথ পায়নি —
+    // ক্লায়েন্ট এই কোড দেখে আনুমানিক ডটেড রুটে পড়ে যায়, তাই সাধারণ
+    // ব্যর্থতা (502) থেকে আলাদা করে `code`-সহ 422 ফেরানো হয়।
+    if (upstream.ok && data && (data.code === "NoRoute" || data.code === "Ok")) {
+      return NextResponse.json(
+        { error: "এই দুই স্থানের মাঝে হাঁটার পথ পাওয়া যায়নি", code: "NoRoute" },
+        { status: 422 }
+      );
+    }
     const detail =
       data?.message ?? (upstream.ok ? "পথ পাওয়া যায়নি" : `আপস্ট্রিম ${upstream.status}`);
     return NextResponse.json({ error: `পথ বের করা যায়নি: ${detail}` }, { status: 502 });
@@ -125,7 +134,7 @@ export async function POST(request: NextRequest) {
   const coordinatesOut = route.geometry?.coordinates;
   if (!Array.isArray(coordinatesOut) || coordinatesOut.length < 2) {
     return NextResponse.json(
-      { error: "এই দুই স্থানের মাঝে হাঁটার পথ পাওয়া যায়নি" },
+      { error: "এই দুই স্থানের মাঝে হাঁটার পথ পাওয়া যায়নি", code: "NoRoute" },
       { status: 422 }
     );
   }

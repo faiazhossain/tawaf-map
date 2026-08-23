@@ -4,11 +4,12 @@
  * থেকে বের করা হয়েছে যাতে হুকের বাইরে থেকেও (useNavigation) ডাকা যায়।
  */
 
-import { buildApproach } from "@/lib/routing/approach";
+import { buildApproach, buildApproximateRoute } from "@/lib/routing/approach";
 import type { Route, RouteStep } from "@/types/navigation";
 
 /**
- * হেঁটে চলার রুট আনে। সফল হলে `id`-সহ Route রিজলভ করে; ব্যর্থ হলে
+ * হেঁটে চলার রুট আনে। সফল হলে `id`-সহ Route রিজলভ করে; ইঞ্জিন সত্যিই
+ * পথ না পেলে (422 NoRoute) আনুমানিক ডটেড রুট রিজলভ করে; বাকি ব্যর্থতায়
  * বাংলা বার্তাসহ Error রিজেক্ট করে (কলারের দায়িত্ব ধরে নেওয়া)।
  */
 export async function fetchWalkingRoute(
@@ -31,9 +32,16 @@ export async function fetchWalkingRoute(
   const data = (await response.json().catch(() => null)) as {
     route?: Omit<Route, "id" | "steps"> & { steps?: RouteStep[] };
     error?: string;
+    code?: string;
   } | null;
 
   if (!response.ok || !data?.route) {
+    // ইঞ্জিন সত্যিই হাঁটার পথ পায়নি — পুরো ট্রিপের আনুমানিক রুট। নেটওয়ার্ক/
+    // আপস্ট্রিম ব্যর্থতা (502) এখানে পড়ে না — সেগুলোতে রিট্রাই-ই সঠিক,
+    // সম্ভাব্য বাজে সরলরেখা দেখানো নয়।
+    if (data?.code === "NoRoute") {
+      return buildApproximateRoute(origin, destination);
+    }
     throw new Error(data?.error ?? "রুট বের করা যায়নি — আবার চেষ্টা করুন।");
   }
 

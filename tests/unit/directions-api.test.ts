@@ -79,7 +79,7 @@ describe("POST /api/directions", () => {
     expect((await res.json()).error).toContain("রাউটিং সার্ভারে পৌঁছানো যাচ্ছে না");
   });
 
-  it("আপস্ট্রিম NoOk দিলে 502", async () => {
+  it("আপস্ট্রিম NoRoute দিলে code-সহ 422 (আনুমানিক রুটের ট্রিগার)", async () => {
     vi.stubGlobal(
       "fetch",
       vi.fn(
@@ -94,7 +94,50 @@ describe("POST /api/directions", () => {
     const res = await POST(
       makeRequest({ origin: [39.8263, 21.4189], destination: [39.8241, 21.4212] })
     );
+    expect(res.status).toBe(422);
+    const data = await res.json();
+    expect(data.code).toBe("NoRoute");
+    expect(data.error).toContain("হাঁটার পথ পাওয়া যায়নি");
+  });
+
+  it("Ok হয়েও ফাঁকা routes দিলে একই 422 NoRoute", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify({ code: "Ok", routes: [] }), {
+              status: 200,
+            })
+          ) as never
+      )
+    );
+    const res = await POST(
+      makeRequest({ origin: [39.8263, 21.4189], destination: [39.8241, 21.4212] })
+    );
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("NoRoute");
+  });
+
+  it("NoRoute ছাড়া অন্য আপস্ট্রিম কোডে 502, code ফিল্ড নেই", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        () =>
+          Promise.resolve(
+            new Response(JSON.stringify({ code: "InvalidUrl", message: "bad" }), {
+              status: 200,
+            })
+          ) as never
+      )
+    );
+    const res = await POST(
+      makeRequest({ origin: [39.8263, 21.4189], destination: [39.8241, 21.4212] })
+    );
     expect(res.status).toBe(502);
+    const data = await res.json();
+    expect(data.code).toBeUndefined();
+    expect(data.error).toContain("পথ বের করা যায়নি");
   });
 
   it("সফল রুটে geometry/duration/বাংলা ধাপ ও সঠিক আপস্ট্রিম অনুরোধ", async () => {
@@ -125,6 +168,20 @@ describe("POST /api/directions", () => {
     expect(url).toContain("profile=foot");
     expect(url).toContain("api_key=test-key");
     expect((init.headers as Record<string, string>).Origin).toBe("maps.barikoi.com");
+  });
+
+  it("অবক্ষয়িত জ্যামিতিতে (এক কোঅর্ডিনেট) 422 NoRoute", async () => {
+    const payload = okPayload();
+    payload.routes[0].geometry.coordinates = [[39.8263, 21.4189]];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(() => Promise.resolve(new Response(JSON.stringify(payload), { status: 200 })) as never)
+    );
+    const res = await POST(
+      makeRequest({ origin: [39.8263, 21.4189], destination: [39.8241, 21.4212] })
+    );
+    expect(res.status).toBe(422);
+    expect((await res.json()).code).toBe("NoRoute");
   });
 
   it("profile car চাইলে আপস্ট্রিমে যায়, অবৈধ profile-এ foot-এ পড়ে", async () => {
