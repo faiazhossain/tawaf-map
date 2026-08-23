@@ -40,11 +40,24 @@ export function GpsSimBadge() {
 
   useEffect(() => {
     // অটো-ওয়াকারকে সক্রিয় নেভিগেশন রুট সরবরাহ — getState() দিয়ে পড়ে বলে
-    // প্রতি টিকে তাজা মান পায়, আর একই রুটে একই রেফারেন্স ফেরায় (zustand)।
+    // প্রতি টিকে তাজা মান পায়। সংযোগকারীসহ পথ জোড়া লাগানো হয় (রাস্তা শেষে
+    // ওয়াকার থেমে না গিয়ে প্রকৃত গন্তব্য পর্যন্ত হাঁটে); কিন্তু প্রতি টিকে
+    // নতুন অ্যারে বানালে ওয়াকার শূন্য থেকে শুরু হয়ে যেত (gps-sim আইডেন্টিটি-
+    // পরীক্ষা), তাই রুট id দিয়ে ক্যাশ করা হয়।
+    let cached: { id: string; path: [number, number][] } | null = null;
     setGpsSimRoutePathProvider(() => {
       const nav = useNavigationStore.getState();
       const route = useRouteStore.getState().activeRoute;
-      return nav.isNavigating && route ? (route.geometry as [number, number][]) : null;
+      if (!nav.isNavigating || !route) return null;
+      if (cached?.id !== route.id) {
+        cached = {
+          id: route.id,
+          path: route.approach
+            ? ([...route.geometry, ...route.approach.geometry] as [number, number][])
+            : (route.geometry as [number, number][]),
+        };
+      }
+      return cached.path;
     });
   }, []);
 
