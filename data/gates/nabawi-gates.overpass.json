@@ -1,0 +1,856 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-08-20T07:10:05Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 5124555217,
+      "lat": 24.4674667,
+      "lon": 39.6114476,
+      "tags": {
+        "access": "no",
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5124555218,
+      "lat": 24.4674677,
+      "lon": 39.6113955,
+      "tags": {
+        "access": "no",
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5124555219,
+      "lat": 24.4674675,
+      "lon": 39.6115035,
+      "tags": {
+        "access": "no",
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5502661251,
+      "lat": 24.4660643,
+      "lon": 39.6106412,
+      "tags": {
+        "barrier": "gate",
+        "name": "301"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5502661252,
+      "lat": 24.4660649,
+      "lon": 39.6105407,
+      "tags": {
+        "barrier": "gate",
+        "name": "302"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5502661253,
+      "lat": 24.4660654,
+      "lon": 39.6104442,
+      "tags": {
+        "barrier": "gate",
+        "name": "303"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859343975,
+      "lat": 24.4660692,
+      "lon": 39.6097859,
+      "tags": {
+        "barrier": "gate",
+        "name": "304"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859343976,
+      "lat": 24.4660737,
+      "lon": 39.6090074,
+      "tags": {
+        "barrier": "gate",
+        "name": "307"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859343977,
+      "lat": 24.4660765,
+      "lon": 39.6085101,
+      "tags": {
+        "barrier": "gate",
+        "name": "308"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859343978,
+      "lat": 24.4660801,
+      "lon": 39.6093855,
+      "tags": {
+        "barrier": "gate",
+        "name": "305"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348091,
+      "lat": 24.4660619,
+      "lon": 39.6110664,
+      "tags": {
+        "barrier": "gate",
+        "name": "369"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348092,
+      "lat": 24.4660601,
+      "lon": 39.6113808,
+      "tags": {
+        "barrier": "gate",
+        "image": "File:Madina_trip_209.jpg",
+        "name": "368"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348093,
+      "lat": 24.4660572,
+      "lon": 39.6118803,
+      "tags": {
+        "barrier": "gate",
+        "name": "367"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348094,
+      "lat": 24.4660523,
+      "lon": 39.612152,
+      "tags": {
+        "barrier": "gate",
+        "name": "366"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348095,
+      "lat": 24.466051,
+      "lon": 39.6126483,
+      "tags": {
+        "barrier": "gate",
+        "name": "365"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348462,
+      "lat": 24.4664354,
+      "lon": 39.6078386,
+      "tags": {
+        "barrier": "gate",
+        "name": "310, 311"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348464,
+      "lat": 24.4668593,
+      "lon": 39.6078411,
+      "tags": {
+        "barrier": "gate",
+        "name": "312, 313"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859348465,
+      "lat": 24.467388,
+      "lon": 39.6078453,
+      "tags": {
+        "barrier": "gate",
+        "name": "314, 315, 316"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859350385,
+      "lat": 24.4660791,
+      "lon": 39.6080659,
+      "tags": {
+        "barrier": "gate",
+        "name": "309"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379976,
+      "lat": 24.4678642,
+      "lon": 39.6078491,
+      "tags": {
+        "barrier": "gate",
+        "name": "317"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379977,
+      "lat": 24.4681979,
+      "lon": 39.6078509,
+      "tags": {
+        "barrier": "gate",
+        "name": "318"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379978,
+      "lat": 24.4684804,
+      "lon": 39.6078524,
+      "tags": {
+        "barrier": "gate",
+        "name": "319"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379979,
+      "lat": 24.4689122,
+      "lon": 39.6078515,
+      "tags": {
+        "barrier": "gate",
+        "name": "320"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379980,
+      "lat": 24.4695271,
+      "lon": 39.6078548,
+      "tags": {
+        "barrier": "gate",
+        "name": "322"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379981,
+      "lat": 24.4692224,
+      "lon": 39.6078532,
+      "tags": {
+        "barrier": "gate",
+        "name": "321"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379982,
+      "lat": 24.4699218,
+      "lon": 39.6078577,
+      "tags": {
+        "barrier": "gate",
+        "name": "323"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379983,
+      "lat": 24.4702282,
+      "lon": 39.6078585,
+      "tags": {
+        "barrier": "gate",
+        "name": "324"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859379984,
+      "lat": 24.4708615,
+      "lon": 39.6078647,
+      "tags": {
+        "barrier": "gate",
+        "name": "326, 327"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859381885,
+      "lat": 24.47047,
+      "lon": 39.6078618,
+      "tags": {
+        "barrier": "gate",
+        "name": "325"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401123,
+      "lat": 24.4709688,
+      "lon": 39.608353,
+      "tags": {
+        "barrier": "gate",
+        "name": "328"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401124,
+      "lat": 24.4709711,
+      "lon": 39.6092044,
+      "tags": {
+        "barrier": "gate",
+        "name": "329"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401125,
+      "lat": 24.4709728,
+      "lon": 39.6098448,
+      "tags": {
+        "barrier": "gate",
+        "image": "File:Bin_Dawood_Nabawi_Mosque_1.JPG",
+        "name": "330"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401126,
+      "lat": 24.4709742,
+      "lon": 39.6103761,
+      "tags": {
+        "barrier": "gate",
+        "name": "331"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401130,
+      "lat": 24.4709806,
+      "lon": 39.612417,
+      "tags": {
+        "barrier": "gate",
+        "name": "338"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401131,
+      "lat": 24.4709801,
+      "lon": 39.6117724,
+      "tags": {
+        "barrier": "gate",
+        "name": "337"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401132,
+      "lat": 24.4709812,
+      "lon": 39.6130951,
+      "tags": {
+        "barrier": "gate",
+        "name": "339"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401133,
+      "lat": 24.4709816,
+      "lon": 39.6135954,
+      "tags": {
+        "barrier": "gate",
+        "name": "340, 341"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859401134,
+      "lat": 24.4709819,
+      "lon": 39.6139532,
+      "tags": {
+        "barrier": "gate",
+        "name": "342, 343"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859411563,
+      "lat": 24.4706868,
+      "lon": 39.6143373,
+      "tags": {
+        "barrier": "gate",
+        "name": "344, 345"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859411564,
+      "lat": 24.4695963,
+      "lon": 39.6143366,
+      "tags": {
+        "barrier": "gate",
+        "name": "346, 347"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859411565,
+      "lat": 24.4687253,
+      "lon": 39.6143361,
+      "tags": {
+        "barrier": "gate",
+        "name": "348, 349"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859411566,
+      "lat": 24.4684031,
+      "lon": 39.6143359,
+      "tags": {
+        "barrier": "gate",
+        "name": "350, 351"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859411568,
+      "lat": 24.4681984,
+      "lon": 39.6139848,
+      "tags": {
+        "barrier": "gate",
+        "name": "352, 353, 354"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859424209,
+      "lat": 24.4680769,
+      "lon": 39.6133869,
+      "tags": {
+        "barrier": "gate",
+        "name": "355, 356"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859424210,
+      "lat": 24.4679349,
+      "lon": 39.6132879,
+      "tags": {
+        "barrier": "gate",
+        "name": "357, 358"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859424211,
+      "lat": 24.467258,
+      "lon": 39.6130445,
+      "tags": {
+        "barrier": "gate",
+        "name": "359, 360"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859424212,
+      "lat": 24.4668704,
+      "lon": 39.6130411,
+      "tags": {
+        "barrier": "gate",
+        "name": "361, 362"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859424214,
+      "lat": 24.4664422,
+      "lon": 39.6130457,
+      "tags": {
+        "barrier": "gate",
+        "name": "363, 364"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859439339,
+      "lat": 24.4707355,
+      "lon": 39.6109178,
+      "tags": {
+        "barrier": "gate",
+        "name": "332"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859439344,
+      "lat": 24.4707355,
+      "lon": 39.6110421,
+      "tags": {
+        "barrier": "gate",
+        "name": "333"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5859439345,
+      "lat": 24.4707355,
+      "lon": 39.6112951,
+      "tags": {
+        "barrier": "gate",
+        "name": "335"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5883054851,
+      "lat": 24.4694544,
+      "lon": 39.61374,
+      "tags": {
+        "barrier": "gate",
+        "name": "مدخل النساء",
+        "name:en": "Women's Entrance"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5889299552,
+      "lat": 24.4707355,
+      "lon": 39.6111655,
+      "tags": {
+        "barrier": "gate",
+        "name": "334"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5893388256,
+      "lat": 24.4707328,
+      "lon": 39.6114352,
+      "tags": {
+        "barrier": "gate",
+        "name": "336"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5895105165,
+      "lat": 24.4694905,
+      "lon": 39.6085692,
+      "tags": {
+        "barrier": "gate",
+        "name": "Women's Entrance"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5895105166,
+      "lat": 24.4704192,
+      "lon": 39.6090367,
+      "tags": {
+        "barrier": "gate",
+        "name": "مدخل النساء",
+        "name:en": "Women's Entrance"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5895119813,
+      "lat": 24.4704468,
+      "lon": 39.6121414,
+      "tags": {
+        "barrier": "gate",
+        "name": "Women's Entrance",
+        "name:fr": "Entrée des femmes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5895119814,
+      "lat": 24.470448,
+      "lon": 39.6130383,
+      "tags": {
+        "barrier": "gate",
+        "name": "Women's Entrance"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5927612356,
+      "lat": 24.4688998,
+      "lon": 39.611983,
+      "tags": {
+        "barrier": "gate",
+        "description": "opening hours: after sunrise around 7am to 9am one hour after dohar after Isha Prayer around 9:30 - 10:00 pm to midnight",
+        "name": "مدخل النساء للروضة الشريفة",
+        "name:en": "Women's Entry into noble Rawda"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5927612357,
+      "lat": 24.4689002,
+      "lon": 39.6122489,
+      "tags": {
+        "barrier": "gate",
+        "description": "opening hours: after sunrise around 7am to 9am one hour after dohar after Isha Prayer around 9:30 - 10:00 pm to midnight",
+        "name": "مدخل النساء للروضة الشريفة",
+        "name:en": "Women's Entry into noble Rawda"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5927612358,
+      "lat": 24.4689007,
+      "lon": 39.612493,
+      "tags": {
+        "barrier": "gate",
+        "description": "opening hours: after sunrise around 7am to 9am one hour after dohar after Isha Prayer around 9:30 - 10:00 pm to midnight",
+        "name": "مدخل النساء للروضة الشريفة",
+        "name:en": "Women's Entry into noble Rawda"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5927612359,
+      "lat": 24.4689001,
+      "lon": 39.6127447,
+      "tags": {
+        "barrier": "gate",
+        "description": "opening hours: after sunrise around 7am to 9am one hour after dohar after Isha Prayer around 9:30 - 10:00 pm to midnight",
+        "name": "مدخل النساء للروضة الشريفة",
+        "name:en": "Women's Entry into noble Rawda"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6444086729,
+      "lat": 24.4675688,
+      "lon": 39.6110616,
+      "tags": {
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6446648525,
+      "lat": 24.4674672,
+      "lon": 39.6111322,
+      "tags": {
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6446716108,
+      "lat": 24.4673329,
+      "lon": 39.6111487,
+      "tags": {
+        "access": "no",
+        "entrance": "yes",
+        "name": "Door 42",
+        "name:es": "Puerta 42",
+        "name:fr": "Porte 42",
+        "name:ur": "دروازہ 42",
+        "religion": "muslim"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8346252308,
+      "lat": 24.467166,
+      "lon": 39.6134855,
+      "tags": {
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670567948,
+      "center": {
+        "lat": 24.4662298,
+        "lon": 39.6106296
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "male": "yes",
+        "name": "206",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670572867,
+      "center": {
+        "lat": 24.4662231,
+        "lon": 39.609664
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "male": "yes",
+        "name": "208",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670573919,
+      "center": {
+        "lat": 24.4662256,
+        "lon": 39.6086681
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "fee": "no",
+        "name": "210",
+        "unisex": "yes",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670658803,
+      "center": {
+        "lat": 24.4672069,
+        "lon": 39.607982
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "fee": "no",
+        "male": "yes",
+        "name": "212",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670658804,
+      "center": {
+        "lat": 24.4681073,
+        "lon": 39.6080037
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "male": "yes",
+        "name": "214"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670658805,
+      "center": {
+        "lat": 24.469016,
+        "lon": 39.6080197
+      },
+      "tags": {
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "fee": "no",
+        "male": "yes",
+        "name": "216",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670658806,
+      "center": {
+        "lat": 24.4699148,
+        "lon": 39.6080166
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "female": "yes",
+        "name": "218",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670821333,
+      "center": {
+        "lat": 24.4703328,
+        "lon": 39.6086556
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "name": "221",
+        "unisex": "yes",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670821533,
+      "center": {
+        "lat": 24.4708146,
+        "lon": 39.6107945
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "male": "yes",
+        "name": "226",
+        "wheelchair": "limited"
+      }
+    },
+    {
+      "type": "way",
+      "id": 670821534,
+      "center": {
+        "lat": 24.4708131,
+        "lon": 39.6115665
+      },
+      "tags": {
+        "access": "yes",
+        "amenity": "toilets",
+        "building": "yes",
+        "entrance": "yes",
+        "male": "yes",
+        "name": "228",
+        "wheelchair": "limited"
+      }
+    }
+  ]
+}

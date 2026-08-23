@@ -46,11 +46,11 @@ export const HARAM_GATES: Gate[] = [
   // Umrah Gates (Southern Side)
   {
     id: "umrah-abdul-aziz",
-    name: "Abdul Aziz Gate (Umrah)",
-    nameAr: "باب عبد العزيز",
-    nameBn: "আবদুল আজিজ গেট (ওমরাহ)",
+    name: "King Abdulaziz Gate",
+    nameAr: "باب الملك عبد العزيز",
+    nameBn: "বাদশাহ আবদুল আজিজ গেট",
     location: {
-      coordinates: [39.8245, 21.4198],
+      coordinates: [39.82587957833222, 21.421170476497856],
     },
     type: "umrah",
     facilities: ["escalator", "elevator", "restroom", "wheelchair", "vending"],

@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { useLocationStore } from "@/lib/store";
-import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGates } from "@/lib/gates/active";
 import {
   haversineDistance,
   calculateBearing,
@@ -45,37 +45,38 @@ export function useGateProximity(maxDistance = 2000, count = 5) {
       return [];
     }
 
-    const gatesWithDistance = HARAM_GATES.map((gate) => {
-      const distance = haversineDistance(
-        latitude,
-        longitude,
-        gate.location.coordinates[1],
-        gate.location.coordinates[0]
-      );
+    const gatesWithDistance = getActiveGates()
+      .map((gate) => {
+        const distance = haversineDistance(
+          latitude,
+          longitude,
+          gate.location.coordinates[1],
+          gate.location.coordinates[0]
+        );
 
-      const bearing = calculateBearing(
-        latitude,
-        longitude,
-        gate.location.coordinates[1],
-        gate.location.coordinates[0]
-      );
+        const bearing = calculateBearing(
+          latitude,
+          longitude,
+          gate.location.coordinates[1],
+          gate.location.coordinates[0]
+        );
 
-      return {
-        gate: {
-          id: gate.id,
-          name: gate.name,
-          nameAr: gate.nameAr,
-          type: gate.type,
-        },
-        distance,
-        distanceFormatted: formatDistance(distance),
-        bearing,
-        bearingFormatted: `${Math.round(bearing)}°`,
-        walkingTime: estimateWalkingTime(distance),
-        walkingTimeFormatted: formatWalkingTime(estimateWalkingTime(distance)),
-        direction: getDirectionFromBearing(bearing),
-      };
-    })
+        return {
+          gate: {
+            id: gate.id,
+            name: gate.name,
+            nameAr: gate.nameAr,
+            type: gate.type ?? "umrah",
+          },
+          distance,
+          distanceFormatted: formatDistance(distance),
+          bearing,
+          bearingFormatted: `${Math.round(bearing)}°`,
+          walkingTime: estimateWalkingTime(distance),
+          walkingTimeFormatted: formatWalkingTime(estimateWalkingTime(distance)),
+          direction: getDirectionFromBearing(bearing),
+        };
+      })
       .filter((g) => g.distance <= maxDistance)
       .sort((a, b) => a.distance - b.distance)
       .slice(0, count);

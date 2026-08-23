@@ -1,4 +1,4 @@
-import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGates } from "@/lib/gates/active";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { DEMO_POIS } from "@/lib/data/pois";
@@ -44,7 +44,7 @@ const MAKKAH_TOURIST_PLACES: TouristPlace[] = TOURIST_PLACES.filter(
 function sourcesForCategory(category: NearbyCategory): NearbySource[] {
   switch (category) {
     case "gate":
-      return HARAM_GATES;
+      return getActiveGates();
     case "hotel":
       return NEARBY_HOTELS;
     case "historical":
@@ -63,7 +63,7 @@ function sourcesForCategory(category: NearbyCategory): NearbySource[] {
 // সাবটাইটেল নির্মাণ
 // ---------------------------------------------------------------------------
 
-const GATE_TYPE_LABELS: Record<Gate["type"], string> = {
+const GATE_TYPE_LABELS: Record<NonNullable<Gate["type"]>, string> = {
   king_fahd: "কিং ফাহদ সম্প্রসারণ",
   umrah: "ওমরাহ গেট",
   salah: "নামাজের গেট",
@@ -97,7 +97,7 @@ const CUISINE_LABELS: Record<NonNullable<POI["cuisine"]>[number], string> = {
 export function nearbySubtitle(category: NearbyCategory, source: NearbySource): string {
   switch (category) {
     case "gate":
-      return GATE_TYPE_LABELS[(source as Gate).type];
+      return GATE_TYPE_LABELS[(source as Gate).type ?? "umrah"];
     case "hotel":
       return `${toBengaliNumber((source as Hotel).starRating)} তারা হোটেল`;
     case "historical":

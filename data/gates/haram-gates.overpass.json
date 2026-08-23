@@ -1,0 +1,2029 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-08-20T06:59:51Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+    {
+      "type": "node",
+      "id": 1199442714,
+      "lat": 21.4254428,
+      "lon": 39.8269231,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "name": "باب قريش 28",
+        "name:ar": "باب قريش 28",
+        "name:en": "Quraish Gate",
+        "ref": "28"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3210609688,
+      "lat": 21.4209022,
+      "lon": 39.8252202,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "90",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3210609691,
+      "lat": 21.4210042,
+      "lon": 39.8253842,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "93",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3210609708,
+      "lat": 21.4223466,
+      "lon": 39.824176,
+      "tags": {
+        "bicycle": "no",
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "68",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 3210622327,
+      "lat": 21.421232,
+      "lon": 39.8240461,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "entrance": "main",
+        "foot": "yes",
+        "name": "باب الملك فھد - 79",
+        "name:ar": "باب الملك فھد - 79",
+        "name:en": "King Fahd Gate - 79",
+        "opening_hours": "24/7",
+        "ref": "79",
+        "short_name:ar": "باب الملك فھد",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4318154227,
+      "lat": 21.4240151,
+      "lon": 39.8265147,
+      "tags": {
+        "bicycle": "no",
+        "entrance": "main",
+        "foot": "yes",
+        "motor_vehicle": "no",
+        "name": "باب الفتح",
+        "name:ar": "باب الفتح",
+        "name:en": "Fateh Gate",
+        "name:ml": "ബാബ് അൽ ഫത്തേഹ്",
+        "name:tr": "Fetih Kapısı",
+        "ref": "30",
+        "short_name:ar": "باب الفتح"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4318154228,
+      "lat": 21.4228378,
+      "lon": 39.8245696,
+      "tags": {
+        "bicycle": "no",
+        "entrance": "main",
+        "foot": "yes",
+        "name": "باب العمرة - 40",
+        "name:ar": "باب العمرة - 40",
+        "name:en": "Umra Gate 40",
+        "name:tk": "Umra Gapysy",
+        "name:tr": "Ümre Kapısı",
+        "ref": "40",
+        "short_name:ar": "باب العمرة"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4538684098,
+      "lat": 21.4254685,
+      "lon": 39.8271687,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "26",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4562384977,
+      "lat": 21.4230322,
+      "lon": 39.8275662,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "inscription": "Bab Al Salam",
+        "level": "-1",
+        "name": "باب السلام",
+        "name:ar": "باب السلام",
+        "name:en": "Bab Al Salam",
+        "name:ml": "ബാബ് അൽ സലാം",
+        "name:tk": "Salam Gapysy",
+        "name:tr": "Selam Kapısı",
+        "short_name:ar": "باب السلام"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4562391840,
+      "lat": 21.4253183,
+      "lon": 39.8273872,
+      "tags": {
+        "entrance": "main",
+        "level": "0",
+        "name": "باب المروة - 25",
+        "name:ar": "باب المروة - 25",
+        "name:en": "Bab Al Marwah 25",
+        "ref": "25",
+        "short_name:ar": "باب المروة"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4755914231,
+      "lat": 21.4210447,
+      "lon": 39.8258406,
+      "tags": {
+        "entrance": "main",
+        "image": "File:King_Abdul_Aziz_Gate_-_panoramio.jpg",
+        "inscription": "1",
+        "level": "0",
+        "name": "باب الملك عبد العزیز (1)",
+        "name:ar": "باب الملك عبد العزیز (1)",
+        "name:en": "King Abdul Aziz Gate 1",
+        "opening_hours": "24/7",
+        "ref": "1",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 4900636561,
+      "lat": 21.4225173,
+      "lon": 39.8262411,
+      "tags": {
+        "access": "no",
+        "automatic_door": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "height": "5.4",
+        "min_height": "2.22",
+        "name": "باب الكعبة",
+        "name:en": "Bab al Kaaba",
+        "name:ml": "ബാബ് അൽ കഅബ",
+        "width": "1.9",
+        "wikidata": "Q16122214",
+        "wikipedia": "ar:باب الكعبة"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5077494802,
+      "lat": 21.4188602,
+      "lon": 39.8225795,
+      "tags": {
+        "entrance": "main",
+        "name": "Gate 4 - Jabel Omar Jumeirah East Tower"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5295574673,
+      "lat": 21.4225544,
+      "lon": 39.8243138,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "65"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5295574674,
+      "lat": 21.4225597,
+      "lon": 39.8245256,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "64"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5349266134,
+      "lat": 21.4224512,
+      "lon": 39.8243476,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "67"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5349266135,
+      "lat": 21.4224354,
+      "lon": 39.8241224,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "66"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5349266137,
+      "lat": 21.4222608,
+      "lon": 39.8240354,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "69"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5783364206,
+      "lat": 21.4208086,
+      "lon": 39.8252628,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "ref": "91"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5783364207,
+      "lat": 21.4209277,
+      "lon": 39.8254624,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "ref": "92"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5783364208,
+      "lat": 21.4210994,
+      "lon": 39.8255488,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "94",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5858896077,
+      "lat": 21.4229524,
+      "lon": 39.8275792,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "inscription": "باب علي Bab Ali - 17",
+        "level": "-1",
+        "name": "باب علي",
+        "name:ar": "باب علي",
+        "name:ml": "ബാബ് അലി",
+        "ref": "17"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5858896695,
+      "lat": 21.4223494,
+      "lon": 39.8276612,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0.5",
+        "ref": "15"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5858929758,
+      "lat": 21.4233538,
+      "lon": 39.824743,
+      "tags": {
+        "entrance": "yes",
+        "name": "باب الحديبية",
+        "name:ar": "باب الحديبية",
+        "name:en": "Bab al-Hudaybiyah",
+        "name:ml": "ബാബ് അൽ ഹുദൈബിയ",
+        "ref": "39"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5858933516,
+      "lat": 21.4210652,
+      "lon": 39.8264059,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "layer": "1",
+        "level": "1",
+        "name": "باب 3 أجياد",
+        "name:ar": "باب 3 أجياد",
+        "name:en": "Bab Ajyad - Gate 3",
+        "ref": "3",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868264686,
+      "lat": 21.4241024,
+      "lon": 39.825277,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "141"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868264695,
+      "lat": 21.4238083,
+      "lon": 39.8248492,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "137"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868454887,
+      "lat": 21.4241467,
+      "lon": 39.8253797,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "143"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868612740,
+      "lat": 21.4242912,
+      "lon": 39.8258979,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "149"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868612741,
+      "lat": 21.4238785,
+      "lon": 39.8249317,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "139"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868612742,
+      "lat": 21.4234545,
+      "lon": 39.8245488,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "132"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5868926115,
+      "lat": 21.4240786,
+      "lon": 39.8259286,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "31"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5869403636,
+      "lat": 21.420775,
+      "lon": 39.8248784,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "88"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5869403642,
+      "lat": 21.4220685,
+      "lon": 39.823929,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "71"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5869413798,
+      "lat": 21.4244162,
+      "lon": 39.8269623,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5873570238,
+      "lat": 21.4230626,
+      "lon": 39.824229,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "127"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5873570239,
+      "lat": 21.4244369,
+      "lon": 39.8264074,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "154"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013038,
+      "lat": 21.4240235,
+      "lon": 39.8256464,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "33"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013040,
+      "lat": 21.4241869,
+      "lon": 39.8255874,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "145"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013041,
+      "lat": 21.4235726,
+      "lon": 39.8249119,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "37"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013043,
+      "lat": 21.423685,
+      "lon": 39.8247715,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "136"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013045,
+      "lat": 21.4240857,
+      "lon": 39.8262311,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874013046,
+      "lat": 21.4242698,
+      "lon": 39.8262355,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "153"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5874024003,
+      "lat": 21.4231623,
+      "lon": 39.8244426,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "128"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5875587679,
+      "lat": 21.4253914,
+      "lon": 39.824132,
+      "tags": {
+        "entrance": "main",
+        "inscription": "King Abdullah Gate",
+        "name": "باب الملك عبد الله",
+        "name:ar": "باب الملك عبد الله",
+        "name:en": "King Abdullah Gate -100"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5875608247,
+      "lat": 21.4213059,
+      "lon": 39.8268532,
+      "tags": {
+        "entrance": "main",
+        "level": "0",
+        "name": "باب أجياد 5",
+        "name:ar": "باب أجياد 5",
+        "name:en": "Ajyad Gate 5",
+        "name:tk": "Äjýad Gapysy 5",
+        "name:tr": "Ecyad Kapısı 5",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 5959825472,
+      "lat": 21.4251852,
+      "lon": 39.8274041,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "2",
+        "ref": "24"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6274498128,
+      "lat": 21.4257566,
+      "lon": 39.8265113,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "166"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6274506396,
+      "lat": 21.4258671,
+      "lon": 39.8260695,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "170"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6274507981,
+      "lat": 21.4257905,
+      "lon": 39.8254521,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "172"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6274534101,
+      "lat": 21.4233679,
+      "lon": 39.8233973,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "119"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6284017920,
+      "lat": 21.4244632,
+      "lon": 39.827387,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "name": "Bani Shaibah Bridge Gate - 21",
+        "ref": "21"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6284838118,
+      "lat": 21.4246888,
+      "lon": 39.8273569,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "name": "باب بني شيبة 22",
+        "name:ar": "باب بني شيبة 22",
+        "name:en": "22 Bani Shaibah Gate",
+        "ref": "22"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6286957777,
+      "lat": 21.4210223,
+      "lon": 39.8243683,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "81"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6286957780,
+      "lat": 21.421628,
+      "lon": 39.8239482,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "75"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6286957781,
+      "lat": 21.4210652,
+      "lon": 39.8243,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0.5",
+        "ref": "80"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6286957782,
+      "lat": 21.4209167,
+      "lon": 39.8244405,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "84",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6297046470,
+      "lat": 21.4238175,
+      "lon": 39.8252692,
+      "tags": {
+        "bicycle": "no",
+        "entrance": "main",
+        "foot": "yes",
+        "motor_vehicle": "no",
+        "name": "باب القدس 35",
+        "name:ar": "باب القدس 35",
+        "name:en": "Al Quds Gate 35",
+        "ref": "35",
+        "short_name:ar": "باب 35"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6347449492,
+      "lat": 21.4196188,
+      "lon": 39.8232932,
+      "tags": {
+        "addr:city": "Makkah al Mukarramah",
+        "description": "Food Courts in 3rd Floor",
+        "entrance": "yes",
+        "name": "Makkah Tower 6 Entrance"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6347924198,
+      "lat": 21.4201593,
+      "lon": 39.8234368,
+      "tags": {
+        "entrance": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6463226586,
+      "lat": 21.4212227,
+      "lon": 39.8219149,
+      "tags": {
+        "entrance": "yes",
+        "name": "Entrance 2 - Jabal Omar Hilton Suites"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6463226587,
+      "lat": 21.4206603,
+      "lon": 39.8222091,
+      "tags": {
+        "entrance": "yes",
+        "name": "Entrance 2 - Jabel Omar Hyatt Regency"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6484866064,
+      "lat": 21.4195941,
+      "lon": 39.8224396,
+      "tags": {
+        "entrance": "main",
+        "name": "Entrance 3 - Jabel Omar Conrad"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6939548311,
+      "lat": 21.424106,
+      "lon": 39.8230331,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "110"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6939548312,
+      "lat": 21.4244004,
+      "lon": 39.8232249,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "108"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6939875313,
+      "lat": 21.4258286,
+      "lon": 39.8256473,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "171"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952678065,
+      "lat": 21.4230997,
+      "lon": 39.824128,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "126"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952678066,
+      "lat": 21.4232073,
+      "lon": 39.8240511,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "125"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952678068,
+      "lat": 21.4232915,
+      "lon": 39.8236056,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "121"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952730361,
+      "lat": 21.4242646,
+      "lon": 39.8231187,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "109"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952780533,
+      "lat": 21.4250248,
+      "lon": 39.8237933,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "102"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952780534,
+      "lat": 21.4256044,
+      "lon": 39.8247215,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "177"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952781263,
+      "lat": 21.4208019,
+      "lon": 39.8250574,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "89",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952792222,
+      "lat": 21.4221171,
+      "lon": 39.8239401,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "70"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952792223,
+      "lat": 21.421845,
+      "lon": 39.8238782,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "73"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952796607,
+      "lat": 21.4248184,
+      "lon": 39.8274063,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "23"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952796608,
+      "lat": 21.4247579,
+      "lon": 39.8268586,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "41"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952815064,
+      "lat": 21.4234909,
+      "lon": 39.8230643,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "116"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952821421,
+      "lat": 21.4242718,
+      "lon": 39.8257612,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "147"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952823256,
+      "lat": 21.4243127,
+      "lon": 39.8260892,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "152"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952825911,
+      "lat": 21.423388,
+      "lon": 39.8245016,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "131"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952825986,
+      "lat": 21.421688,
+      "lon": 39.8239039,
+      "tags": {
+        "description": "دخول ذوي الاحتياجات الخاصة",
+        "description:en": "Accessible entrance",
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "ref": "74",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6952830685,
+      "lat": 21.4235608,
+      "lon": 39.8246182,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "134"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6955924610,
+      "lat": 21.4210413,
+      "lon": 39.8262726,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "ref": "2"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6955924615,
+      "lat": 21.4211869,
+      "lon": 39.8266054,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "ref": "4"
+      }
+    },
+    {
+      "type": "node",
+      "id": 6955934980,
+      "lat": 21.4219351,
+      "lon": 39.8276581,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "13"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7087051618,
+      "lat": 21.4210054,
+      "lon": 39.8243794,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "82"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7087051619,
+      "lat": 21.4209865,
+      "lon": 39.8243931,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "83"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7530037908,
+      "lat": 21.4197701,
+      "lon": 39.8243967,
+      "tags": {
+        "entrance": "yes",
+        "name": "Food Courts 3rd Floor"
+      }
+    },
+    {
+      "type": "node",
+      "id": 7728594724,
+      "lat": 21.4224983,
+      "lon": 39.8277405,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0",
+        "name": "باب سلم الأرقم الكهربائي",
+        "name:ar": "باب سلم الأرقم الكهربائي",
+        "ref": "16",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8419284372,
+      "lat": 21.4260586,
+      "lon": 39.8262801,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "1",
+        "ref": "167"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8430227444,
+      "lat": 21.4260579,
+      "lon": 39.8263161,
+      "tags": {
+        "entrance": "yes",
+        "level": "1",
+        "ref": "167"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8455552507,
+      "lat": 21.4238034,
+      "lon": 39.8226486,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "1",
+        "ref": "113"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8455552511,
+      "lat": 21.4248566,
+      "lon": 39.8233401,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "1",
+        "ref": "105"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8455577720,
+      "lat": 21.4258731,
+      "lon": 39.8249786,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "1",
+        "ref": "175"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8715775972,
+      "lat": 21.4253089,
+      "lon": 39.8273881,
+      "tags": {
+        "entrance": "main",
+        "level": "1",
+        "name": "باب المروة - 25",
+        "name:ar": "باب المروة - 25",
+        "name:en": "Bab Al Marwah 25",
+        "name:tk": "Merwe Gapysy - 25",
+        "name:tr": "Merve Kapısı - 25",
+        "ref": "25",
+        "short_name:ar": "باب المروة",
+        "short_name:tk": "Merwe Gapysy",
+        "short_name:tr": "Merve Kapısı",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8747505998,
+      "lat": 21.4240699,
+      "lon": 39.8274905,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "20"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8756153753,
+      "lat": 21.4222008,
+      "lon": 39.8276781,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "name": "باب النبي",
+        "name:ar": "باب النبي",
+        "name:en": "Al Nabi Gate 14",
+        "ref": "14"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8756604114,
+      "lat": 21.4222985,
+      "lon": 39.8272306,
+      "tags": {
+        "entrance": "yes",
+        "level": "0.5"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559543,
+      "lat": 21.4249135,
+      "lon": 39.8236159,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "104"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559544,
+      "lat": 21.4249683,
+      "lon": 39.8236984,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "103"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559545,
+      "lat": 21.4250759,
+      "lon": 39.8238786,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "101"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559546,
+      "lat": 21.4254926,
+      "lon": 39.8245471,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "179"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559547,
+      "lat": 21.4255473,
+      "lon": 39.8246296,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "178"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559548,
+      "lat": 21.4256577,
+      "lon": 39.8248174,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "176"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559593,
+      "lat": 21.4215934,
+      "lon": 39.8239744,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "77"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783559594,
+      "lat": 21.4216101,
+      "lon": 39.8239611,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "-1",
+        "ref": "76"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651499,
+      "lat": 21.4212315,
+      "lon": 39.8241489,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "female": "yes",
+        "indoor": "door"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651500,
+      "lat": 21.421272,
+      "lon": 39.8241205,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "indoor": "door"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651501,
+      "lat": 21.4213125,
+      "lon": 39.8240921,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "indoor": "door"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651608,
+      "lat": 21.4251877,
+      "lon": 39.8267429,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "36"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651609,
+      "lat": 21.4252777,
+      "lon": 39.8267317,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "35"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651613,
+      "lat": 21.4233003,
+      "lon": 39.8244521,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "129"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651614,
+      "lat": 21.4233412,
+      "lon": 39.8244745,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "130"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651615,
+      "lat": 21.4235238,
+      "lon": 39.8245865,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "133"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651616,
+      "lat": 21.4236006,
+      "lon": 39.8246489,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "135"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651619,
+      "lat": 21.4238427,
+      "lon": 39.8248831,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "138"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651620,
+      "lat": 21.4239124,
+      "lon": 39.8249715,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "140"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651622,
+      "lat": 21.4241268,
+      "lon": 39.8253281,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "142"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651623,
+      "lat": 21.4241705,
+      "lon": 39.8254334,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "144"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651626,
+      "lat": 21.4242621,
+      "lon": 39.8257091,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "146"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651627,
+      "lat": 21.4243081,
+      "lon": 39.8260395,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "151"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651628,
+      "lat": 21.4243031,
+      "lon": 39.8259857,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "150"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651629,
+      "lat": 21.4242793,
+      "lon": 39.8258135,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "148"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651630,
+      "lat": 21.4245269,
+      "lon": 39.8264091,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "155"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651631,
+      "lat": 21.4246937,
+      "lon": 39.8264404,
+      "tags": {
+        "entrance": "main"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651636,
+      "lat": 21.4255618,
+      "lon": 39.8264392,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "165"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651637,
+      "lat": 21.4254599,
+      "lon": 39.8264365,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "164"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651638,
+      "lat": 21.42517,
+      "lon": 39.8264289,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "161"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651639,
+      "lat": 21.4252683,
+      "lon": 39.8264315,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "162"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651640,
+      "lat": 21.425361,
+      "lon": 39.8264339,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "163"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651641,
+      "lat": 21.4249716,
+      "lon": 39.8264237,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "159"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651642,
+      "lat": 21.4248736,
+      "lon": 39.8264211,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "158"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651644,
+      "lat": 21.4250628,
+      "lon": 39.8264261,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "160"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651648,
+      "lat": 21.4258574,
+      "lon": 39.8259605,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "169"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651649,
+      "lat": 21.4258456,
+      "lon": 39.8258431,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "170"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651654,
+      "lat": 21.4257583,
+      "lon": 39.8252366,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "174"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651655,
+      "lat": 21.4257733,
+      "lon": 39.8253432,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "173"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651661,
+      "lat": 21.4246037,
+      "lon": 39.8233597,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "106"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651662,
+      "lat": 21.4245001,
+      "lon": 39.8232927,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "107"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651666,
+      "lat": 21.4239143,
+      "lon": 39.8229068,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "112"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651667,
+      "lat": 21.4240104,
+      "lon": 39.8229678,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "112"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651675,
+      "lat": 21.4235697,
+      "lon": 39.8228559,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "114"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651676,
+      "lat": 21.4235289,
+      "lon": 39.8229638,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "115"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651677,
+      "lat": 21.4232223,
+      "lon": 39.823794,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "123",
+        "wheelchair": "yes"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651678,
+      "lat": 21.4232587,
+      "lon": 39.823695,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "122"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651679,
+      "lat": 21.4233264,
+      "lon": 39.8235106,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "120"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651750,
+      "lat": 21.4254558,
+      "lon": 39.8270416,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "27"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651752,
+      "lat": 21.4251155,
+      "lon": 39.8267519,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "38"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651772,
+      "lat": 21.4236708,
+      "lon": 39.8250287,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "36"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651773,
+      "lat": 21.422429,
+      "lon": 39.8241269,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "66"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651774,
+      "lat": 21.4225452,
+      "lon": 39.8243216,
+      "tags": {
+        "bicycle": "no",
+        "door": "hinged",
+        "entrance": "yes",
+        "foot": "yes",
+        "horse": "no",
+        "motor_vehicle": "no",
+        "ref": "65"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651775,
+      "lat": 21.4209576,
+      "lon": 39.8253101,
+      "tags": {
+        "door": "no",
+        "entrance": "yes",
+        "level": "1"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651801,
+      "lat": 21.421901,
+      "lon": 39.8238909,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "72"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651802,
+      "lat": 21.4215062,
+      "lon": 39.8239877,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "level": "0.5",
+        "ref": "78"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651840,
+      "lat": 21.4208312,
+      "lon": 39.8245926,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "85"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651841,
+      "lat": 21.4208221,
+      "lon": 39.8246388,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "86"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8783651842,
+      "lat": 21.4207846,
+      "lon": 39.8248296,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "87"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532075,
+      "lat": 21.4246346,
+      "lon": 39.826334,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "156"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532078,
+      "lat": 21.4247557,
+      "lon": 39.8263306,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "157"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532080,
+      "lat": 21.4234074,
+      "lon": 39.8232186,
+      "tags": {
+        "entrance": "main"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532081,
+      "lat": 21.4235173,
+      "lon": 39.8231904,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "117"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532084,
+      "lat": 21.4234692,
+      "lon": 39.8233252,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "118"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532085,
+      "lat": 21.4232601,
+      "lon": 39.8239086,
+      "tags": {
+        "door": "hinged",
+        "entrance": "yes",
+        "ref": "124"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8785532088,
+      "lat": 21.4231418,
+      "lon": 39.8239383,
+      "tags": {
+        "entrance": "main"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8796052404,
+      "lat": 21.4209562,
+      "lon": 39.8253077,
+      "tags": {
+        "door": "no",
+        "entrance": "yes",
+        "level": "2"
+      }
+    },
+    {
+      "type": "node",
+      "id": 8873173646,
+      "lat": 21.4196634,
+      "lon": 39.8255669,
+      "tags": {
+        "entrance": "main"
+      }
+    },
+    {
+      "type": "node",
+      "id": 10838162448,
+      "lat": 21.4180447,
+      "lon": 39.8226701,
+      "tags": {
+        "entrance": "main",
+        "name": "Gate 6 - Jabel Omar Jumeirah - West Tower"
+      }
+    },
+    {
+      "type": "node",
+      "id": 10838162449,
+      "lat": 21.4183813,
+      "lon": 39.8226351,
+      "tags": {
+        "entrance": "main",
+        "name": "Gate 5 - Jabel Omar Jumeirah"
+      }
+    }
+  ]
+}

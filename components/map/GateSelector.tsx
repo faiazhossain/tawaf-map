@@ -4,7 +4,8 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMapStore, useGateStore } from "@/lib/store";
-import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGates } from "@/lib/gates/active";
+import { filterGatesByQuery } from "@/lib/gates/search";
 import { Search, MapPin, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -21,14 +22,10 @@ export function GateSelector({ showLabel = false }: GateSelectorProps) {
   const flyTo = useMapStore((state) => state.flyTo);
   const { setGate, selectedGate } = useGateStore();
 
-  const filteredGates = HARAM_GATES.filter(
-    (gate) =>
-      gate.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      gate.nameAr.includes(searchQuery)
-  );
+  const filteredGates = filterGatesByQuery(getActiveGates(), searchQuery);
 
   const handleSelectGate = (gateId: string) => {
-    const gate = HARAM_GATES.find((g) => g.id === gateId);
+    const gate = getActiveGates().find((g) => g.id === gateId);
     if (gate) {
       setGate(gate);
       flyTo(gate.location.coordinates);
@@ -106,7 +103,7 @@ export function GateSelector({ showLabel = false }: GateSelectorProps) {
               ) : (
                 <div className="p-2 space-y-1">
                   {filteredGates.map((gate) => {
-                    const config = typeConfig[gate.type];
+                    const config = typeConfig[gate.type ?? "umrah"];
                     return (
                       <button
                         key={gate.id}

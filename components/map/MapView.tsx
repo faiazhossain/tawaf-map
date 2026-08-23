@@ -53,9 +53,29 @@ import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
 import type { LandmarkHintData } from "@/lib/map/landmark-utils";
 import { getContextualLandmarkHint, getClosestAnchorId } from "@/lib/map/landmark-utils";
 import { nearbyRadiusBounds } from "@/lib/nearby/query";
+import {
+  selectNearbyMapMarkers,
+  nearbySelectionSignature,
+  EMPTY_NEARBY_MARKER_SELECTION,
+  type NearbyMarkerSelection,
+} from "@/lib/nearby/map-markers-selection";
 import { nearbyCameraPadding } from "@/lib/utils/nearby-sheet";
+import { haversineDistance } from "@/lib/utils/distance";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGates } from "@/lib/gates/active";
+import { isDemoWorldActive } from "@/lib/dev/demo-world";
+import { registerGatesPmtilesProtocol, gatesPmtilesUrl } from "@/components/map/gates/pmtiles";
+import {
+  GATES_PMTILES_SOURCE_ID,
+  GATES_PMTILES_LAYER_ID,
+  GATES_PMTILES_LABEL_ID,
+  GATES_PMTILES_SELECTED_ID,
+  gatesPmtilesSource,
+  gatesCircleLayer,
+  gatesLabelLayer,
+  gatesSelectedLayer,
+} from "@/components/map/gates/gates-layers";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
 import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { getStepById } from "@/lib/data/umrah/steps";
@@ -89,7 +109,6 @@ import {
 import {
   createUserAccuracySource,
   createRouteSource,
-  getGatesBounds,
   createNearbyRadiusSource,
 } from "@/lib/map/sources";
 import {
@@ -111,6 +130,7 @@ import {
   createUmrahStepMarkerElement,
   createMiqatMarkerElement,
   createNearbyItemMarkerElement,
+  createNearbyItemDotMarkerElement,
   pilgrimIconForGender,
   type UmrahStepStatus,
 } from "@/lib/map/markers";
@@ -291,6 +311,17 @@ export function MapView({
   const nearbyMembershipKey = useMemo(
     () => nearbyItems.map((item) => item.id).join("|"),
     [nearbyItems]
+  );
+
+  // "আমার কাছে" মানচিত্র-নির্বাচন — Airbnb-ধাঁচে ক্যাপ + নিকটতম-অগ্রাধিকার +
+  // ওভারল্যাপ স্কিপ (বিশুদ্ধ ফাংশন, lib/nearby/map-markers-selection)। সিগনেচার
+  // বদলালেই মার্কার-ইফেক্ট পুনর্নির্মাণ করে।
+  const [nearbySelection, setNearbySelection] = useState<NearbyMarkerSelection>(
+    EMPTY_NEARBY_MARKER_SELECTION
+  );
+  const nearbySelectionKey = useMemo(
+    () => nearbySelectionSignature(nearbySelection),
+    [nearbySelection]
   );
 
   // Store state - individual selectors only. Camera state (center/zoom/
@@ -855,12 +886,13 @@ export function MapView({
     markersMap.forEach((marker) => marker.remove());
     markersMap.clear();
 
-    if (showGates) {
-      // Add gate markers
+    if (showGates && isDemoWorldActive()) {
+      // Add gate markers — শুধু ডেমো-ওয়ার্ল্ড মোডে। বাস্তব মোডে গেটগুলো
+      // ভেক্টর-টাইল লেয়ার হিসেবে দেখানো হয় (নীচের OSM গেট ইফেক্ট)।
       HARAM_GATES.forEach((gate) => {
         const isSelected = selectedGate?.id === gate.id;
         const el = createGateMarkerElement(
-          gate.type,
+          gate.type ?? "umrah",
           isSelected,
           () => onGateClick?.(gate.id),
           (gate.name as string) ?? "গেট"
@@ -878,16 +910,111 @@ export function MapView({
     }
   }, [mapLoaded, showGates, selectedGate?.id, onGateClick]);
 
-  // গেট বাউন্ডসে মানচিত্র সামঞ্জস্য - শুধু গেট টগল/লোডে, অন্য রি-রেন্ডারে নয়।
-  // এটি আলাদা করা হয়েছে যাতে ট্যাব পরিবর্তন বা লোকেশন আপডেটের মতো আকস্মিক রি-রেন্ডারে
-  // গাইডের ক্যামেরা জুম (যেমন তওয়াফে ১৮) গেট বাউন্ডসে (১৪.৮৫) পাল্টে না যায়।
+  // গেট টগল/লোডে মানচিত্রকে সবগুলো গেটের বাউন্ডসে ফিট না করে (যা মানচিত্রকে ছোট করে
+  // ফেলে) নিকটতম গেটে জুম-১৫ দেখাও। এটি আলাদা করা হয়েছে যাতে ট্যাব পরিবর্তন বা
+  // লোকেশন আপডেটের মতো আকস্মিক রি-রেন্ডারে গাইডের ক্যামেরা জুম (যেমন তওয়াফে ১৮)
+  // গেট-দৃশ্যে পাল্টে না যায়।
   useEffect(() => {
     if (!mapRef.current || !mapLoaded || !showGates) return;
-    programmaticFitBounds(getGatesBounds(HARAM_GATES), {
-      padding: { top: 50, bottom: 50, left: 50, right: 50 },
-      duration: 1000,
-    });
-  }, [mapLoaded, showGates, programmaticFitBounds]);
+    const gates = getActiveGates();
+    if (!gates.length) return;
+
+    // ব্যবহারকারীর লোকেশন থাকলে নিকটতম গেট টার্গেট করো, অন্যথায় ডিফল্টে এল-হারামের
+    // কেন্দ্র বিন্দু (প্রথম গেট) টার্গেট করো — সবগুলো গেটের বাউন্ডস ফিট করলে মানচিত্র
+    // ছোট হয়ে যায়।
+    let center = gates[0].location.coordinates;
+    if (latitude !== null && longitude !== null) {
+      let nearest = gates[0];
+      let nearestDist = Infinity;
+      for (const gate of gates) {
+        const [glng, glat] = gate.location.coordinates;
+        const dist = haversineDistance(latitude, longitude, glat, glng);
+        if (dist < nearestDist) {
+          nearestDist = dist;
+          nearest = gate;
+        }
+      }
+      center = nearest.location.coordinates;
+    }
+
+    programmaticFlyTo({ center, zoom: 15, duration: 1000 });
+  }, [mapLoaded, showGates, latitude, longitude, programmaticFlyTo]);
+
+  // OSM গেট ভেক্টর-লেয়ার — শুধু বাস্তব (নন-ডেমো) মোডে।
+  // ডেমো-ওয়ার্ল্ড মোডে গেটগুলো উপরের DOM মার্কার ইফেক্ট থেকে দেখানো হয়।
+  useEffect(() => {
+    if (!mapRef.current || !mapLoaded || !showGates) return;
+    if (isDemoWorldActive()) return;
+
+    const map = mapRef.current;
+
+    const pmtilesUrl = gatesPmtilesUrl();
+
+    // প্রোটোকল আগে রেজিস্টার — `addSource` সাথে-সাথে `pmtiles://` ফেচ করে,
+    // তাই প্রোটোকল অবশ্যই আগে অ্যাঁড হতে হবে।
+    const removeProtocol = registerGatesPmtilesProtocol();
+
+    if (!map.getSource(GATES_PMTILES_SOURCE_ID)) {
+      map.addSource(GATES_PMTILES_SOURCE_ID, gatesPmtilesSource(pmtilesUrl));
+    }
+
+    // বিল্ডিং-গ্রুপের অ্যাঙ্কর (`building-metro`) নিচে ঢোকাও — যাতে পিওআই/লেবেল
+    // উপরে থাকে (addBelowLabels-এর নিয়ম অনুসরণ)।
+    const insertBelowLabels = (layer: Parameters<typeof map.addLayer>[0]) => {
+      if (map.getLayer("building-metro")) {
+        map.addLayer(layer, "building-metro");
+      } else {
+        map.addLayer(layer);
+      }
+    };
+
+    if (!map.getLayer(GATES_PMTILES_LAYER_ID)) {
+      insertBelowLabels(gatesCircleLayer());
+    }
+    if (!map.getLayer(GATES_PMTILES_LABEL_ID)) {
+      map.addLayer(gatesLabelLayer(), GATES_PMTILES_LAYER_ID);
+    }
+    if (!map.getLayer(GATES_PMTILES_SELECTED_ID)) {
+      map.addLayer(gatesSelectedLayer(), GATES_PMTILES_LAYER_ID);
+    }
+
+    // গেট ক্লিক → পপআপ (বাংলা/আরবি/ইংরেজি নাম)। টাইল-প্রোপার্টি Latin-শুধু তাই
+    // `ogc_fid` (OSM id) দিয়ে সক্রিয় ডেটাসেট থেকে বাংলা/আরবি নাম আনা হয়।
+    const onGateClick = (e: maplibregl.MapLayerMouseEvent) => {
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: [GATES_PMTILES_LAYER_ID],
+      });
+      if (!features.length) return;
+      const ogcFid = features[0].properties?.ogc_fid;
+      const gate = getActiveGates().find((g) => g.id === `+osm-${ogcFid}`);
+      const lines = [
+        gate?.nameBn ?? gate?.name ?? "",
+        gate?.nameAr ?? "",
+        typeof features[0].properties?.ref === "string"
+          ? (features[0].properties!.ref as string)
+          : "",
+      ]
+        .filter(Boolean)
+        .map((line) => `<div>${line}</div>`)
+        .join("");
+      new maplibregl.Popup({ closeOnClick: false, offset: 10 })
+        .setLngLat(e.lngLat)
+        .setHTML(`<div class="gate-popup font-medium">${lines || "গেট"}</div>`)
+        .addTo(map);
+    };
+    map.on("click", GATES_PMTILES_LAYER_ID, onGateClick);
+
+    return () => {
+      if (map.getStyle()) {
+        if (map.getLayer(GATES_PMTILES_SELECTED_ID)) map.removeLayer(GATES_PMTILES_SELECTED_ID);
+        if (map.getLayer(GATES_PMTILES_LABEL_ID)) map.removeLayer(GATES_PMTILES_LABEL_ID);
+        if (map.getLayer(GATES_PMTILES_LAYER_ID)) map.removeLayer(GATES_PMTILES_LAYER_ID);
+        if (map.getSource(GATES_PMTILES_SOURCE_ID)) map.removeSource(GATES_PMTILES_SOURCE_ID);
+      }
+      map.off("click", GATES_PMTILES_LAYER_ID, onGateClick);
+      removeProtocol?.();
+    };
+  }, [mapLoaded, showGates]);
 
   // Add/update hotel markers
   useEffect(() => {
@@ -989,10 +1116,65 @@ export function MapView({
     programmaticFitBounds,
   ]);
 
+  // ----- "আমার কাছে": মানচিত্র-নির্বাচন (ক্যাপ + ওভারল্যাপ স্কিপ) -----
+  // বিশুদ্ধ নির্বাচন map.project() দিয়ে হিসাব করে state-এ রাখে; মার্কার-ইফেক্ট
+  // শুধু সিগনেচার বদলালে চলে। moveend-এ রিকমপিউট — জেসচার থামলে একবার (প্রতি
+  // ফ্রেমে নয়)। zoomend যথেষ্ট নয়: টেরেইন/3D মোডে pitch 60 হয়, যাতেও স্ক্রিন-
+  // জ্যামিতি বদলায়; zoom/pitch/bearing তিনটিই অপরিবর্তিত হলে (শুধু প্যান)
+  // রিকমপিউট স্কিপ। নির্বাচিত আইটেম বলপ্রয়োগে-অন্তর্ভুক্ত — cap-এর বাইরে
+  // থাকলেও ফ্লাই-টুর পরে মার্কার দেখা যায়।
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !mapLoaded || !nearbyCategory) {
+      setNearbySelection((prev) =>
+        prev === EMPTY_NEARBY_MARKER_SELECTION ? prev : EMPTY_NEARBY_MARKER_SELECTION
+      );
+      return;
+    }
+
+    let lastCamera = { zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+
+    const recompute = () => {
+      const selectedId = nearbySelectedRef.current;
+      const next = selectNearbyMapMarkers(
+        nearbyItemsRef.current,
+        (item) => map.project(item.coordinates),
+        { alwaysIncludeIds: selectedId ? [selectedId] : [] }
+      );
+      lastCamera = { zoom: map.getZoom(), pitch: map.getPitch(), bearing: map.getBearing() };
+      setNearbySelection((prev) =>
+        nearbySelectionSignature(prev) === nearbySelectionSignature(next) ? prev : next
+      );
+    };
+    recompute();
+
+    const onCameraSettled = () => {
+      if (
+        map.getZoom() === lastCamera.zoom &&
+        map.getPitch() === lastCamera.pitch &&
+        map.getBearing() === lastCamera.bearing
+      )
+        return;
+      recompute();
+    };
+    map.on("moveend", onCameraSettled);
+    return () => {
+      map.off("moveend", onCameraSettled);
+    };
+    // nearbySelectedItemId dep: বলপ্রয়োগ-অন্তর্ভুক্তি সেট বদলালে নির্বাচিত
+    // আইটেমের মার্কার মানচিত্রে আসে।
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mapLoaded, nearbyCategory, nearbyMembershipKey, nearbySelectedItemId]);
+
   // ----- "আমার কাছে": সক্রিয় বিভাগের মার্কার-পরিবার -----
-  // deps-এ শুধু মেম্বারশিপ-কী + নির্বাচন — GPS ফিক্সে nearbyItems-এর identity
-  // বদলালেও (একই সদস্য) রিবিল্ড হয় না। গেট/হোটেল/ঐতিহাসিক বিভাগে পেজ
-  // সংশ্লিষ্ট show* প্রপ চেপে দেয়, তাই দ্বৈত-মার্কার হয় না।
+  // kept-তালিকা (<= cap) পূর্ণ আইকন পায় — নিকটতম ৩টি স্পন্দিত (rank টিয়ার),
+  // বাকি compact; বাদ-পড়া আইটেম ছোট বিন্দু (hover-এ মার্কার, ট্যাপে নির্বাচন) —
+  // কেউ মানচিত্রে লুকায় না। deps-এ সিগনেচার-কী + নির্বাচন — GPS ফিক্সে
+  // সদস্যতা/টিয়ার বদলানো পর্যন্ত রিবিল্ড হয় না। গেট/হোটেল/ঐতিহাসিক বিভাগে
+  // পেজ সংশ্লিষ্ট show* প্রপ চেপে দেয়, তাই দ্বৈত-মার্কার হয় না।
+  // নোট: সদস্যতা বদলালে এই ইফেক্ট চলেই না যতক্ষণ নির্বাচন-state না বসে —
+  // map.project ইম্পারেটিভ, তাই এক কমিটের বিলম্ব অনিবার্য; ৮০০ms ফ্লাই-এর
+  // পাশে অনুভবযোগ্য নয়।
   useEffect(() => {
     if (!mapRef.current || !mapLoaded) return;
 
@@ -1003,9 +1185,31 @@ export function MapView({
     markersMap.clear();
 
     if (nearbyCategory) {
-      nearbyItemsRef.current.forEach((item) => {
+      // স্ট্যাকিং ক্রম ইচ্ছাকৃত: প্রথমে বিন্দুগুলো দূরতম-থেকে-নিকটতম ক্রমে
+      // (নিকটতম বিন্দু DOM-এ পরে = উপরে), সবশেষে kept মার্কার — পূর্ণ
+      // আইকন সব বিন্দুর উপরে। ঘন গেট-গুচ্ছে hover/ট্যাপ তাই দৃশ্যমান
+      // (নিকটতম/পূর্ণ) মার্কারটিই পায়, পেছনের কেউ চুরি করে না।
+      [...nearbySelection.skipped].reverse().forEach((item) => {
+        const el = createNearbyItemDotMarkerElement(item, () => onNearbyItemClick?.(item));
+        // anchor "center": বিন্দু ঠিক কোঅর্ডিনেটে বসে, hover-এ ফোটা মার্কারও
+        // সেই কেন্দ্রেই — কোনো অবস্থান-লাফ নেই।
+        const marker = new Marker({ element: el, anchor: "center" })
+          .setLngLat(item.coordinates)
+          .addTo(map);
+        markersMap.set(item.id, marker);
+      });
+
+      nearbySelection.kept.forEach(({ item, rank, pulsed }) => {
         const isSelected = item.id === nearbySelectedItemId;
-        const el = createNearbyItemMarkerElement(item, isSelected, () => onNearbyItemClick?.(item));
+        const el = createNearbyItemMarkerElement(
+          item,
+          isSelected,
+          () => onNearbyItemClick?.(item),
+          {
+            rank,
+            pulsed,
+          }
+        );
         const marker = new Marker({ element: el, anchor: "bottom" })
           .setLngLat(item.coordinates)
           .addTo(map);
@@ -1015,7 +1219,7 @@ export function MapView({
     // onNearbyItemClick stabilize করা (useCallback, getState) — নাহলে এখানে যোগ করলে
     // প্রতি রেন্ডারে রিবিল্ড হতো।
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [mapLoaded, nearbyCategory, nearbyMembershipKey, nearbySelectedItemId]);
+  }, [mapLoaded, nearbyCategory, nearbySelectedItemId, nearbySelectionKey]);
 
   // ----- "আমার কাছে": ব্যাসার্ধ বৃত্ত (স্ট্রাকচার) -----
   // চালু হলে সোর্স+দুই লেয়ার যোগ, বন্ধ হলে পরিষ্কার। ডেটা আলাদা ইফেক্টে setData।

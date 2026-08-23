@@ -20,6 +20,11 @@ if (typeof window !== "undefined") {
         dispatchEvent: () => false,
       }) as unknown as MediaQueryList;
   }
+  // maplibre-gl-এর কর্মী (worker) URL jsdom-এ Blob->objectURL মক প্রয়োজন
+  if (!window.URL.createObjectURL) {
+    window.URL.createObjectURL = (() =>
+      "blob:mock-worker") as unknown as typeof URL.createObjectURL;
+  }
   if (!window.IntersectionObserver) {
     class FakeIO {
       observe() {}

@@ -66,7 +66,7 @@ function GateInfoContent({
   gate: {
     name: string;
     nameAr: string;
-    type: "king_fahd" | "umrah" | "salah";
+    type?: "king_fahd" | "umrah" | "salah";
     facilities: string[];
     nearestLandmarks: string[];
     location: { coordinates: [number, number] };
@@ -228,7 +228,7 @@ export function GateInfoPanel({ onClose }: GateInfoPanelProps) {
   if (!gate) return null;
 
   const hasLocation = latitude !== null && longitude !== null;
-  const config = typeConfigs[gate.type];
+  const config = typeConfigs[gate.type ?? "umrah"];
 
   // Mobile bottom sheet
   const mobileContent = (

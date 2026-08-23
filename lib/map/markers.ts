@@ -62,12 +62,14 @@ export function getHotelPriceColor(_level: PriceLevel): string {
 
 /**
  * Make an HTML element keyboard-activatable and screen-reader-named.
- * The same click handler fires on Enter/Space. Call after the element exists.
+ * The same click handler fires on click and Enter/Space. Call after the
+ * element exists.
  */
 function makeAccessible(el: HTMLElement, label: string, onClick?: () => void) {
   if (onClick) {
     el.setAttribute("role", "button");
     el.tabIndex = 0;
+    el.addEventListener("click", () => onClick());
     el.addEventListener("keydown", (e) => {
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
@@ -122,6 +124,75 @@ export const NEARBY_POI_ICONS: Record<NearbyPoiCategory, string> = {
 // Marker factories — every clickable marker is keyboard-accessible
 // ---------------------------------------------------------------------------
 
+/** "আমার কাছে" মানচিত্র-মার্কারের ভিজ্যুয়াল টিয়ার (44px হিট-এরিয়া অপরিবর্তিত) */
+export type NearbyMarkerVariant = "compact" | "pulse-strong" | "pulse-soft";
+
+/** নির্বাচন-প্লেসমেন্ট — selectNearbyMapMarkers-এর rank/pulsed */
+export interface NearbyMarkerPlacementSpec {
+  rank: number;
+  pulsed: boolean;
+}
+
+/** placement থেকে ভিজ্যুয়াল টিয়ার; undefined মানে লেগেসি 44px চেহারা */
+export function nearbyVariantFromPlacement(
+  placement?: NearbyMarkerPlacementSpec
+): NearbyMarkerVariant | undefined {
+  if (!placement) return undefined;
+  if (placement.pulsed) return placement.rank === 1 ? "pulse-strong" : "pulse-soft";
+  return "compact";
+}
+
+/**
+ * টিয়ার-নির্ভর মেট্রিক্স: বাইরের এলিমেন্ট সবসময় 44px (টাচ টার্গেট + anchor
+ * জ্যামিতি), ভিজ্যুয়াল বৃত্ত compact 28px / স্পন্দিত 36px — কেন্দ্রে বসে।
+ * স্পন্দন ক্লাসগুলো globals.css-এর nearby-pulse বহন করে; ভিজ্যুয়াল বৃত্তটি
+ * অবশ্যই বাইরের এলিমেন্টের প্রথম child div থাকতে হবে (CSS `> div` টার্গেট)।
+ */
+function nearbyVariantMetrics(variant?: NearbyMarkerVariant): {
+  className: string;
+  circleSize: number;
+  iconSize: number;
+} {
+  if (variant === "compact") {
+    return {
+      className: "map-marker-nearby map-marker-nearby-compact",
+      circleSize: 28,
+      iconSize: 16,
+    };
+  }
+  if (variant === "pulse-strong") {
+    return {
+      className: "map-marker-nearby map-marker-nearby-pulse-strong",
+      circleSize: 36,
+      iconSize: 20,
+    };
+  }
+  if (variant === "pulse-soft") {
+    return {
+      className: "map-marker-nearby map-marker-nearby-pulse-soft",
+      circleSize: 36,
+      iconSize: 20,
+    };
+  }
+  return { className: "", circleSize: 44, iconSize: 22 };
+}
+
+/**
+ * বাইরের 44px বক্সে ছোট ভিজ্যুয়াল বৃত্ত কেন্দ্রে রাখে এবং বক্সটিকে inert
+ * করে (pointer-events none) — স্বচ্ছ কোণগুলো নিচের বিন্দু-মার্কার থেকে
+ * hover চুরি করে না; ভেতরের বৃত্তই (inline pointer-events: auto) ইন্টারঅ্যাকশন
+ * পায় — যা দেখা যায়, তা-ই ট্যাপযোগ্য।
+ */
+function nearbyVariantShellStyles(variant?: NearbyMarkerVariant): Partial<CSSStyleDeclaration> {
+  if (!variant) return {};
+  return {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  };
+}
+
 /**
  * Create HTML element for a gate marker. Neutral landmark pin with door icon;
  * selected becomes emerald ring. Keyboard-activatable.
@@ -130,22 +201,30 @@ export function createGateMarkerElement(
   type: GateType,
   isSelected = false,
   onClick?: () => void,
-  label = "গেট"
+  label = "গেট",
+  nearbyVariant?: NearbyMarkerVariant
 ): HTMLElement {
   void type;
   const color = MAP_COLORS.landmark;
   const accent = isSelected ? MAP_COLORS.route : color;
   const el = document.createElement("div");
-  el.className = `map-marker map-marker-gate ${isSelected ? "map-marker-selected" : ""}`;
+  const { className: variantClass, circleSize, iconSize } = nearbyVariantMetrics(nearbyVariant);
+  el.className = [
+    "map-marker",
+    "map-marker-gate",
+    variantClass,
+    isSelected ? "map-marker-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const circleSize = 44; // 44px touch target
-  const iconSize = 22;
   const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${circleSize}px`,
-    height: `${circleSize}px`,
+    width: "44px", // হিট-এরিয়া টিয়ার-নিরপেক্ষ
+    height: "44px",
     cursor: "pointer",
+    ...nearbyVariantShellStyles(nearbyVariant),
   });
 
   el.innerHTML = `
@@ -153,6 +232,7 @@ export function createGateMarkerElement(
       width: ${circleSize}px;
       height: ${circleSize}px;
       border-radius: 50%;
+      pointer-events: auto;
       background: white;
       border: ${strokeWidth}px solid ${accent};
       display: flex;
@@ -174,22 +254,30 @@ export function createHotelMarkerElement(
   priceLevel: PriceLevel,
   isSelected = false,
   onClick?: () => void,
-  label = "হোটেল"
+  label = "হোটেল",
+  nearbyVariant?: NearbyMarkerVariant
 ): HTMLElement {
   void priceLevel;
   const color = MAP_COLORS.landmark;
   const accent = isSelected ? MAP_COLORS.route : color;
   const el = document.createElement("div");
-  el.className = `map-marker map-marker-hotel ${isSelected ? "map-marker-selected" : ""}`;
+  const { className: variantClass, circleSize, iconSize } = nearbyVariantMetrics(nearbyVariant);
+  el.className = [
+    "map-marker",
+    "map-marker-hotel",
+    variantClass,
+    isSelected ? "map-marker-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const circleSize = 44;
-  const iconSize = 22;
   const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${circleSize}px`,
-    height: `${circleSize}px`,
+    width: "44px", // হিট-এরিয়া টিয়ার-নিরপেক্ষ
+    height: "44px",
     cursor: "pointer",
+    ...nearbyVariantShellStyles(nearbyVariant),
   });
 
   el.innerHTML = `
@@ -197,6 +285,7 @@ export function createHotelMarkerElement(
       width: ${circleSize}px;
       height: ${circleSize}px;
       border-radius: 50%;
+      pointer-events: auto;
       background: white;
       border: ${strokeWidth}px solid ${accent};
       display: flex;
@@ -456,21 +545,29 @@ export function createTouristPlaceMarkerElement(
   isSelected = false,
   isPopular = false,
   onClick?: () => void,
-  label = "চিহ্নিত স্থান"
+  label = "চিহ্নিত স্থান",
+  nearbyVariant?: NearbyMarkerVariant
 ): HTMLElement {
   const color = MAP_COLORS.landmark;
   const accent = isSelected ? MAP_COLORS.route : color;
   const el = document.createElement("div");
-  el.className = `map-marker map-marker-tourist-place ${isSelected ? "map-marker-selected" : ""}`;
+  const { className: variantClass, circleSize, iconSize } = nearbyVariantMetrics(nearbyVariant);
+  el.className = [
+    "map-marker",
+    "map-marker-tourist-place",
+    variantClass,
+    isSelected ? "map-marker-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const circleSize = 44; // 44px touch target (was 40)
-  const iconSize = 22;
   const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${circleSize}px`,
-    height: `${circleSize}px`,
+    width: "44px", // হিট-এরিয়া টিয়ার-নিরপেক্ষ
+    height: "44px",
     cursor: "pointer",
+    ...nearbyVariantShellStyles(nearbyVariant),
   });
 
   el.innerHTML = `
@@ -478,6 +575,7 @@ export function createTouristPlaceMarkerElement(
       width: ${circleSize}px;
       height: ${circleSize}px;
       border-radius: 50%;
+      pointer-events: auto;
       background: ${accent};
       border: ${strokeWidth}px solid white;
       display: flex;
@@ -525,21 +623,29 @@ export function createNearbyPOIMarkerElement(
   category: NearbyPoiCategory,
   isSelected = false,
   onClick?: () => void,
-  label = "নিকটবর্তী স্থান"
+  label = "নিকটবর্তী স্থান",
+  nearbyVariant?: NearbyMarkerVariant
 ): HTMLElement {
   const color = MAP_COLORS.landmark;
   const accent = isSelected ? MAP_COLORS.route : color;
   const el = document.createElement("div");
-  el.className = `map-marker map-marker-nearby-poi ${isSelected ? "map-marker-selected" : ""}`;
+  const { className: variantClass, circleSize, iconSize } = nearbyVariantMetrics(nearbyVariant);
+  el.className = [
+    "map-marker",
+    "map-marker-nearby-poi",
+    variantClass,
+    isSelected ? "map-marker-selected" : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  const circleSize = 44; // 44px touch target
-  const iconSize = 22;
   const strokeWidth = isSelected ? 3 : 2;
 
   Object.assign(el.style, {
-    width: `${circleSize}px`,
-    height: `${circleSize}px`,
+    width: "44px", // হিট-এরিয়া টিয়ার-নিরপেক্ষ
+    height: "44px",
     cursor: "pointer",
+    ...nearbyVariantShellStyles(nearbyVariant),
   });
 
   el.innerHTML = `
@@ -547,6 +653,7 @@ export function createNearbyPOIMarkerElement(
       width: ${circleSize}px;
       height: ${circleSize}px;
       border-radius: 50%;
+      pointer-events: auto;
       background: ${accent};
       border: ${strokeWidth}px solid white;
       display: flex;
@@ -565,27 +672,32 @@ export function createNearbyPOIMarkerElement(
 
 /**
  * NearbyItem-কে উপযুক্ত মার্কারে বাঁটে — গেট/হোটেল/ঐতিহাসিক নিজেদের
- * ফ্যাক্টরি পুনর্ব্যবহার করে (চেহারা অপরিবর্তিত), বাকি ছয়টি POI ফ্যাক্টরি।
+ * ফ্যাক্টরি পুনর্ব্যবহার করে, বাকি ছয়টি POI ফ্যাক্টরি। placement দিলে
+ * টিয়ার-ভিত্তিক ভিজ্যুয়াল (compact/স্পন্দিত); না দিলে লেগেসি চেহারা।
  */
 export function createNearbyItemMarkerElement(
   item: import("@/types/nearby").NearbyItem,
   isSelected = false,
-  onClick?: () => void
+  onClick?: () => void,
+  placement?: NearbyMarkerPlacementSpec
 ): HTMLElement {
+  const nearbyVariant = nearbyVariantFromPlacement(placement);
   switch (item.category) {
     case "gate":
       return createGateMarkerElement(
-        (item.source as import("@/types/gate").Gate).type,
+        (item.source as import("@/types/gate").Gate).type ?? "umrah",
         isSelected,
         onClick,
-        item.name
+        item.name,
+        nearbyVariant
       );
     case "hotel":
       return createHotelMarkerElement(
         (item.source as import("@/types/hotel").Hotel).priceLevel,
         isSelected,
         onClick,
-        item.name
+        item.name,
+        nearbyVariant
       );
     case "historical":
       return createTouristPlaceMarkerElement(
@@ -593,7 +705,8 @@ export function createNearbyItemMarkerElement(
         isSelected,
         (item.source as import("@/types/tourist-place").TouristPlace).popular,
         onClick,
-        item.name
+        item.name,
+        nearbyVariant
       );
     case "restaurant":
     case "cafe":
@@ -601,8 +714,118 @@ export function createNearbyItemMarkerElement(
     case "atm":
     case "pharmacy":
     case "mosque":
-      return createNearbyPOIMarkerElement(item.category, isSelected, onClick, item.name);
+      return createNearbyPOIMarkerElement(
+        item.category,
+        isSelected,
+        onClick,
+        item.name,
+        nearbyVariant
+      );
   }
+}
+
+/**
+ * বাদ-পড়া (kept-বহির্ভূত) "আমার কাছে" আইটেমের বিন্দু-মার্কার — পূর্ণ আইকন
+ * না পেয়েও আইটেমটি মানচিত্রে উপস্থিত থাকে, লুকিয়ে যায় না। hover-এ compact
+ * মার্কারে রূপ নেয়, বেরিয়ে গেলে আবার বিন্দু; ক্লিক/ট্যাপ স্বাভাবিক
+ * আইটেম-নির্বাচন (মোবাইলে hover নেই — ট্যাপই পথ)।
+ *
+ * জ্যামিতি: MapView এই মার্কারটি anchor "center"-এ বসায় — বিন্দু ঠিক
+ * কোঅর্ডিনেটের উপরে, আর সম্প্রসারিত মার্কারও সেই কেন্দ্রেই ফোটে (কোনো
+ * লাফ নেই)। বাইরের 44px বক্স pointer-events none — ঘন বিন্দুপুঞ্জে
+ * বড় হিট-বক্স ওভারল্যাপ এড়াতে ভেতরের 16px হিট-বৃত্তই ইন্টারঅ্যাকশন
+ * পায় (হিট-ব্যাসার্ধ 8px — ভুল বিন্দু ফুটার সর্বোচ্চ বিচ্যুতি 8px)।
+ *
+ * দুই স্থায়ী অবস্থা (বিন্দু / সম্প্রসারিত) আগেই তৈরি থাকে — hover-এ
+ * শুধু display বদলায়, নোড অদলাবদল হয় না (নোড সরালে ব্রাউজার
+ * relatedTarget-null mouseout ছোড়ে, যাতে expand/collapse দোদুল্যমান লুপে
+ * পড়ে)।
+ *
+ * a11y: বিন্দু পরিপূরক ইঙ্গিত মাত্র — role="img" + নাম, tab-টার্গেট নয়
+ * (কয়েকশ বিন্দুতে tab-stop কীবোর্ড নেভিগেশন ভেঙে দিত; পূর্ণ অ্যাক্সেস
+ * তালিকা-শিট ও কার্ড-স্ট্রিপে আছে)।
+ */
+export function createNearbyItemDotMarkerElement(
+  item: import("@/types/nearby").NearbyItem,
+  onClick?: () => void
+): HTMLElement {
+  const el = document.createElement("div");
+  el.className = "map-marker map-marker-nearby-dot";
+
+  Object.assign(el.style, {
+    width: "44px",
+    height: "44px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "none",
+  });
+
+  // অবস্থা ১: 16px হিট-বৃত্তে 10px বিন্দু। pointer-events উত্তরাধিকার সূত্রে
+  // none আসে, তাই সন্তানে স্পষ্ট auto।
+  const hitState = document.createElement("div");
+  Object.assign(hitState.style, {
+    width: "16px",
+    height: "16px",
+    borderRadius: "50%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    pointerEvents: "auto",
+  });
+  const dotVisual = document.createElement("div");
+  Object.assign(dotVisual.style, {
+    width: "10px",
+    height: "10px",
+    borderRadius: "50%",
+    background: MAP_COLORS.landmark,
+    border: "2px solid white",
+    boxShadow: "0 1px 3px rgba(0, 0, 0, 0.3)",
+  });
+  hitState.appendChild(dotVisual);
+
+  // অবস্থা ২: পরিবার-ফ্যাক্টরির compact ভিজ্যুয়াল একবারই বানানো — শুধু
+  // innerHTML নেওয়া হয়, ফ্যাক্টরির a11y-শ্রোতা বাদ পড়ে।
+  const expandedState = document.createElement("div");
+  Object.assign(expandedState.style, {
+    display: "none",
+    pointerEvents: "auto",
+  });
+  expandedState.innerHTML = createNearbyItemMarkerElement(item, false, undefined, {
+    rank: 0,
+    pulsed: false,
+  }).innerHTML;
+
+  el.append(hitState, expandedState);
+  el.setAttribute("role", "img");
+  el.setAttribute("aria-label", item.name);
+
+  let expanded = false;
+  const setExpanded = (next: boolean) => {
+    if (expanded === next) return;
+    expanded = next;
+    hitState.style.display = next ? "none" : "flex";
+    expandedState.style.display = next ? "flex" : "none";
+    // সম্প্রসারিত বিন্দু প্রতিবেশীদের উপরে — খোলা অবস্থায় হিট-চুরি রোধ
+    el.style.zIndex = next ? "1" : "";
+    el.classList.toggle("map-marker-nearby-dot-expanded", next);
+  };
+
+  // Delegation: সন্তান যা-ই হোক, relatedTarget el-এর বাইরে গেলেই collapse।
+  el.addEventListener("mouseover", (e) => {
+    if (expanded || !el.contains(e.target as Node)) return;
+    setExpanded(true);
+  });
+  el.addEventListener("mouseout", (e) => {
+    const related = e.relatedTarget as Node | null;
+    if (!expanded || (related && el.contains(related))) return;
+    setExpanded(false);
+  });
+  if (onClick) {
+    el.addEventListener("click", () => onClick());
+  }
+  return el;
 }
 
 // ---------------------------------------------------------------------------

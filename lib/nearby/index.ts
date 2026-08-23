@@ -20,3 +20,17 @@ export {
   NEARBY_NEAR_THRESHOLD_M,
   type NearbyQueryOptions,
 } from "./query";
+export {
+  selectNearbyMapMarkers,
+  nearbySelectionSignature,
+  EMPTY_NEARBY_MARKER_SELECTION,
+  NEARBY_MAP_MARKER_CAP,
+  NEARBY_MAP_PULSE_COUNT,
+  NEARBY_MAP_PULSED_VISUAL_RADIUS_PX,
+  NEARBY_MAP_COMPACT_VISUAL_RADIUS_PX,
+  NEARBY_MAP_MARKER_SPACING_PX,
+  type ScreenPoint,
+  type NearbyMarkerPlacement,
+  type NearbyMarkerSelection,
+  type SelectNearbyMapMarkersOptions,
+} from "./map-markers-selection";

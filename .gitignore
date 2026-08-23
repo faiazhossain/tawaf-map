@@ -39,3 +39,7 @@ next-env.d.ts
 .vitest
 
 certificates
+
+# gates tiles pipeline (regenerable build artifacts)
+/data/gates/blended-gates.geojson
+/public/tiles/gates.pmtiles

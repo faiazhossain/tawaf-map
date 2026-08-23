@@ -301,13 +301,13 @@ export const DEMO_POIS: POI[] = [
   },
   {
     id: "poi-toilet-abdul-aziz",
-    name: "আবদুল আজিজ গেট টয়লেট",
-    nameAr: "دورة مياه باب عبد العزيز",
+    name: "বাদশাহ আবদুল আজিজ গেট টয়লেট",
+    nameAr: "دورة مياه باب الملك عبد العزيز",
     category: "toilet",
     prayerFriendly: true,
     location: {
-      coordinates: [39.8245, 21.4198],
-      address: "আবদুল আজিজ গেট, মক্কা",
+      coordinates: [39.82587957833222, 21.421170476497856],
+      address: "বাদশাহ আবদুল আজিজ গেট, মক্কা",
     },
     openingHours: "২৪ ঘণ্টা",
   },

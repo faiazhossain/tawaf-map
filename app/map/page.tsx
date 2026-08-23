@@ -34,7 +34,7 @@ import {
 import { guideOverlayBottomPx, guideSheetRaised } from "@/lib/utils/guide-sheet";
 import { NEARBY_CHIP_BAR_HEIGHT_PX, NEARBY_CARDS_STRIP_GAP_PX } from "@/lib/utils/nearby-sheet";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
-import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGateById } from "@/lib/gates/active";
 import { intentPreloadModelUrls } from "@/lib/map/model-config";
 import { fetchModelBytes } from "@/lib/map/model-manager";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
@@ -320,7 +320,7 @@ export default function MapPage() {
 
   const handleGateClick = useCallback(
     (gateId: string) => {
-      const gate = HARAM_GATES.find((g) => g.id === gateId);
+      const gate = getActiveGateById(gateId);
       const proximity = nearbyGatesRef.current.find((g) => g.gate.id === gateId);
 
       if (gate) {
