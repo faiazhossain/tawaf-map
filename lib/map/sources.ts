@@ -56,6 +56,35 @@ export function createRouteSource(route: Route | null) {
 }
 
 /**
+ * GeoJSON source for the dotted approach line — the curved connector from
+ * the road end to the true destination, or the whole approximate route.
+ * Like "route", the source persists and only its data swaps.
+ */
+export function createApproachSource(geometry: number[][] | null) {
+  if (!geometry || geometry.length < 2) {
+    return {
+      type: "geojson" as const,
+      data: {
+        type: "FeatureCollection" as const,
+        features: [],
+      },
+    };
+  }
+
+  return {
+    type: "geojson" as const,
+    data: {
+      type: "Feature" as const,
+      properties: {},
+      geometry: {
+        type: "LineString" as const,
+        coordinates: geometry,
+      },
+    },
+  };
+}
+
+/**
  * GeoJSON source for user location
  */
 export function createUserLocationSource(lat: number | null, lon: number | null) {

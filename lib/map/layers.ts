@@ -16,6 +16,9 @@ export const POI_LABEL_LAYER_ID = "poi-labels";
 export const ROUTE_LAYER_ID = "active-route";
 export const ROUTE_CASING_LAYER_ID = "active-route-casing";
 
+// Dotted curved approach/approximate layer (route source "route-approach")
+export const ROUTE_APPROACH_LAYER_ID = "active-route-approach";
+
 // User location layer
 export const USER_LOCATION_LAYER_ID = "user-location";
 export const USER_ACCURACY_LAYER_ID = "user-accuracy";
@@ -101,6 +104,20 @@ export const routeCasingPaint: any = {
   "line-color": MAP_COLORS.casing,
   "line-width": 8,
   "line-opacity": 0.9,
+};
+
+/**
+ * Dotted approach paint — Google-style "walk the rest of the way" beads.
+ * Round cap + a near-zero dash turns each dash into a circle: period
+ * (0.05 + 2.2) * 4.5 ~= 10 px center-to-center, dot ~= 4.5 px. No casing —
+ * a white halo's dashes cannot align with the dots, and emerald reads fine
+ * on the light basemap by itself.
+ */
+export const routeApproachPaint: any = {
+  "line-color": MAP_COLORS.route,
+  "line-width": 4.5,
+  "line-opacity": 0.9,
+  "line-dasharray": [0.05, 2.2],
 };
 
 /**
@@ -203,6 +220,15 @@ export function getLayerConfigs() {
       id: ROUTE_CASING_LAYER_ID,
       type: "line",
       paint: routeCasingPaint,
+      layout: {
+        "line-cap": "round",
+        "line-join": "round",
+      },
+    },
+    routeApproach: {
+      id: ROUTE_APPROACH_LAYER_ID,
+      type: "line",
+      paint: routeApproachPaint,
       layout: {
         "line-cap": "round",
         "line-join": "round",

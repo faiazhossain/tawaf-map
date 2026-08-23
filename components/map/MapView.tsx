@@ -113,12 +113,14 @@ import {
 import {
   createUserAccuracySource,
   createRouteSource,
+  createApproachSource,
   createNearbyRadiusSource,
 } from "@/lib/map/sources";
 import {
   getLayerConfigs,
   ROUTE_LAYER_ID,
   ROUTE_CASING_LAYER_ID,
+  ROUTE_APPROACH_LAYER_ID,
   USER_ACCURACY_LAYER_ID,
   NEARBY_RADIUS_SOURCE_ID,
   NEARBY_RADIUS_FILL_LAYER_ID,
@@ -1462,7 +1464,11 @@ export function MapView({
     if (!map.getSource("route")) {
       map.addSource("route", createRouteSource(null));
     }
+    if (!map.getSource("route-approach")) {
+      map.addSource("route-approach", createApproachSource(null));
+    }
 
+    const isApproximate = activeRoute?.approximate === true;
     const navRemaining = isNavigating ? navRemainingGeometry : null;
     // শেষ বিন্দুতে (১টি পয়েন্ট) LineString অবৈধ — খালি আঁকাই সঠিক।
     const lineGeometry =
@@ -1471,15 +1477,25 @@ export function MapView({
         : navRemaining
           ? null
           : (activeRoute?.geometry ?? null);
+    // আনুমানিক রুটে সলিড লাইন নয় — পুরো রুটই ডটেড "route-approach"-এ আঁকা হয়।
     const lineRoute =
-      lineGeometry && lineGeometry.length > 1
+      !isApproximate && lineGeometry && lineGeometry.length > 1
         ? ({ ...activeRoute, geometry: lineGeometry } as Route)
         : null;
     (map.getSource("route") as any)?.setData(createRouteSource(lineRoute).data);
 
+    // ডটেড জ্যামিতি: আনুমানিক রুটে পুরো (নেভিগেশনে বাকি-থাকা) চাপ; সাধারণ
+    // রুটে শুধু সংযোগকারী — সেটি কখনো কাটা হয় না, চূড়ান্ত ধাপজুড়ে দেখা যায়।
+    const approachGeometry = isApproximate
+      ? lineGeometry
+      : (activeRoute?.approach?.geometry ?? null);
+    (map.getSource("route-approach") as any)?.setData(createApproachSource(approachGeometry).data);
+
     const layerConfigs = getLayerConfigs();
 
-    if (activeRoute) {
+    // আনুমানিক রুটে সলিড লেয়ার স্পষ্টভাবে খারিজ — আগের রুটের সলিড রেখা
+    // ডটেড চাপের নিচে অবশিষ্ট থেকে যেত না তাহলে।
+    if (activeRoute && !isApproximate) {
       if (!map.getLayer(ROUTE_CASING_LAYER_ID)) {
         map.addLayer({
           id: ROUTE_CASING_LAYER_ID,
@@ -1499,7 +1515,30 @@ export function MapView({
           layout: layerConfigs.routeLine.layout,
         });
       }
+    } else {
+      if (map.getLayer(ROUTE_LAYER_ID)) {
+        map.removeLayer(ROUTE_LAYER_ID);
+      }
+      if (map.getLayer(ROUTE_CASING_LAYER_ID)) {
+        map.removeLayer(ROUTE_CASING_LAYER_ID);
+      }
+    }
 
+    if (approachGeometry && approachGeometry.length > 1) {
+      if (!map.getLayer(ROUTE_APPROACH_LAYER_ID)) {
+        map.addLayer({
+          id: ROUTE_APPROACH_LAYER_ID,
+          type: "line",
+          source: "route-approach",
+          paint: layerConfigs.routeApproach.paint,
+          layout: layerConfigs.routeApproach.layout,
+        });
+      }
+    } else if (map.getLayer(ROUTE_APPROACH_LAYER_ID)) {
+      map.removeLayer(ROUTE_APPROACH_LAYER_ID);
+    }
+
+    if (activeRoute) {
       // Fit bounds to show route (শুধু নতুন রুট id-তে, নেভিগেশনে নয়)
       if (
         !isNavigating &&
@@ -1507,7 +1546,13 @@ export function MapView({
         activeRoute.geometry.length > 0
       ) {
         lastFittedRouteIdRef.current = activeRoute.id;
-        const coords = activeRoute.geometry;
+        // প্রকৃত গন্তব্য (সংযোগকারীর শেষ বিন্দু) যেন ফ্রেমের বাইরে না পড়ে।
+        const coords = activeRoute.approach
+          ? [
+              ...activeRoute.geometry,
+              activeRoute.approach.geometry[activeRoute.approach.geometry.length - 1],
+            ]
+          : activeRoute.geometry;
         const bounds: LngLatBoundsLike = [
           [Math.min(...coords.map((c) => c[0])), Math.min(...coords.map((c) => c[1]))],
           [Math.max(...coords.map((c) => c[0])), Math.max(...coords.map((c) => c[1]))],
@@ -1519,12 +1564,6 @@ export function MapView({
       }
     } else {
       lastFittedRouteIdRef.current = null;
-      if (map.getLayer(ROUTE_LAYER_ID)) {
-        map.removeLayer(ROUTE_LAYER_ID);
-      }
-      if (map.getLayer(ROUTE_CASING_LAYER_ID)) {
-        map.removeLayer(ROUTE_CASING_LAYER_ID);
-      }
     }
   }, [activeRoute, isNavigating, navRemainingGeometry, mapLoaded, programmaticFitBounds]);
 
