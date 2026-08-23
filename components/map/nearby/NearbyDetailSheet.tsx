@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Maximize2, TrendingDown, TrendingUp, Footprints } from "lucide-react";
+import { Star, Maximize2, TrendingDown, TrendingUp, Footprints, X } from "lucide-react";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 import { Button } from "@/components/ui/button";
 import { NEARBY_CATEGORY_META } from "@/lib/nearby/categories";
@@ -18,7 +18,16 @@ interface NearbyDetailSheetProps {
 }
 
 /** ডিটেইল সারাংশ — শিট (৩০%) ও ডেস্কটপ কার্ড উভয়ে */
-function DetailContent({ item, onShowDetails }: { item: NearbyItem; onShowDetails: () => void }) {
+function DetailContent({
+  item,
+  onShowDetails,
+  headerAction,
+}: {
+  item: NearbyItem;
+  onShowDetails: () => void;
+  /** ডেস্কটপ কার্ডের কাছ-বাটন ইত্যাদি — শিরোনাম-সারির ডানে বসে */
+  headerAction?: React.ReactNode;
+}) {
   const meta = NEARBY_CATEGORY_META[item.category];
   const Icon = meta.icon;
   // লাইভ দূরত্ব — স্ন্যাপশট নয়; চলাচলে প্রতি ~২ মিটারে বদলায় (ব্যাসার্ধ-নিরপেক্ষ)
@@ -50,6 +59,7 @@ function DetailContent({ item, onShowDetails }: { item: NearbyItem; onShowDetail
             {live.direction} দিকে
           </p>
         </div>
+        {headerAction && <div className="shrink-0">{headerAction}</div>}
       </div>
 
       {/* লাইভ দূরত্ব-সারি — স্ক্রিন-রিডার এক বাক্যে শোনে (polite, atomic) */}
@@ -124,7 +134,21 @@ export function NearbyDetailSheet({
   if (isDesktop) {
     return (
       <div className="absolute bottom-24 right-4 z-[100] w-96 rounded-2xl border border-border/60 bg-surface/95 p-4 shadow-2xl backdrop-blur-xl">
-        <DetailContent item={item} onShowDetails={onShowDetails} />
+        <DetailContent
+          item={item}
+          onShowDetails={onShowDetails}
+          headerAction={
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              aria-label="বন্ধ করুন"
+              data-testid="nearby-detail-close"
+              className="flex h-8 w-8 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            >
+              <X className="h-4 w-4" aria-hidden />
+            </button>
+          }
+        />
       </div>
     );
   }
@@ -138,6 +162,10 @@ export function NearbyDetailSheet({
       showBackdrop={false}
       dismissOnDragDown
     >
+      <BottomSheet.Header>
+        <div className="flex-1" />
+        <BottomSheet.CloseButton />
+      </BottomSheet.Header>
       <BottomSheet.Content>
         <DetailContent item={item} onShowDetails={onShowDetails} />
       </BottomSheet.Content>

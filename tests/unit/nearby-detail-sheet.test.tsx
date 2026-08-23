@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, fireEvent, act } from "@testing-library/react";
 import { NearbyDetailSheet } from "@/components/map/nearby/NearbyDetailSheet";
 import { useLocationStore } from "@/lib/store";
 import { useNearbyStore, NEARBY_RADIUS_DEFAULT } from "@/lib/store/nearbyStore";
@@ -7,6 +7,11 @@ import { getNearbyItems } from "@/lib/nearby/query";
 import { haversineDistance, formatDistance } from "@/lib/utils/distance";
 import { DEFAULT_ENABLED_CATEGORIES } from "@/lib/nearby/categories";
 import { MAKKAH_CENTER } from "@/lib/utils/constants";
+import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+
+vi.mock("@/lib/hooks/useMediaQuery", () => ({
+  useMediaQuery: vi.fn(() => false),
+}));
 
 const LAT = MAKKAH_CENTER.lat;
 const LNG = MAKKAH_CENTER.lng;
@@ -119,5 +124,35 @@ describe("NearbyDetailSheet live distance", () => {
     const row = screen.getByTestId("nearby-detail-distance").closest('[aria-live="polite"]');
     expect(row).not.toBeNull();
     expect(row).toHaveAttribute("aria-atomic", "true");
+  });
+});
+
+describe("NearbyDetailSheet deselect", () => {
+  beforeEach(() => {
+    resetStores();
+    vi.mocked(useMediaQuery).mockReturnValue(true);
+  });
+  afterEach(() => {
+    vi.mocked(useMediaQuery).mockReturnValue(false);
+    resetStores();
+  });
+
+  it("ডেস্কটপ কার্ডে বন্ধ-বাটন আছে — ক্লিকে onOpenChange(false)", async () => {
+    const onOpenChange = vi.fn();
+    render(
+      <NearbyDetailSheet open onOpenChange={onOpenChange} item={GATE} onShowDetails={vi.fn()} />
+    );
+    await act(async () => {});
+    fireEvent.click(screen.getByTestId("nearby-detail-close"));
+    expect(onOpenChange).toHaveBeenCalledWith(false);
+  });
+
+  it("clearSelection নির্বাচন খুলে দেয় — তালিকা/স্ট্রিপ ফিরে আসে", () => {
+    useNearbyStore.getState().selectItem(GATE);
+    expect(useNearbyStore.getState().selectedItem?.id).toBe(GATE.id);
+
+    useNearbyStore.getState().clearSelection();
+    expect(useNearbyStore.getState().selectedItem).toBeNull();
+    expect(useNearbyStore.getState().detailModalOpen).toBe(false);
   });
 });
