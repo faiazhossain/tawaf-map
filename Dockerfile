@@ -22,7 +22,13 @@ COPY . .
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+# Gates artifacts (public/tiles/gates.pmtiles, lib/data/gates-osm.generated.ts)
+# are prebuilt on the host via `npm run build:gates`; tippecanoe is not
+# installable in Alpine. Verify they made it into the build context.
+RUN test -f lib/data/gates-osm.generated.ts && test -f public/tiles/gates.pmtiles \
+    || { echo "ERROR: missing generated gates artifacts - run 'npm run build:gates' locally first"; exit 1; }
+
+RUN npm run build:web
 
 # ============================================
 # Stage 3: Run Next.js application
