@@ -9,7 +9,7 @@
 
 import { projectPointToSegment, offsetToLngLat, metersOffset, type LngLat } from "@/lib/geo/plane";
 import { haversineDistance, estimateWalkingTime } from "@/lib/utils/distance";
-import type { RouteStep } from "@/types/navigation";
+import type { RouteApproach, RouteStep } from "@/types/navigation";
 
 // ---------------------------------------------------------------------------
 // থ্রেশহোল্ড ধ্রুবক (টেস্ট ও ভোক্তার জন্য এক্সপোর্টকৃত)
@@ -26,6 +26,13 @@ export const OFF_ROUTE_SUSTAINED_FIXES = 3;
 
 /** গন্তব্যের এত মিটারের মধ্যে এলে "পৌঁছেছেন" (OSRM গন্তব্য-স্ন্যাপ ঢেকে দেয়)। */
 export const ARRIVAL_RADIUS_M = 20;
+
+/**
+ * রুটের রাস্তার অংশে এত মিটার বা তার কম বাকি থাকলে "চূড়ান্ত পর্যায়" —
+ * বাকিটা ডটেড সংযোগকারী ধরে প্রকৃত গন্তব্য পর্যন্ত। locateOnPolyline শেষ
+ * ভার্টেক্সের পরে ক্ল্যাম্প করে, তাই একবার ঢুকলে পর্যায়টি আর ফেরে না।
+ */
+export const APPROACH_ENTER_REMAINING_M = 10;
 
 /** এর চেয়ে খারাপ accuracy-র ফিক্স পুরোপুরি উপেক্ষিত — ভুল তথ্য নয়, বরং থেমে থাকা। */
 export const MAX_FIX_ACCURACY_M = 50;
@@ -207,6 +214,8 @@ export interface RouteProgressInput {
   point: [number, number];
   /** গন্তব্য [lng, lat]; null হলে আগমন-পরীক্ষা বন্ধ থাকে */
   destination: [number, number] | null;
+  /** রাস্তার শেষে প্রকৃত গন্তব্য পর্যন্ত সংযোগকারী (ঐচ্ছিক) */
+  approach?: RouteApproach | null;
   /** একমুখী ক্ল্যাম্প — আগের currentStepIndex (ঐচ্ছিক) */
   minStepIndex?: number;
 }
@@ -226,11 +235,15 @@ export interface RouteProgress {
   remainingGeometry: number[][];
   /** haversine(কাঁচা ফিক্স -> গন্তব্য) <= ARRIVAL_RADIUS_M */
   hasArrived: boolean;
+  /** রাস্তার অংশ শেষ — সংযোগকারী ধরে গন্তব্যের চূড়ান্ত পর্যায় */
+  inApproach: boolean;
+  /** চূড়ান্ত পর্যায়ে কাঁচা ফিক্স থেকে প্রকৃত গন্তব্যের দূরত্ব, মিটারে */
+  approachRemainingM: number;
 }
 
 /** এক ফিক্সের জন্য সম্পূর্ণ প্রগ্রেস হিসাব। */
 export function computeRouteProgress(input: RouteProgressInput): RouteProgress {
-  const { geometry, steps, point, destination, minStepIndex = 0 } = input;
+  const { geometry, steps, point, destination, approach = null, minStepIndex = 0 } = input;
 
   const located = locateOnPolyline(geometry, point);
   const totalDistance = totalPolylineDistance(geometry);
@@ -242,16 +255,32 @@ export function computeRouteProgress(input: RouteProgressInput): RouteProgress {
     minStepIndex
   );
 
-  const remainingDistance = Math.max(0, totalDistance - located.distanceAlongRoute);
-  const stepEnd = boundaries[Math.min(currentStepIndex, boundaries.length - 1)];
-  const distanceToStepEnd = Math.max(0, stepEnd - located.distanceAlongRoute);
-
   const hasArrived =
     destination !== null &&
     haversineDistance(point[1], point[0], destination[1], destination[0]) <= ARRIVAL_RADIUS_M;
 
+  // চূড়ান্ত পর্যায়: রাস্তার বাকিটা প্রবেশ-সীমার ভিতরে — অবশিষ্ট হিসাব
+  // এখন থেকে কাঁচা ফিক্স থেকে প্রকৃত গন্তব্যের সরলরেখায়।
+  const inApproach =
+    approach !== null &&
+    destination !== null &&
+    totalDistance - located.distanceAlongRoute <= APPROACH_ENTER_REMAINING_M;
+  const approachRemainingM =
+    destination !== null
+      ? haversineDistance(point[1], point[0], destination[1], destination[0])
+      : 0;
+
+  const roadRemainingDistance = Math.max(0, totalDistance - located.distanceAlongRoute);
+  const remainingDistance = inApproach
+    ? roadRemainingDistance + approachRemainingM
+    : roadRemainingDistance;
+  const stepEnd = boundaries[Math.min(currentStepIndex, boundaries.length - 1)];
+  const distanceToStepEnd = Math.max(0, stepEnd - located.distanceAlongRoute);
+
   return {
-    snapped: located.snapped,
+    // চূড়ান্ত পর্যায়ে স্ন্যাপ করার মতো রাস্তা নেই — কাঁচা ফিক্সই অবস্থান;
+    // ফলো-ক্যামেরা তীর্থযাত্রীকে উঠান পেরিয়ে অনুসরণ করে, রাস্তার শেষে আটকে থাকে না।
+    snapped: inApproach ? point : located.snapped,
     distanceAlongRoute: located.distanceAlongRoute,
     distanceFromRoute: located.distanceFromRoute,
     currentStepIndex,
@@ -260,6 +289,8 @@ export function computeRouteProgress(input: RouteProgressInput): RouteProgress {
     remainingDuration: estimateWalkingTime(remainingDistance),
     remainingGeometry: sliceRemainingGeometry(geometry, located),
     hasArrived,
+    inApproach,
+    approachRemainingM,
   };
 }
 

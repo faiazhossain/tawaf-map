@@ -10,6 +10,7 @@ import {
   OFF_ROUTE_ENTER_M,
   OFF_ROUTE_EXIT_M,
   ARRIVAL_RADIUS_M,
+  APPROACH_ENTER_REMAINING_M,
 } from "@/lib/routing/route-progress";
 import { haversineDistance, estimateWalkingTime } from "@/lib/utils/distance";
 import type { RouteStep } from "@/types/navigation";
@@ -239,6 +240,86 @@ describe("computeRouteProgress", () => {
     });
     expect(onRoute.distanceFromRoute).toBeLessThan(1);
     expect(offRoute.distanceFromRoute).toBeGreaterThan(OFF_ROUTE_ENTER_M - 1);
+  });
+});
+
+describe("computeRouteProgress — চূড়ান্ত পর্যায় (সংযোগকারী)", () => {
+  // গন্তব্য রাস্তার শেষ বিন্দুর ৪০ মি উত্তরে — রাস্তার তথ্য নেই এমন উঠানে।
+  const APPROACH_DEST: [number, number] = at(400, 40);
+  const approach = {
+    geometry: [at(400, 0), APPROACH_DEST],
+    distance: 40,
+  };
+
+  it("রাস্তায় বহু বাকি থাকলে চূড়ান্ত পর্যায় নয়", () => {
+    const progress = computeRouteProgress({
+      geometry: LINE,
+      steps: makeSteps([400]),
+      point: at(350, 0),
+      destination: APPROACH_DEST,
+      approach,
+    });
+    expect(progress.inApproach).toBe(false);
+    expect(progress.snapped[0]).toBeCloseTo(at(350, 0)[0], 8);
+  });
+
+  it(`রাস্তায় ${APPROACH_ENTER_REMAINING_M} মি বা কম বাকি থাকলে চূড়ান্ত পর্যায়`, () => {
+    const fix = at(395, 0);
+    const progress = computeRouteProgress({
+      geometry: LINE,
+      steps: makeSteps([400]),
+      point: fix,
+      destination: APPROACH_DEST,
+      approach,
+    });
+
+    const direct = haversineDistance(fix[1], fix[0], APPROACH_DEST[1], APPROACH_DEST[0]);
+    expect(progress.inApproach).toBe(true);
+    expect(progress.approachRemainingM).toBeGreaterThan(direct - 0.5);
+    expect(progress.approachRemainingM).toBeLessThan(direct + 0.5);
+    // স্ন্যাপ নয়, কাঁচা ফিক্সই অবস্থান।
+    expect(progress.snapped).toEqual(fix);
+    // অবশিষ্ট = রাস্তার বাকি (~৫ মি) + গন্তব্য পর্যন্ত সরলরেখা।
+    expect(progress.remainingDistance).toBeGreaterThan(direct + 4);
+    expect(progress.remainingDistance).toBeLessThan(direct + 6);
+  });
+
+  it("শেষ বিন্দু পেরিয়ে গেলে পর্যায় অটল — অবশিষ্ট শুধু গন্তব্য পর্যন্ত", () => {
+    const fix = at(410, 5);
+    const progress = computeRouteProgress({
+      geometry: LINE,
+      steps: makeSteps([400]),
+      point: fix,
+      destination: APPROACH_DEST,
+      approach,
+    });
+
+    const direct = haversineDistance(fix[1], fix[0], APPROACH_DEST[1], APPROACH_DEST[0]);
+    expect(progress.inApproach).toBe(true);
+    expect(progress.remainingDistance).toBeGreaterThan(direct - 0.5);
+    expect(progress.remainingDistance).toBeLessThan(direct + 0.5);
+  });
+
+  it("সংযোগকারী না থাকলে শেষ বিন্দুতেও চূড়ান্ত পর্যায় নয়", () => {
+    const progress = computeRouteProgress({
+      geometry: LINE,
+      steps: makeSteps([400]),
+      point: at(400, 0),
+      destination: at(400, 0),
+    });
+    expect(progress.inApproach).toBe(false);
+    expect(progress.approachRemainingM).toBe(0);
+  });
+
+  it("গন্তব্য null হলে চূড়ান্ত পর্যায় অসম্ভব", () => {
+    const progress = computeRouteProgress({
+      geometry: LINE,
+      steps: makeSteps([400]),
+      point: at(400, 0),
+      destination: null,
+      approach,
+    });
+    expect(progress.inApproach).toBe(false);
   });
 });
 
