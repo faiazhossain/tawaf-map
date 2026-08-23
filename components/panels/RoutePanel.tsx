@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { MapPin, Clock, Navigation, Footprints, X, Route } from "lucide-react";
+import { MapPin, Clock, Navigation, Footprints, X, Route, AlertTriangle } from "lucide-react";
 import { useRouteStore, useNavigationStore, usePanelStore } from "@/lib/store";
-import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
+import { formatDistance, formatWalkingTime, estimateWalkingTime } from "@/lib/utils/distance";
+import { useMapRouting } from "@/lib/hooks/useMapRouting";
+import type { RouteApproach } from "@/types/navigation";
 import { BottomSheet } from "@/components/ui/bottom-sheet";
 
 interface RoutePanelProps {
@@ -158,14 +160,18 @@ function RoutePanelContent({
   route,
   navigation,
   onClose,
+  onRetry,
 }: {
   route: {
     distance: number;
     duration: number;
     steps: Array<{ instruction: string; distance: number; duration: number }>;
+    approach?: RouteApproach | null;
+    approximate?: boolean;
   };
   navigation: NavigationMode;
   onClose: () => void;
+  onRetry: (() => void) | null;
 }) {
   const { isNavigating, currentStepIndex, isRerouting } = navigation;
   const stepsContainerRef = useRef<HTMLDivElement | null>(null);
@@ -197,7 +203,35 @@ function RoutePanelContent({
 
       {/* Route Summary */}
       <div className="p-4 border-b border-border/50">
+        {route.approximate && (
+          <div className="bg-amber-500/10 border border-amber-500/20 rounded-2xl p-3 mb-3">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-xs font-medium text-amber-600">
+                  নির্দিষ্ট হাঁটার পথ পাওয়া যায়নি — সরলরেখায় আনুমানিক পথ দেখানো হচ্ছে
+                </p>
+                {/* রিট্রাই ব্যর্থ হলে এরর-কন্টেন্ট দেখায়, আনুমানিক রুট ম্যাপে থেকে যায়;
+                    প্যানেল বন্ধ করলে সব পরিষ্কার হয়। নেভিগেশন চলাকালীন রিট্রাই নয়। */}
+                {onRetry && !isNavigating && (
+                  <button
+                    onClick={onRetry}
+                    className="mt-2 text-xs font-medium text-amber-600 hover:text-amber-500 underline underline-offset-2 transition-colors"
+                  >
+                    আবার চেষ্টা করুন
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
         <RouteSummaryGrid distance={route.distance} duration={route.duration} />
+        {route.approach && !isNavigating && (
+          <p className="text-xs text-muted-foreground mt-3">
+            গন্তব্যের শেষ প্রায় {formatDistance(route.approach.distance)} রাস্তার বাইরে — ডটেড রেখা
+            ধরে হেঁটে যান
+          </p>
+        )}
         {isRerouting && (
           <div className="flex items-center gap-2 mt-3 text-sm text-amber-600">
             <div className="w-4 h-4 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
@@ -263,8 +297,12 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
       useNavigationStore.getState().startNavigation(destination);
       return;
     }
-    // পুরনো রুটে গন্তব্য-স্টোর খালি থাকলে জ্যামিতির শেষ বিন্দুই গন্তব্য।
-    const last = activeRoute?.geometry[activeRoute.geometry.length - 1];
+    // পুরনো রুটে গন্তব্য-স্টোর খালি থাকলে জ্যামিতির শেষ বিন্দুই গন্তব্য — তবে
+    // সংযোগকারী থাকলে তার শেষ বিন্দুই প্রকৃত গন্তব্য, রাস্তার বিন্দু নয়।
+    const approach = activeRoute?.approach ?? null;
+    const last = approach
+      ? approach.geometry[approach.geometry.length - 1]
+      : activeRoute?.geometry[activeRoute.geometry.length - 1];
     if (last) {
       useNavigationStore
         .getState()
@@ -272,14 +310,28 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
     }
   };
 
-  // নেভিগেশনে লাইভ অবশিষ্ট মান, নাহলে রুটের মোট মান।
+  // আনুমানিক রুটে রিট্রাই — সফল হলে সত্যিকারের রুট এসে বদলে দেয়।
+  const { calculateRoute } = useMapRouting();
+  const handleRetryApproximate = () => {
+    if (destination) {
+      void calculateRoute(destination.coordinates);
+    }
+  };
+
+  // নেভিগেশনে লাইভ অবশিষ্ট মান (ইঞ্জিন সংযোগকারীর বাকিটাও ধরে), নাহলে
+  // রুটের মোট মানে সংযোগকারীর দূরত্ব ও হাঁটার সময় যোগ হয়।
+  const approach = activeRoute?.approach ?? null;
   const summaryRoute = activeRoute
     ? {
         ...activeRoute,
         distance:
-          isNavigating && remainingDistance !== null ? remainingDistance : activeRoute.distance,
+          isNavigating && remainingDistance !== null
+            ? remainingDistance
+            : activeRoute.distance + (approach?.distance ?? 0),
         duration:
-          isNavigating && remainingDuration !== null ? remainingDuration : activeRoute.duration,
+          isNavigating && remainingDuration !== null
+            ? remainingDuration
+            : activeRoute.duration + (approach ? estimateWalkingTime(approach.distance) : 0),
       }
     : null;
 
@@ -307,7 +359,12 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
         {isRouting && <RouteLoadingContent />}
         {routeError && <RouteErrorContent error={routeError} onDismiss={handleClose} />}
         {!isRouting && !routeError && summaryRoute && (
-          <RoutePanelContent route={summaryRoute} navigation={navigation} onClose={handleClose} />
+          <RoutePanelContent
+            route={summaryRoute}
+            navigation={navigation}
+            onClose={handleClose}
+            onRetry={summaryRoute.approximate ? handleRetryApproximate : null}
+          />
         )}
       </div>
     </BottomSheet>
@@ -329,7 +386,12 @@ export function RoutePanel({ onClose }: RoutePanelProps) {
         )}
         {!isRouting && !routeError && summaryRoute && (
           <div className="px-4">
-            <RoutePanelContent route={summaryRoute} navigation={navigation} onClose={handleClose} />
+            <RoutePanelContent
+              route={summaryRoute}
+              navigation={navigation}
+              onClose={handleClose}
+              onRetry={summaryRoute.approximate ? handleRetryApproximate : null}
+            />
           </div>
         )}
       </div>
