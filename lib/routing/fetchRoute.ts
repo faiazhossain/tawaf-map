@@ -4,6 +4,7 @@
  * থেকে বের করা হয়েছে যাতে হুকের বাইরে থেকেও (useNavigation) ডাকা যায়।
  */
 
+import { buildApproach } from "@/lib/routing/approach";
 import type { Route, RouteStep } from "@/types/navigation";
 
 /**
@@ -42,5 +43,8 @@ export async function fetchWalkingRoute(
     distance: data.route.distance,
     duration: data.route.duration,
     steps: data.route.steps ?? [],
+    // রাস্তার শেষ বিন্দু গন্তব্যের আগে শেষ হলে বাঁকা সংযোগকারী — প্রাথমিক
+    // রুট ও রিয়ারাউট দুটোতেই এই একই ফাঁক দিয়ে হিসাব হয়।
+    approach: buildApproach(data.route.geometry, destination),
   };
 }

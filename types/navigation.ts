@@ -1,9 +1,21 @@
+/** রাস্তার শেষ বিন্দু থেকে প্রকৃত গন্তব্য পর্যন্ত বাঁকা ডটেড সংযোগকারী। */
+export interface RouteApproach {
+  /** [lng, lat] নমুনা-বিন্দু — চাপের জ্যামিতি (lib/geo/curve) */
+  geometry: number[][];
+  /** চাপ ধরে হাঁটা দূরত্ব, মিটারে (haversine যোগফল) */
+  distance: number;
+}
+
 export interface Route {
   id: string;
   geometry: number[][];
   distance: number;
   duration: number;
   steps: RouteStep[];
+  /** রাস্তার শেষ বিন্দু ও প্রকৃত গন্তব্যের ফাঁক প্রাসঙ্গিক সীমা ছাড়ালে বাঁকা সংযোগকারী */
+  approach?: RouteApproach | null;
+  /** পথ না পাওয়া গেলে সরলরেখা-ভিত্তিক আনুমানিক পুরো রুট */
+  approximate?: boolean;
 }
 
 export interface RouteStep {
