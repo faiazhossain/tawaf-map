@@ -122,6 +122,7 @@ export function useNavigation(): void {
       steps: route.steps,
       point: [longitude, latitude],
       destination: navState.destination?.coordinates ?? null,
+      approach: route.approach ?? null,
       minStepIndex: navState.currentStepIndex,
     });
 
@@ -130,10 +131,20 @@ export function useNavigation(): void {
       return;
     }
 
-    offRouteRef.current = nextOffRouteCounters(offRouteRef.current, progress.distanceFromRoute);
-    useNavigationStore
-      .getState()
-      .setOffRoute(offRouteRef.current.sustained, offRouteRef.current.consecutive);
+    // গাইডেন্স-দমন: (১) চূড়ান্ত পর্যায়ে রাস্তা নেই — সংযোগকারী ধরে হাঁটা
+    // অফ-রুট নয়, রিয়ারাউট চেষ্টা করা অর্থহীন ঝামেলা; (২) আনুমানিক রুটে
+    // ইঞ্জিনের কাছে পথ-ই নেই — সেখানে আবার জিজ্ঞেস করা বৃথা।
+    const suppressGuidance = progress.inApproach || route.approximate === true;
+
+    if (suppressGuidance) {
+      offRouteRef.current = { consecutive: 0, sustained: false };
+      useNavigationStore.getState().setOffRoute(false, 0);
+    } else {
+      offRouteRef.current = nextOffRouteCounters(offRouteRef.current, progress.distanceFromRoute);
+      useNavigationStore
+        .getState()
+        .setOffRoute(offRouteRef.current.sustained, offRouteRef.current.consecutive);
+    }
     useNavigationStore.getState().setProgress({
       currentStepIndex: progress.currentStepIndex,
       remainingDistance: progress.remainingDistance,
@@ -141,9 +152,12 @@ export function useNavigation(): void {
       distanceToStepEnd: progress.distanceToStepEnd,
       snappedPosition: progress.snapped,
       remainingGeometry: progress.remainingGeometry,
+      inApproach: progress.inApproach,
+      approachRemainingM: progress.approachRemainingM,
     });
 
     if (
+      !suppressGuidance &&
       offRouteRef.current.sustained &&
       !rerouteInFlightRef.current &&
       Date.now() - lastRerouteAtRef.current >= REROUTE_COOLDOWN_MS

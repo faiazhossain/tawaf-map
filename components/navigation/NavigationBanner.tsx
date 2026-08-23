@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, MapPin, X } from "lucide-react";
+import { AlertTriangle, Footprints, MapPin, X } from "lucide-react";
 import { useRouteStore, useNavigationStore, usePanelStore } from "@/lib/store";
 import { formatDistance, formatWalkingTime } from "@/lib/utils/distance";
 import { maneuverIconFor } from "./maneuver-icons";
@@ -21,6 +21,12 @@ export interface NavigationBannerContentProps {
   offRoute: boolean;
   rerouteError: string | null;
   hasArrived: boolean;
+  /** রাস্তার অংশ শেষ — ডটেড সংযোগকারী ধরে গন্তব্যের চূড়ান্ত পর্যায় */
+  inApproach?: boolean;
+  /** চূড়ান্ত পর্যায়ে প্রকৃত গন্তব্য পর্যন্ত দূরত্ব, মিটারে */
+  approachRemainingM?: number | null;
+  /** আনুমানিক (পথ-নেই) রুট — নির্দেশনার সাথে ছোট ট্যাগ দেখায় */
+  approximate?: boolean;
   onExit: () => void;
 }
 
@@ -35,6 +41,9 @@ export function NavigationBannerContent({
   offRoute,
   rerouteError,
   hasArrived,
+  inApproach = false,
+  approachRemainingM = null,
+  approximate = false,
   onExit,
 }: NavigationBannerContentProps) {
   return (
@@ -46,7 +55,7 @@ export function NavigationBannerContent({
       <div className="flex items-center gap-3">
         <div className="flex-shrink-0 w-10 h-10 rounded-xl bg-primary-soft flex items-center justify-center">
           {(() => {
-            // অবস্থার প্রাধিকার: আগমন > রিয়ারাউট > সতর্কতা > স্বাভাবিক ধাপ
+            // অবস্থার প্রাধিকার: আগমন > রিয়ারাউট > সতর্কতা > চূড়ান্ত পর্যায় > স্বাভাবিক ধাপ
             if (hasArrived) {
               return <MapPin className="w-5 h-5 text-primary" />;
             }
@@ -57,6 +66,9 @@ export function NavigationBannerContent({
             }
             if (rerouteError || offRoute) {
               return <AlertTriangle className="w-5 h-5 text-amber-500" />;
+            }
+            if (inApproach) {
+              return <Footprints className="w-5 h-5 text-primary" />;
             }
             const Icon = maneuverIconFor(maneuver);
             return <Icon className="w-5 h-5 text-primary" />;
@@ -79,9 +91,33 @@ export function NavigationBannerContent({
             <p className="text-sm font-medium text-amber-600">
               রুট থেকে সরে গেছেন — নতুন রুট আনা হচ্ছে...
             </p>
+          ) : inApproach ? (
+            <>
+              <p className="text-sm font-semibold text-foreground">গন্তব্যের দিকে হেঁটে যান</p>
+              <div className="flex items-baseline gap-2 mt-0.5">
+                {approachRemainingM !== null && (
+                  <span className="text-lg font-bold text-primary leading-none">
+                    {formatDistance(approachRemainingM)}
+                  </span>
+                )}
+                {remainingDistanceM !== null && remainingDurationS !== null && (
+                  <span className="text-xs text-muted-foreground">
+                    মোট {formatDistance(remainingDistanceM)} •{" "}
+                    {formatWalkingTime(remainingDurationS)}
+                  </span>
+                )}
+              </div>
+            </>
           ) : (
             <>
-              <p className="text-sm font-semibold text-foreground truncate">{instruction}</p>
+              <p className="text-sm font-semibold text-foreground truncate">
+                {instruction}
+                {approximate && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground align-middle">
+                    (আনুমানিক পথ)
+                  </span>
+                )}
+              </p>
               <div className="flex items-baseline gap-2 mt-0.5">
                 {distanceToStepEndM !== null && (
                   <span className="text-lg font-bold text-primary leading-none">
@@ -122,6 +158,8 @@ export function NavigationBanner() {
   const isRerouting = useNavigationStore((state) => state.isRerouting);
   const rerouteError = useNavigationStore((state) => state.rerouteError);
   const hasArrived = useNavigationStore((state) => state.hasArrived);
+  const inApproach = useNavigationStore((state) => state.inApproach);
+  const approachRemainingM = useNavigationStore((state) => state.approachRemainingM);
   const activeRoute = useRouteStore((state) => state.activeRoute);
 
   if (!isNavigating) return null;
@@ -147,6 +185,9 @@ export function NavigationBanner() {
         offRoute={offRoute}
         rerouteError={rerouteError}
         hasArrived={hasArrived}
+        inApproach={inApproach}
+        approachRemainingM={approachRemainingM}
+        approximate={activeRoute?.approximate ?? false}
         onExit={handleExit}
       />
     </div>

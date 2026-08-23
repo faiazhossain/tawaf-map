@@ -17,6 +17,8 @@ function resetStores() {
     distanceToStepEnd: null,
     snappedPosition: null,
     remainingGeometry: null,
+    inApproach: false,
+    approachRemainingM: null,
     offRoute: false,
     offRouteFixCount: 0,
     isRerouting: false,
@@ -125,6 +127,71 @@ describe("NavigationBannerContent", () => {
     expect(screen.getByText("মাসজিদুল হারাম")).toBeTruthy();
   });
 
+  it("চূড়ান্ত পর্যায়ে 'গন্তব্যের দিকে হেঁটে যান' ও সংযোগকারীর দূরত্ব, ধাপের নির্দেশনা নয়", () => {
+    render(
+      <NavigationBannerContent
+        instruction="বাঁয়ে মোড় নিন"
+        maneuver="turn left"
+        remainingDistanceM={45}
+        remainingDurationS={33}
+        distanceToStepEndM={0}
+        destinationName="কিং ফাহ্দ গেট"
+        isRerouting={false}
+        offRoute={false}
+        rerouteError={null}
+        hasArrived={false}
+        inApproach
+        approachRemainingM={35}
+        onExit={() => {}}
+      />
+    );
+    expect(screen.getByText("গন্তব্যের দিকে হেঁটে যান")).toBeTruthy();
+    expect(screen.getByText("৩৫ মি")).toBeTruthy();
+    expect(screen.queryByText("বাঁয়ে মোড় নিন")).toBeNull();
+  });
+
+  it("চূড়ান্ত পর্যায় আগমনের কাছে হার যায়", () => {
+    render(
+      <NavigationBannerContent
+        instruction="এগিয়ে চলুন"
+        maneuver="arrive"
+        remainingDistanceM={0}
+        remainingDurationS={0}
+        distanceToStepEndM={0}
+        destinationName={null}
+        isRerouting={false}
+        offRoute={false}
+        rerouteError={null}
+        hasArrived
+        inApproach
+        approachRemainingM={5}
+        onExit={() => {}}
+      />
+    );
+    expect(screen.getByText("আপনি গন্তব্যে পৌঁছেছেন")).toBeTruthy();
+    expect(screen.queryByText("গন্তব্যের দিকে হেঁটে যান")).toBeNull();
+  });
+
+  it("আনুমানিক রুটে নির্দেশনার পাশে 'আনুমানিক পথ' ট্যাগ", () => {
+    render(
+      <NavigationBannerContent
+        instruction="গন্তব্যের দিকে সোজা হেঁটে যান"
+        maneuver="arrive"
+        remainingDistanceM={300}
+        remainingDurationS={216}
+        distanceToStepEndM={300}
+        destinationName={null}
+        isRerouting={false}
+        offRoute={false}
+        rerouteError={null}
+        hasArrived={false}
+        approximate
+        onExit={() => {}}
+      />
+    );
+    expect(screen.getByText("(আনুমানিক পথ)")).toBeTruthy();
+  });
+
   it("বাহির বোতামে onExit কল হয়", () => {
     const onExit = vi.fn();
     render(
@@ -190,5 +257,37 @@ describe("NavigationBanner (container)", () => {
     expect(useNavigationStore.getState().isNavigating).toBe(false);
     expect(useRouteStore.getState().activeRoute).toBeNull();
     expect(usePanelStore.getState().activePanel).toBeNull();
+  });
+
+  it("চূড়ান্ত পর্যায়ের অবস্থা স্টোর থেকে ব্যানারে ওঠে", () => {
+    act(() => {
+      useRouteStore.getState().setRoute({
+        id: "route-y",
+        geometry: [
+          [39.8262, 21.4225],
+          [39.83, 21.423],
+        ],
+        distance: 400,
+        duration: 288,
+        steps: [
+          { instruction: "হাঁটা শুরু করুন", distance: 400, duration: 288, maneuver: "depart" },
+        ],
+        approach: {
+          geometry: [
+            [39.83, 21.423],
+            [39.8301, 21.4233],
+          ],
+          distance: 42,
+        },
+      });
+      useNavigationStore.getState().startNavigation({
+        coordinates: [39.8301, 21.4233],
+        name: "উঠানের গন্তব্য",
+      });
+      useNavigationStore.setState({ inApproach: true, approachRemainingM: 42 });
+    });
+    render(<NavigationBanner />);
+    expect(screen.getByText("গন্তব্যের দিকে হেঁটে যান")).toBeTruthy();
+    expect(screen.getByText("৪২ মি")).toBeTruthy();
   });
 });

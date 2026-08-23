@@ -18,6 +18,8 @@ interface NavigationProgress {
   distanceToStepEnd: number;
   snappedPosition: [number, number];
   remainingGeometry: number[][];
+  inApproach: boolean;
+  approachRemainingM: number;
 }
 
 interface NavigationStore {
@@ -29,6 +31,10 @@ interface NavigationStore {
   distanceToStepEnd: number | null;
   snappedPosition: [number, number] | null;
   remainingGeometry: number[][] | null;
+  /** রাস্তার অংশ শেষ — ডটেড সংযোগকারী ধরে গন্তব্যের চূড়ান্ত পর্যায় */
+  inApproach: boolean;
+  /** চূড়ান্ত পর্যায়ে প্রকৃত গন্তব্য পর্যন্ত সরলরেখা দূরত্ব, মিটারে */
+  approachRemainingM: number | null;
   offRoute: boolean;
   offRouteFixCount: number;
   isRerouting: boolean;
@@ -59,6 +65,8 @@ const EMPTY_STATE = {
   distanceToStepEnd: null,
   snappedPosition: null,
   remainingGeometry: null,
+  inApproach: false,
+  approachRemainingM: null,
   offRoute: false,
   offRouteFixCount: 0,
   isRerouting: false,
@@ -92,6 +100,8 @@ export const useNavigationStore = create<NavigationStore>((set) => ({
       distanceToStepEnd: progress.distanceToStepEnd,
       snappedPosition: progress.snappedPosition,
       remainingGeometry: progress.remainingGeometry,
+      inApproach: progress.inApproach,
+      approachRemainingM: progress.approachRemainingM,
     }),
 
   setOffRoute: (offRoute, fixCount) => set({ offRoute, offRouteFixCount: fixCount }),

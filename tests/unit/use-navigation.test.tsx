@@ -75,6 +75,8 @@ function resetStores() {
     distanceToStepEnd: null,
     snappedPosition: null,
     remainingGeometry: null,
+    inApproach: false,
+    approachRemainingM: null,
     offRoute: false,
     offRouteFixCount: 0,
     isRerouting: false,
@@ -356,5 +358,65 @@ describe("useNavigation", () => {
     await setRouteAct(makeRoute("route-a"));
     await reportFix(at(100, 0));
     expect(useNavigationStore.getState().remainingDistance).toBeNull();
+  });
+
+  it("চূড়ান্ত পর্যায়ে সংযোগকারী ধরে হাঁটায় অফ-রুট/রিয়ারাউট নয়, আগমন হয়", async () => {
+    const fetchMock = installFetch();
+    // গন্তব্য রাস্তার শেষের ৬০ মি উত্তরে — রাস্তার তথ্য নেই এমন উঠানে।
+    const approachDest = at(400, 60);
+    const routeWithApproach: Route = {
+      ...makeRoute("route-approach"),
+      approach: { geometry: [at(400, 0), approachDest], distance: 60 },
+    };
+
+    render(<Harness />);
+    await setRouteAct(routeWithApproach);
+    await act(async () => {
+      useNavigationStore
+        .getState()
+        .startNavigation({ coordinates: approachDest, name: "উঠানের গন্তব্য" });
+    });
+
+    // রাস্তার শেষ ৫ মি — চূড়ান্ত পর্যায়ে প্রবেশ।
+    await reportFix(at(395, 0));
+    expect(useNavigationStore.getState().inApproach).toBe(true);
+
+    // সংযোগকারী ধরে হাঁটা: রাস্তা থেকে ৩৫+ মি দূরে (সাধারণ রুটে টানা
+    // অফ-রুট হিসেবে রিয়ারাউট হত), কিন্তু গন্তব্য থেকে ২০ মি-র বাইরে।
+    await reportFix(at(400, 35));
+    await reportFix(at(400, 37));
+    await reportFix(at(400, 39));
+    await settle();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(useNavigationStore.getState().offRoute).toBe(false);
+    expect(useNavigationStore.getState().inApproach).toBe(true);
+    const remaining = useNavigationStore.getState().approachRemainingM;
+    expect(remaining).not.toBeNull();
+    expect(remaining!).toBeGreaterThan(20);
+    expect(remaining!).toBeLessThan(22);
+
+    // প্রকৃত গন্তব্যের ২০ মি-র ভিতরে এলেই আগমন।
+    await reportFix(at(400, 55));
+    expect(useNavigationStore.getState().hasArrived).toBe(true);
+  });
+
+  it("আনুমানিক রুটে কখনো রিয়ারাউট হয় না", async () => {
+    const fetchMock = installFetch();
+    const approximateRoute: Route = { ...makeRoute("route-approx"), approximate: true };
+
+    render(<Harness />);
+    await setRouteAct(approximateRoute);
+    await startNav();
+
+    await reportFix(at(100, 0));
+    await reportFix(at(110, 35));
+    await reportFix(at(120, 35));
+    await reportFix(at(130, 35));
+    await settle();
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(useNavigationStore.getState().offRoute).toBe(false);
+    expect(useRouteStore.getState().activeRoute?.id).toBe("route-approx");
   });
 });
