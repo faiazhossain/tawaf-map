@@ -70,6 +70,17 @@ describe("nearbyStore category lifecycle", () => {
     expect(useNearbyStore.getState().activeCategory).toBeNull();
   });
 
+  it("toggling off the active category clears its selection too", () => {
+    // "গেট খুঁজুন"-এর মতো পথে সংশ্লিষ্ট বিভাগ সক্রিয় থাকলে ডাবল-সক্রিয়করণ
+    // টগল-অফ হয়ে যায় — তাই কলারকে আগে activeCategory মিলিয়ে নিতে হয়
+    useNearbyStore.getState().setActiveCategory("gate");
+    useNearbyStore.getState().selectItem(sampleItem());
+    useNearbyStore.getState().setActiveCategory("gate");
+    const state = useNearbyStore.getState();
+    expect(state.activeCategory).toBeNull();
+    expect(state.selectedItem).toBeNull();
+  });
+
   it("disabling an enabled category deactivates it if active", () => {
     useNearbyStore.getState().setActiveCategory("cafe");
     useNearbyStore.getState().toggleEnabledCategory("cafe");

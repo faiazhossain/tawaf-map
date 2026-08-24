@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   getNearbyItems,
   getNearbyCounts,
+  gateToNearbyItem,
   shouldEmitPositionChange,
   nearbyRadiusBounds,
   nearbySubtitle,
@@ -10,6 +11,8 @@ import {
 } from "@/lib/nearby/query";
 import { DEMO_POIS } from "@/lib/data/pois";
 import { NEARBY_HOTELS } from "@/lib/data/hotels";
+import { HARAM_GATES } from "@/lib/data/gates";
+import { getActiveGates } from "@/lib/gates/active";
 import { haversineDistance } from "@/lib/utils/distance";
 import { MAKKAH_CENTER } from "@/lib/utils/constants";
 import type { NearbyCategory } from "@/types/nearby";
@@ -110,6 +113,45 @@ describe("getNearbyCounts", () => {
     const withHalal = getNearbyCounts(LAT, LNG, 3000, { halalOnly: true });
     expect(withHalal.cafe).toBe(without.cafe - 1);
     expect(withHalal.restaurant).toBe(without.restaurant);
+  });
+});
+
+describe("gateToNearbyItem", () => {
+  it("builds a live-measured item from the user's fix", () => {
+    const gate = HARAM_GATES.find((g) => g.type === "king_fahd");
+    if (!gate) throw new Error("king fahd gate missing");
+    const item = gateToNearbyItem(gate, LAT, LNG);
+    expect(item.category).toBe("gate");
+    expect(item.name).toBe(gate.nameBn);
+    expect(item.subtitle).toBe("কিং ফাহদ সম্প্রসারণ");
+    expect(item.coordinates).toBe(gate.location.coordinates);
+    expect(item.source).toBe(gate);
+    expect(item.distance).toBeCloseTo(
+      haversineDistance(LAT, LNG, gate.location.coordinates[1], gate.location.coordinates[0]),
+      6
+    );
+    expect(item.distanceFormatted).toMatch(/[ঀ-৿]/);
+    expect(item.walkingTimeFormatted).toMatch(/[ঀ-৿]/);
+    expect(["N", "NE", "E", "SE", "S", "SW", "W", "NW"]).toContain(item.direction);
+  });
+
+  it("falls back to the plain name for OSM gates without a Bengali name", () => {
+    const osmGate = getActiveGates().find((g) => g.id.startsWith("+osm-"));
+    if (!osmGate) throw new Error("osm gate fixture missing");
+    const item = gateToNearbyItem(osmGate, LAT, LNG);
+    expect(item.name).toBe(osmGate.name);
+  });
+
+  it("without a fix yields placeholder fields that stay isNear-safe", () => {
+    const gate = HARAM_GATES[0];
+    const item = gateToNearbyItem(gate, null, null);
+    expect(item.distanceFormatted).toBe("—");
+    expect(item.walkingTimeFormatted).toBe("—");
+    expect(item.direction).toBe("");
+    // অসীম দূরত্ব — no-fix ফলব্যাকে "প্রায় পৌঁছে গেছেন" দেখাবে না
+    expect(item.distance).not.toBeLessThan(50);
+    expect(item.name).toBe(gate.nameBn);
+    expect(item.source).toBe(gate);
   });
 });
 

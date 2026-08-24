@@ -47,7 +47,11 @@ export function NearbyDetailFullContent({ item }: { item: NearbyItem }) {
       <div className="flex flex-wrap gap-2">
         <InfoChip
           icon={MapPin}
-          label={`${live.distanceFormatted} • ${live.direction} দিকে`}
+          label={
+            live.direction
+              ? `${live.distanceFormatted} • ${live.direction} দিকে`
+              : live.distanceFormatted
+          }
           data-testid="nearby-full-distance-chip"
         />
         <InfoChip icon={Clock} label={`${live.walkingTimeFormatted} হেঁটে`} />

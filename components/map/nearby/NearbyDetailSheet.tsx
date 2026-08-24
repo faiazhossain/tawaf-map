@@ -58,8 +58,9 @@ function DetailContent({
             </p>
           )}
           <p className="truncate text-xs text-muted-foreground">
-            {item.subtitle ? `${meta.label} • ${item.subtitle} • ` : `${meta.label} • `}
-            {live.direction} দিকে
+            {item.subtitle ? `${meta.label} • ${item.subtitle}` : meta.label}
+            {/* ফিক্স ছাড়া সার্চ-নির্বাচিত আইটেমে দিক খালি — "দিকে" প্রত্যয়টি তখন বাদ */}
+            {live.direction ? ` • ${live.direction} দিকে` : ""}
           </p>
         </div>
         {headerAction && <div className="shrink-0">{headerAction}</div>}

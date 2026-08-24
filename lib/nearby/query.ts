@@ -176,6 +176,33 @@ function toItem(
 // পাবলিক কোয়েরি
 // ---------------------------------------------------------------------------
 
+/**
+ * "গেট খুঁজুন" সার্চ থেকে NearbyItem — ব্যাসার্ধ-কোয়েরির বাইরের (এমনকি ব্যবহারকারীর
+ * ফিক্স ছাড়া বাছাই করা) গেটও ডিটেইল শিটে খোলা যায়। ফিক্স না থাকলে দূরত্ব-ফিল্ড
+ * "—": distance অসীম, তাই no-fix ফলব্যাকে isNear মিথ্যা থাকে ও সাজানোর শেষে বসে।
+ */
+export function gateToNearbyItem(gate: Gate, lat: number | null, lon: number | null): NearbyItem {
+  if (lat !== null && lon !== null) {
+    return toItem("gate", gate, lat, lon);
+  }
+  return {
+    id: gate.id,
+    category: "gate",
+    name: displayName("gate", gate),
+    nameAr: gate.nameAr,
+    coordinates: gate.location.coordinates,
+    distance: Number.POSITIVE_INFINITY,
+    distanceFormatted: "—",
+    walkingTime: 0,
+    walkingTimeFormatted: "—",
+    bearing: 0,
+    direction: "",
+    rating: ratingOf("gate", gate),
+    subtitle: nearbySubtitle("gate", gate),
+    source: gate,
+  };
+}
+
 export interface NearbyQueryOptions {
   /** কোন বিভাগ ধরা হবে (সেটিংসের ভিজিবিলিটি টগল); ডিফল্ট সব */
   enabledCategories?: NearbyCategory[];
