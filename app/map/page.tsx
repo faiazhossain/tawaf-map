@@ -1,16 +1,11 @@
 "use client";
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import {
-  MapView,
-  GateSelector,
-  UserLocation,
-  TouristPlacesList,
-  BarikoiAttribution,
-} from "@/components/map";
+import { useState, useEffect, useCallback, useMemo } from "react";
+import { MapView, GateSelector, UserLocation, BarikoiAttribution } from "@/components/map";
 import { NearbyChipBar, NearbySettingsPanel } from "@/components/map/nearby";
 import {
   NearbyCardsStrip,
+  NearbyCategoryButton,
   NearbyListSheet,
   NearbyDetailSheet,
   NearbyDetailModal,
@@ -19,71 +14,36 @@ import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
-import {
-  useGateProximity,
-  useGeolocation,
-  useMediaQuery,
-  useNearbyPlaces,
-  useNavigation,
-} from "@/lib/hooks";
+import { useGeolocation, useMediaQuery, useNearbyPlaces, useNavigation } from "@/lib/hooks";
 import { NavigationBanner } from "@/components/navigation/NavigationBanner";
 import {
-  useGateStore,
-  useHotelStore,
+  useLocationStore,
+  useNearbyStore,
   useRouteStore,
   usePanelStore,
-  useTouristPlaceStore,
   useUmrahGuideStore,
   useGuideSheetStore,
-  useNearbyStore,
   useMapStore,
 } from "@/lib/store";
 import { guideOverlayBottomPx, guideSheetRaised } from "@/lib/utils/guide-sheet";
 import { NEARBY_CHIP_BAR_HEIGHT_PX, NEARBY_CARDS_STRIP_GAP_PX } from "@/lib/utils/nearby-sheet";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import { getActiveGateById } from "@/lib/gates/active";
+import { gateToNearbyItem } from "@/lib/nearby/query";
 import { intentPreloadModelUrls } from "@/lib/map/model-config";
 import { fetchModelBytes } from "@/lib/map/model-manager";
-import { NEARBY_HOTELS } from "@/lib/data/hotels";
-import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { cn } from "@/lib/utils";
-import {
-  Hotel,
-  Mountain,
-  Building2,
-  Box,
-  X,
-  DoorOpen,
-  Moon,
-  Menu,
-  type LucideIcon,
-} from "lucide-react";
+import { Mountain, Box, X, Moon, Menu, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
 // Lazy load panels to avoid render overlap
 import dynamic from "next/dynamic";
 
-const GateInfoPanel = dynamic(
-  () => import("@/components/map/GateInfoPanel").then((mod) => ({ default: mod.GateInfoPanel })),
-  { ssr: false }
-);
-const HotelInfoPanel = dynamic(
-  () =>
-    import("@/components/panels/HotelInfoPanel").then((mod) => ({ default: mod.HotelInfoPanel })),
-  { ssr: false }
-);
 const RoutePanel = dynamic(
   () => import("@/components/panels/RoutePanel").then((mod) => ({ default: mod.RoutePanel })),
-  { ssr: false }
-);
-const TouristPlaceInfoPanel = dynamic(
-  () =>
-    import("@/components/panels/TouristPlaceInfoPanel").then((mod) => ({
-      default: mod.TouristPlaceInfoPanel,
-    })),
   { ssr: false }
 );
 const DebugLocationPanel = dynamic(
@@ -96,6 +56,8 @@ const DebugLocationPanel = dynamic(
 
 // মোবাইল হ্যামবার্গার মেনুর টগল-সারি: আইকন + বাংলা লেবেল বামে, সুইচ ডানে।
 // সুইচের রঙ primary থিম অনুসরণ করে; বোতামটি aria-pressed-এ অবস্থা জানায়।
+// (স্থায়ী মানচিত্র-পছন্দ — টেরেইন/3D — এর জন্য; "আমার কাছে" বিভাগগুলো
+// NearbyCategoryButton দিয়ে যায়, চিপ-বারের মতোই।)
 function MenuToggleRow({
   label,
   icon: Icon,
@@ -140,7 +102,6 @@ function MenuToggleRow({
 }
 
 export default function MapPage() {
-  const { nearbyGates } = useGateProximity();
   // "আমার কাছে" — থ্রটল-করা লাইভ কোয়েরি (গণনা + সক্রিয় বিভাগের তালিকা)
   const nearby = useNearbyPlaces();
   const activeNearbyCategory = useNearbyStore((state) => state.activeCategory);
@@ -165,28 +126,15 @@ export default function MapPage() {
   // লাইভ নেভিগেশন অর্কেস্ট্রেশন — পেজে ঠিক একবারই মাউন্ট হয় (দ্বিতীয়বার হলে
   // প্রতি ফিক্সে ডাবল হিসাব/ডাবল রিয়ারাউট হবে)।
   useNavigation();
-  const { setGate, setGateDistance, clearGate } = useGateStore();
-  const { selectedHotel, setSelectedHotel, clearSelectedHotel } = useHotelStore();
   const { activeRoute } = useRouteStore();
   const { activePanel, setActivePanel } = usePanelStore();
-  const {
-    setPlace: setTouristPlace,
-    clearPlace: clearTouristPlace,
-    selectedPlace,
-  } = useTouristPlaceStore();
   const umrahOnboarded = useUmrahGuideStore((s) => s.onboarded);
 
-  const [showGates, setShowGates] = useState(false);
-  const [showHotels, setShowHotels] = useState(false);
   const [showTerrain, setShowTerrain] = useState(false);
   const [show3DModel, setShow3DModel] = useState(false);
-  const [showTouristPlaces, setShowTouristPlaces] = useState(false);
-  const [showTouristList, setShowTouristList] = useState(false);
   const [showUmrahOnboarding, setShowUmrahOnboarding] = useState(false);
   const [showUmrahGuide, setShowUmrahGuide] = useState(false);
   const [showMiqatOverview, setShowMiqatOverview] = useState(false);
-  // Show all cities by default
-  const [selectedTouristCity, setSelectedTouristCity] = useState<"makkah" | "madinah" | null>(null);
 
   // ওমরাহ গাইড বোতাম: অনবোর্ডিং না থাকলে উইজার্ড, থাকলে ধাপ-তালিকা
   const handleToggleUmrah = () => {
@@ -283,9 +231,11 @@ export default function MapPage() {
   useEffect(() => {
     const active = isDemoWorldActive();
     setDemoWorldActive(active);
-    // ডেমো মোডে গেট লেয়ার ডিফল্টেই চালু — এরিনায় সরানো ডেটা এক নজরে দেখা যায়,
-    // আর কাছাকাছি গেট প্যানেলের সাথে মানচিত্রও সঙ্গে সঙ্গে মিলে যায়।
-    if (active) setShowGates(true);
+    // ডেমো মোডে গেট বিভাগ ডিফল্টেই সক্রিয় — এরিনায় সরানো গেটগুলো এক নজরে
+    // দেখা যায়। মার্কার/কার্ড প্রথম রিম্যাপ-করা জিপিএস ফিক্সের পরেই বসে।
+    if (active && useNearbyStore.getState().activeCategory === null) {
+      useNearbyStore.getState().setActiveCategory("gate");
+    }
   }, []);
 
   // ভিউপোর্টের উচ্চতা — গাইড শিটের স্ন্যাপ অনুযায়ী চিপ-বারের bottom অফসেট
@@ -312,12 +262,6 @@ export default function MapPage() {
   // নামে - useGuideSheetNearbySync; এই নিয়ম সেটেল-চলাকালীন ফাঁকও ঢাকে)।
   const guideBlocksNearby = guideSheetActive && guideSheetRaised(guideSheetSnap);
 
-  // nearbyGates রেফ ধরে রাখা হয়েছে যাতে হ্যান্ডলার useCallback-এ স্থিতিশীল থাকে।
-  // এতে লোকেশন আপডেটে পেইজ রি-রেন্ডার হলেও MapView-এর effect পুনরায় না চলে —
-  // ফলে ট্যাব পরিবর্তনের পর গাইড ক্যামেরা জুম (যেমন তওয়াফে ১৮) অপরিবর্তিত থাকে।
-  const nearbyGatesRef = useRef(nearbyGates);
-  nearbyGatesRef.current = nearbyGates;
-
   // মোবাইল হেডার: লোগো বামে, ডানে শুধু ওমরাহ + মোড + হ্যামবার্গার; বাকি সব
   // টুলবার আইটেম হ্যামবার্গার মেনুর ভেতরে। ডেস্কটপে (>=sm) আগের মতো অনুভূমিক
   // টুলবার। প্রতিটি লেআউটে প্রতিটি আইটেম একবারই মাউন্ট হয়; GPS ওয়াচ এজন্যই
@@ -328,137 +272,44 @@ export default function MapPage() {
   const isDesktop = useMediaQuery("(min-width: 640px)");
   const [toolbarMenuOpen, setToolbarMenuOpen] = useState(false);
 
-  const handleGateClick = useCallback(
-    (gateId: string) => {
-      const gate = getActiveGateById(gateId);
-      const proximity = nearbyGatesRef.current.find((g) => g.gate.id === gateId);
-
-      if (gate) {
-        setGate(gate);
-        if (proximity) {
-          setGateDistance(proximity.distance, proximity.walkingTime);
-        }
-      }
-
-      clearSelectedHotel();
-      setActivePanel("gate");
-    },
-    [setGate, setGateDistance, clearSelectedHotel, setActivePanel]
-  );
-
-  const handleHotelClick = useCallback(
-    (hotelId: string) => {
-      const hotel = NEARBY_HOTELS.find((h) => h.id === hotelId);
-      if (hotel) {
-        setSelectedHotel(hotel);
-      }
-
-      clearGate();
-      clearTouristPlace();
-      setActivePanel("hotel");
-      setShowTouristList(false);
-    },
-    [setSelectedHotel, clearGate, clearTouristPlace, setActivePanel]
-  );
-
-  const handleTouristPlaceClick = useCallback(
-    (placeId: string) => {
-      const place = TOURIST_PLACES.find((p) => p.id === placeId);
-      if (place) {
-        setTouristPlace(place);
-      }
-
-      clearGate();
-      clearSelectedHotel();
-      setActivePanel("tourist-place");
-      setShowTouristList(false);
-    },
-    [setTouristPlace, clearGate, clearSelectedHotel, setActivePanel]
-  );
-
-  const handleToggleGates = () => {
-    setShowGates((prev) => !prev);
-    // When turning on gates, turn off hotels and places
-    if (!showGates) {
-      setShowHotels(false);
-      setShowTouristPlaces(false);
+  // সার্চ থেকে গেট বাছাই: চিপ-ট্যাপের মতোই একই পথে যায় — গেট বিভাগ সক্রিয়
+  // করে ডিটেইল শিট খোলে। setActiveCategory একই বিভাগে ডাকলে টগল-অফ হয়ে
+  // যায় ও নির্বাচন রিসেট করে, তাই আগে বিভাগ মিলিয়ে নিয়ে তারপর selectItem।
+  const handleSearchGateSelect = useCallback((gateId: string) => {
+    // মোবাইল: হ্যামবার্গার মেনুর ভেতর থেকে বাছলে মেনু বন্ধ, নইলে ইনফো
+    // শীটের সাথে ওভারল্যাপ করে পুরো স্ক্রিন ভরিয়ে রাখে।
+    setToolbarMenuOpen(false);
+    const gate = getActiveGateById(gateId);
+    if (!gate) return;
+    const { latitude, longitude } = useLocationStore.getState();
+    const item = gateToNearbyItem(gate, latitude, longitude);
+    const store = useNearbyStore.getState();
+    if (store.activeCategory !== "gate") {
+      store.setActiveCategory("gate");
     }
-  };
-
-  const handleToggleHotels = () => {
-    setShowHotels((prev) => !prev);
-    if (showHotels) {
-      clearSelectedHotel();
-      if (activePanel === "hotel") {
-        setActivePanel(null);
-      }
-    } else {
-      // When turning on hotels, turn off gates and places
-      setShowGates(false);
-      setShowTouristPlaces(false);
-    }
-  };
-
-  const handleToggleTouristPlaces = () => {
-    setShowTouristPlaces((prev) => !prev);
-    setShowTouristList(false);
-    if (showTouristPlaces) {
-      clearTouristPlace();
-      if (activePanel === "tourist-place") {
-        setActivePanel(null);
-      }
-    } else {
-      // When turning on places, turn off gates and hotels
-      setShowGates(false);
-      setShowHotels(false);
-    }
-  };
-
-  // সার্চ থেকে গেট বাছাই: গেট-লেয়ার বন্ধ থাকলে চালু হয় (টগল-কনভেনশন মতো
-  // হোটেল/স্থান বন্ধ), তারপর মার্কার ক্লিকের মতোই একই পথে ইনফো প্যানেল খোলে।
-  const handleSearchGateSelect = useCallback(
-    (gateId: string) => {
-      if (!showGates) {
-        setShowGates(true);
-        setShowHotels(false);
-        setShowTouristPlaces(false);
-      }
-      // মোবাইল: হ্যামবার্গার মেনুর ভেতর থেকে বাছলে মেনু বন্ধ, নইলে ইনফো
-      // শীটের সাথে ওভারল্যাপ করে পুরো স্ক্রিন ভরিয়ে রাখে।
-      setToolbarMenuOpen(false);
-      handleGateClick(gateId);
-    },
-    [showGates, handleGateClick]
-  );
-
-  const handleCloseGatePanel = () => {
-    clearGate();
-    setActivePanel(null);
-  };
-
-  const handleCloseHotelPanel = () => {
-    clearSelectedHotel();
-    setActivePanel(null);
-  };
-
-  const handleCloseTouristPlacePanel = () => {
-    clearTouristPlace();
-    setActivePanel(null);
-  };
+    store.selectItem(item);
+  }, []);
 
   const handleCloseRoutePanel = () => {
     setActivePanel(null);
   };
 
-  const showGatePanel = activePanel === "gate";
-  const showHotelPanel = activePanel === "hotel" && selectedHotel !== null;
-  const showTouristPlacePanel = activePanel === "tourist-place";
   const showRoutePanel = activePanel === "route" && activeRoute !== null;
   const hasActivePanel = activePanel !== null;
 
   if (activeRoute !== null && activePanel === null) {
     setActivePanel("route");
   }
+
+  // নির্বাচিত আইটেম ব্যাসার্ধের বাইরে হলেও (যেমন সার্চে বাছাই করা দূরের গেট)
+  // MapView-এর মার্কার-তালিকায় জোর করে ঢোকানো হয় — selectNearbyMapMarkers-এর
+  // alwaysIncludeIds তখন মার্কার বসায় ও ফ্লাই-টু চলে। কার্ড-স্ট্রিপ/তালিকা-
+  // শিট আসল nearby.items-ই পায়, যাতে বাইরের আইটেম কার্ড হয়ে না ফুটে।
+  const itemsWithSelected = useMemo(() => {
+    if (!activeNearbyCategory || !nearbySelectedItem) return nearby.items;
+    if (nearby.items.some((item) => item.id === nearbySelectedItem.id)) return nearby.items;
+    return [...nearby.items, nearbySelectedItem];
+  }, [nearby.items, activeNearbyCategory, nearbySelectedItem]);
 
   // হেডারের শেয়ার্ড আইটেম — ডেস্কটপ টুলবার ও মোবাইল ক্লাস্টার/মেনু একই JSX
   // ব্যবহার করে। isDesktop শর্তে যেকোনো সময় একটিই লেআউট রেন্ডার হয়, তাই প্রতিটি
@@ -526,34 +377,18 @@ export default function MapPage() {
                   {themeToggle}
                   {userLocationItem}
                   {umrahButton}
-                  <Button
-                    variant={showHotels ? "default" : "outline"}
-                    size={showHotels ? "sm" : "icon"}
-                    onClick={handleToggleHotels}
-                    className={
-                      showHotels
-                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                    }
-                  >
-                    <Hotel className="hidden sm:inline-block w-4 h-4" />
-                    <span className="inline whitespace-nowrap">{showHotels ? "On" : "Hotels"}</span>
-                  </Button>
-                  <Button
-                    variant={showTouristPlaces ? "default" : "outline"}
-                    size={showTouristPlaces ? "sm" : "icon"}
-                    onClick={handleToggleTouristPlaces}
-                    className={
-                      showTouristPlaces
-                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                    }
-                  >
-                    <Building2 className="hidden sm:inline-block w-4 h-4" />
-                    <span className="inline whitespace-nowrap">
-                      {showTouristPlaces ? "Hist On" : "Hist"}
-                    </span>
-                  </Button>
+                  {/* "আমার কাছে" প্রধান তিন বিভাগ — চিপ-বারের মতোই একই বোতাম,
+                      একই স্টোর; উভয় প্রবেশপথ সবসময় সিঙ্কে থাকে। */}
+                  {(["hotel", "gate", "historical"] as const).map((category) => (
+                    <NearbyCategoryButton
+                      key={category}
+                      category={category}
+                      count={nearby.counts[category]}
+                      active={activeNearbyCategory === category}
+                      disabled={!nearby.hasLocation}
+                      onSelect={handleNearbyCategorySelect}
+                    />
+                  ))}
                   <Button
                     variant={showTerrain ? "default" : "outline"}
                     size={showTerrain ? "sm" : "icon"}
@@ -586,19 +421,6 @@ export default function MapPage() {
                       <span className="inline whitespace-nowrap">{show3DModel ? "On" : "3D"}</span>
                     </Button>
                   )}
-                  <Button
-                    variant={showGates ? "default" : "outline"}
-                    size={showGates ? "sm" : "icon"}
-                    onClick={handleToggleGates}
-                    className={
-                      showGates
-                        ? "bg-primary text-primary-foreground border-0 shadow-lg text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                        : "border-border bg-surface/80 hover:bg-muted hover:text-foreground text-muted-foreground text-sm px-2 sm:px-4 sm:min-w-[4.5rem]"
-                    }
-                  >
-                    <DoorOpen className="hidden sm:inline-block w-4 h-4" />
-                    <span className="inline whitespace-nowrap">{showGates ? "On" : "Gates"}</span>
-                  </Button>
                   <GateSelector onSelectGate={handleSearchGateSelect} />
                 </div>
               </div>
@@ -629,18 +451,21 @@ export default function MapPage() {
           <div className="absolute inset-x-0 top-full z-[60] border-b border-border bg-surface/95 shadow-lg backdrop-blur-md">
             <div className="mx-auto max-w-screen-2xl max-h-[70vh] overflow-y-auto px-3 py-1.5">
               <div className="divide-y divide-border">
-                <MenuToggleRow
-                  label="নিকটবর্তী হোটেল"
-                  icon={Hotel}
-                  checked={showHotels}
-                  onChange={handleToggleHotels}
-                />
-                <MenuToggleRow
-                  label="দর্শনীয় স্থানসমূহ"
-                  icon={Building2}
-                  checked={showTouristPlaces}
-                  onChange={handleToggleTouristPlaces}
-                />
+                {/* "আমার কাছে" তিন বিভাগ — চিপ-বারের একই বোতাম, উল্লম্ব তালিকার
+                    জন্য প্রসারিত; সুইচ-সারি শুধু স্থায়ী পছন্দে (টেরেইন/3D)। */}
+                <div className="flex flex-col items-stretch gap-1.5 py-1.5">
+                  {(["hotel", "gate", "historical"] as const).map((category) => (
+                    <NearbyCategoryButton
+                      key={category}
+                      category={category}
+                      count={nearby.counts[category]}
+                      active={activeNearbyCategory === category}
+                      disabled={!nearby.hasLocation}
+                      className="w-full justify-start"
+                      onSelect={handleNearbyCategorySelect}
+                    />
+                  ))}
+                </div>
                 <MenuToggleRow
                   label="টেরেইন ম্যাপ"
                   icon={Mountain}
@@ -656,12 +481,6 @@ export default function MapPage() {
                     onIntent={handle3DIntent}
                   />
                 )}
-                <MenuToggleRow
-                  label="হারামের গেট"
-                  icon={DoorOpen}
-                  checked={showGates}
-                  onChange={handleToggleGates}
-                />
               </div>
               <div className="mt-1.5 flex items-center justify-end gap-3 border-t border-border pt-2.5">
                 <GateSelector showLabel onSelectGate={handleSearchGateSelect} />
@@ -675,60 +494,19 @@ export default function MapPage() {
       {/* Map */}
       <div className="relative flex-1">
         <MapView
-          showGates={showGates && activeNearbyCategory !== "gate"}
-          showHotels={showHotels && activeNearbyCategory !== "hotel"}
-          showTouristPlaces={showTouristPlaces && activeNearbyCategory !== "historical"}
-          touristCity={selectedTouristCity}
           showUserLocation
           showTerrain={showTerrain}
           show3DModel={show3DModel}
           showUmrah={umrahOnboarded && showUmrahGuide}
           showMiqatOverview={umrahOnboarded && showMiqatOverview}
           nearbyCategory={activeNearbyCategory}
-          nearbyItems={activeNearbyCategory ? nearby.items : []}
+          nearbyItems={activeNearbyCategory ? itemsWithSelected : []}
           nearbySelectedItemId={nearbySelectedItem?.id ?? null}
           nearbyCenter={nearby.center}
           nearbyRadiusM={nearbyRadius}
-          onGateClick={handleGateClick}
-          onHotelClick={handleHotelClick}
-          onTouristPlaceClick={handleTouristPlaceClick}
           onUmrahStepClick={handleUmrahStepClick}
           onNearbyItemClick={handleNearbyItemClick}
         />
-
-        {/* Tourist Places List */}
-        {showTouristList && !hasActivePanel && (
-          <div className="absolute top-4 left-4 z-[40] w-80 sm:w-96">
-            <div className="relative">
-              <button
-                onClick={() => setShowTouristList(false)}
-                className="absolute -top-2 -right-2 p-1 bg-muted hover:bg-muted-foreground/20 rounded-full z-10"
-              >
-                <X className="w-4 h-4 text-foreground" />
-              </button>
-              <TouristPlacesList
-                initialCity={selectedTouristCity ?? undefined}
-                onCityChange={setSelectedTouristCity}
-                onPlaceClick={(placeId) => {
-                  handleTouristPlaceClick(placeId);
-                  setShowTouristList(false);
-                }}
-              />
-            </div>
-          </div>
-        )}
-
-        {/* Info Panels */}
-        {showGatePanel && <GateInfoPanel onClose={handleCloseGatePanel} />}
-        {showHotelPanel && selectedHotel && (
-          <HotelInfoPanel hotel={selectedHotel} onClose={handleCloseHotelPanel} />
-        )}
-        {showTouristPlacePanel && selectedPlace.place && (
-          <TouristPlaceInfoPanel
-            place={selectedPlace.place}
-            onClose={handleCloseTouristPlacePanel}
-          />
-        )}
 
         {/* Route Panel */}
         {showRoutePanel && <RoutePanel onClose={handleCloseRoutePanel} />}
@@ -741,23 +519,6 @@ export default function MapPage() {
 
         {/* GPS simulator badge (dev/test harness, only renders while active) */}
         <GpsSimBadge />
-
-        {/* Tourist Places Floating Button (when list is closed and places toggle is on) */}
-        {!showTouristList && !hasActivePanel && showTouristPlaces && (
-          <div className="absolute bottom-20 left-4 z-[40]">
-            <Button
-              onClick={() => {
-                setShowTouristList(true);
-              }}
-              size="sm"
-              className="bg-primary hover:bg-primary-hover text-primary-foreground border-0 shadow-lg flex items-center gap-2"
-            >
-              <Building2 className="w-4 h-4" />
-              <span className="hidden sm:inline">Browse Historical</span>
-              <span className="sm:hidden">Historical</span>
-            </Button>
-          </div>
-        )}
 
         {/* ওমরাহ গাইড - অনবোর্ডিং উইজার্ড */}
         {showUmrahOnboarding && (

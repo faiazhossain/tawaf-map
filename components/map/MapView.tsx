@@ -40,11 +40,8 @@ import type { ModelLayerHandle } from "@/lib/map/three-model-layer";
 import {
   useMapStore,
   useLocationStore,
-  useGateStore,
   useRouteStore,
   useNavigationStore,
-  useHotelStore,
-  useTouristPlaceStore,
   useUmrahGuideStore,
   useGuideSheetStore,
 } from "@/lib/store";
@@ -62,26 +59,8 @@ import {
   type NearbyMarkerSelection,
 } from "@/lib/nearby/map-markers-selection";
 import { nearbyCameraPadding } from "@/lib/utils/nearby-sheet";
-import { haversineDistance } from "@/lib/utils/distance";
 import type { NearbyCategory, NearbyItem } from "@/types/nearby";
 import type { Route } from "@/types/navigation";
-import { HARAM_GATES } from "@/lib/data/gates";
-import { getActiveGates } from "@/lib/gates/active";
-import { isDemoWorldActive } from "@/lib/dev/demo-world";
-import { registerGatesPmtilesProtocol, gatesPmtilesUrl } from "@/components/map/gates/pmtiles";
-import {
-  GATES_PMTILES_SOURCE_ID,
-  GATES_PMTILES_LAYER_ID,
-  GATES_PMTILES_LABEL_ID,
-  GATES_PMTILES_SELECTED_ID,
-  gatesPmtilesSource,
-  gatesCircleLayer,
-  gateSelectionFilter,
-  gatesLabelLayer,
-  gatesSelectedLayer,
-} from "@/components/map/gates/gates-layers";
-import { NEARBY_HOTELS } from "@/lib/data/hotels";
-import { TOURIST_PLACES } from "@/lib/data/tourist-places";
 import { getStepById } from "@/lib/data/umrah/steps";
 import { getAnchorById } from "@/lib/data/umrah/anchors";
 import { isStepComplete } from "@/lib/data/umrah/sequence";
@@ -129,9 +108,6 @@ import {
   nearbyRadiusLinePaint,
 } from "@/lib/map/layers";
 import {
-  createGateMarkerElement,
-  createHotelMarkerElement,
-  createTouristPlaceMarkerElement,
   createUserLocationElement,
   createUmrahStepMarkerElement,
   createMiqatMarkerElement,
@@ -150,10 +126,6 @@ import { getDemoWorldViewport } from "@/lib/dev/demo-world";
 
 interface MapViewProps {
   className?: string;
-  showGates?: boolean;
-  showHotels?: boolean;
-  showTouristPlaces?: boolean;
-  touristCity?: "makkah" | "madinah" | null;
   showUserLocation?: boolean;
   showTerrain?: boolean;
   show3DModel?: boolean;
@@ -169,9 +141,6 @@ interface MapViewProps {
   nearbyCenter?: { latitude: number; longitude: number } | null;
   /** ব্যাসার্ধ মিটারে */
   nearbyRadiusM?: number;
-  onGateClick?: (gateId: string) => void;
-  onHotelClick?: (hotelId: string) => void;
-  onTouristPlaceClick?: (placeId: string) => void;
   onUmrahStepClick?: (stepId: string) => void;
   onMiqatClick?: (miqatId: string) => void;
   onNearbyItemClick?: (item: NearbyItem) => void;
@@ -217,10 +186,6 @@ function flashRitualRing(
 
 export function MapView({
   className = "",
-  showGates = true,
-  showHotels = false,
-  showTouristPlaces = false,
-  touristCity = "makkah",
   showUserLocation = true,
   showTerrain = false,
   show3DModel = false,
@@ -231,9 +196,6 @@ export function MapView({
   nearbySelectedItemId = null,
   nearbyCenter = null,
   nearbyRadiusM = 1000,
-  onGateClick,
-  onHotelClick,
-  onTouristPlaceClick,
   onUmrahStepClick,
   onMiqatClick,
   onNearbyItemClick,
@@ -297,9 +259,6 @@ export function MapView({
     useTawafCamera(mapInstance);
 
   // Store references to markers for removal/update
-  const gateMarkersRef = useRef<Map<string, Marker>>(new Map());
-  const hotelMarkersRef = useRef<Map<string, Marker>>(new Map());
-  const touristPlaceMarkersRef = useRef<Map<string, Marker>>(new Map());
   const umrahStepMarkersRef = useRef<Map<string, Marker>>(new Map());
   const miqatMarkersRef = useRef<Map<string, Marker>>(new Map());
   const nearbyMarkersRef = useRef<Map<string, Marker>>(new Map());
@@ -345,7 +304,6 @@ export function MapView({
   const longitude = useLocationStore((state) => state.longitude);
   const accuracy = useLocationStore((state) => state.accuracy);
 
-  const selectedGate = useGateStore((state) => state.selectedGate.gate);
   const activeRoute = useRouteStore((state) => state.activeRoute);
   // লাইভ নেভিগেশন — অবশিষ্ট জ্যামিতি, স্ন্যাপড অবস্থান ও ক্যামেরা ফলো
   const isNavigating = useNavigationStore((state) => state.isNavigating);
@@ -353,8 +311,6 @@ export function MapView({
   const navSnapped = useNavigationStore((state) => state.snappedPosition);
   const navFollowEnabled = useNavigationStore((state) => state.followEnabled);
   const navHasArrived = useNavigationStore((state) => state.hasArrived);
-  const selectedHotel = useHotelStore((state) => state.selectedHotel);
-  const selectedTouristPlace = useTouristPlaceStore((state) => state.selectedPlace.place);
 
   // ওমরাহ গাইড স্টেট - স্থিতিশীল সিলেক্টর (নতুন অবজেক্ট রেফারেন্স এড়াতে হবে)
   const umrahStepIds = useUmrahGuideStore((s) => s.stepIds);
@@ -889,258 +845,6 @@ export function MapView({
     });
   }, [mapLoaded]);
 
-  // Add/update gate markers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    const map = mapRef.current;
-    const markersMap = gateMarkersRef.current;
-
-    // Remove all existing gate markers
-    markersMap.forEach((marker) => marker.remove());
-    markersMap.clear();
-
-    if (showGates && isDemoWorldActive()) {
-      // Add gate markers — শুধু ডেমো-ওয়ার্ল্ড মোডে। বাস্তব মোডে গেটগুলো
-      // ভেক্টর-টাইল লেয়ার হিসেবে দেখানো হয় (নীচের OSM গেট ইফেক্ট)।
-      HARAM_GATES.forEach((gate) => {
-        const isSelected = selectedGate?.id === gate.id;
-        const el = createGateMarkerElement(
-          gate.type ?? "umrah",
-          isSelected,
-          () => onGateClick?.(gate.id),
-          (gate.name as string) ?? "গেট"
-        );
-
-        const marker = new Marker({
-          element: el,
-          anchor: "bottom",
-        })
-          .setLngLat(gate.location.coordinates as [number, number])
-          .addTo(map);
-
-        markersMap.set(gate.id, marker);
-      });
-    }
-  }, [mapLoaded, showGates, selectedGate?.id, onGateClick]);
-
-  // গেট টগল/লোডে মানচিত্রকে সবগুলো গেটের বাউন্ডসে ফিট না করে (যা মানচিত্রকে ছোট করে
-  // ফেলে) নিকটতম গেটে জুম-১৫ দেখাও। এটি আলাদা করা হয়েছে যাতে ট্যাব পরিবর্তন বা
-  // লোকেশন আপডেটের মতো আকস্মিক রি-রেন্ডারে গাইডের ক্যামেরা জুম (যেমন তওয়াফে ১৮)
-  // গেট-দৃশ্যে পাল্টে না যায়।
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showGates) return;
-    const gates = getActiveGates();
-    if (!gates.length) return;
-
-    // ব্যবহারকারীর লোকেশন থাকলে নিকটতম গেট টার্গেট করো, অন্যথায় ডিফল্টে এল-হারামের
-    // কেন্দ্র বিন্দু (প্রথম গেট) টার্গেট করো — সবগুলো গেটের বাউন্ডস ফিট করলে মানচিত্র
-    // ছোট হয়ে যায়।
-    let center = gates[0].location.coordinates;
-    if (latitude !== null && longitude !== null) {
-      let nearest = gates[0];
-      let nearestDist = Infinity;
-      for (const gate of gates) {
-        const [glng, glat] = gate.location.coordinates;
-        const dist = haversineDistance(latitude, longitude, glat, glng);
-        if (dist < nearestDist) {
-          nearestDist = dist;
-          nearest = gate;
-        }
-      }
-      center = nearest.location.coordinates;
-    }
-
-    programmaticFlyTo({ center, zoom: 15, duration: 1000 });
-  }, [mapLoaded, showGates, latitude, longitude, programmaticFlyTo]);
-
-  // OSM গেট ভেক্টর-লেয়ার — শুধু বাস্তব (নন-ডেমো) মোডে।
-  // ডেমো-ওয়ার্ল্ড মোডে গেটগুলো উপরের DOM মার্কার ইফেক্ট থেকে দেখানো হয়।
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !showGates) return;
-    if (isDemoWorldActive()) return;
-
-    const map = mapRef.current;
-
-    const pmtilesUrl = gatesPmtilesUrl();
-
-    // প্রোটোকল আগে রেজিস্টার — `addSource` সাথে-সাথে `pmtiles://` ফেচ করে,
-    // তাই প্রোটোকল অবশ্যই আগে অ্যাঁড হতে হবে।
-    const removeProtocol = registerGatesPmtilesProtocol();
-
-    if (!map.getSource(GATES_PMTILES_SOURCE_ID)) {
-      map.addSource(GATES_PMTILES_SOURCE_ID, gatesPmtilesSource(pmtilesUrl));
-    }
-
-    // বিল্ডিং-গ্রুপের অ্যাঙ্কর (`building-metro`) নিচে ঢোকাও — যাতে পিওআই/লেবেল
-    // উপরে থাকে (addBelowLabels-এর নিয়ম অনুসরণ)।
-    const insertBelowLabels = (layer: Parameters<typeof map.addLayer>[0]) => {
-      if (map.getLayer("building-metro")) {
-        map.addLayer(layer, "building-metro");
-      } else {
-        map.addLayer(layer);
-      }
-    };
-
-    if (!map.getLayer(GATES_PMTILES_LAYER_ID)) {
-      insertBelowLabels(gatesCircleLayer());
-    }
-    if (!map.getLayer(GATES_PMTILES_LABEL_ID)) {
-      map.addLayer(gatesLabelLayer(), GATES_PMTILES_LAYER_ID);
-    }
-    if (!map.getLayer(GATES_PMTILES_SELECTED_ID)) {
-      // বেস সার্কেলের উপরে (কোনো beforeId ছাড়া = স্ট্যাকের একদম উপরে) —
-      // আগে beforeId=বেস-লেয়ার দিলে হাইলাইট ধূসর বিন্দুর নিচে চাপা পড়ত।
-      map.addLayer(gatesSelectedLayer());
-    }
-
-    // গেট ক্লিক → পপআপ (বাংলা/আরবি/ইংরেজি নাম)। টাইল-প্রোপার্টি Latin-শুধু তাই
-    // `ogc_fid` (OSM id) দিয়ে সক্রিয় ডেটাসেট থেকে বাংলা/আরবি নাম আনা হয়।
-    const onGateClick = (e: maplibregl.MapLayerMouseEvent) => {
-      const features = map.queryRenderedFeatures(e.point, {
-        layers: [GATES_PMTILES_LAYER_ID],
-      });
-      if (!features.length) return;
-      const ogcFid = features[0].properties?.ogc_fid;
-      const gate = getActiveGates().find((g) => g.id === `+osm-${ogcFid}`);
-      const lines = [
-        gate?.nameBn ?? gate?.name ?? "",
-        gate?.nameAr ?? "",
-        typeof features[0].properties?.ref === "string"
-          ? (features[0].properties!.ref as string)
-          : "",
-      ]
-        .filter(Boolean)
-        .map((line) => `<div>${line}</div>`)
-        .join("");
-      new maplibregl.Popup({ closeOnClick: false, offset: 10 })
-        .setLngLat(e.lngLat)
-        .setHTML(`<div class="gate-popup font-medium">${lines || "গেট"}</div>`)
-        .addTo(map);
-    };
-    map.on("click", GATES_PMTILES_LAYER_ID, onGateClick);
-
-    return () => {
-      if (map.getStyle()) {
-        if (map.getLayer(GATES_PMTILES_SELECTED_ID)) map.removeLayer(GATES_PMTILES_SELECTED_ID);
-        if (map.getLayer(GATES_PMTILES_LABEL_ID)) map.removeLayer(GATES_PMTILES_LABEL_ID);
-        if (map.getLayer(GATES_PMTILES_LAYER_ID)) map.removeLayer(GATES_PMTILES_LAYER_ID);
-        if (map.getSource(GATES_PMTILES_SOURCE_ID)) map.removeSource(GATES_PMTILES_SOURCE_ID);
-      }
-      map.off("click", GATES_PMTILES_LAYER_ID, onGateClick);
-      removeProtocol?.();
-    };
-  }, [mapLoaded, showGates]);
-
-  // নির্বাচিত গেটের হাইলাইট ফিল্টার — সার্চ বা মার্কার যে-পথেই নির্বাচন হোক।
-  // লেয়ার-স্ট্যাক শো-টগলে নতুন করে যোগ হয়, তাই showGates-ও ডিপেন্ডেন্সিতে।
-  useEffect(() => {
-    const map = mapRef.current;
-    if (!map || !mapLoaded || isDemoWorldActive()) return;
-    if (!map.getLayer(GATES_PMTILES_SELECTED_ID)) return;
-    map.setFilter(GATES_PMTILES_SELECTED_ID, gateSelectionFilter(selectedGate?.id));
-  }, [mapLoaded, showGates, selectedGate?.id]);
-
-  // Add/update hotel markers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    const map = mapRef.current;
-    const markersMap = hotelMarkersRef.current;
-
-    // Remove all existing hotel markers
-    markersMap.forEach((marker) => marker.remove());
-    markersMap.clear();
-
-    if (showHotels) {
-      // Add hotel markers
-      NEARBY_HOTELS.forEach((hotel) => {
-        const isSelected = selectedHotel?.id === hotel.id;
-        const el = createHotelMarkerElement(
-          hotel.priceLevel,
-          isSelected,
-          () => onHotelClick?.(hotel.id),
-          (hotel.name as string) ?? "হোটেল"
-        );
-
-        const marker = new Marker({
-          element: el,
-          anchor: "bottom",
-        })
-          .setLngLat(hotel.location.coordinates as [number, number])
-          .addTo(map);
-
-        markersMap.set(hotel.id, marker);
-      });
-    }
-  }, [mapLoaded, showHotels, selectedHotel?.id, onHotelClick]);
-
-  // Add/update tourist place markers
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded) return;
-
-    const map = mapRef.current;
-    const markersMap = touristPlaceMarkersRef.current;
-
-    // Remove all existing tourist place markers
-    markersMap.forEach((marker) => marker.remove());
-    markersMap.clear();
-
-    if (showTouristPlaces) {
-      // Filter places by selected city (Makkah or Madinah), or show all if null
-      const placesToShow = touristCity
-        ? TOURIST_PLACES.filter((place) => place.city === touristCity)
-        : TOURIST_PLACES;
-
-      // Add tourist place markers
-      placesToShow.forEach((place) => {
-        const isSelected = selectedTouristPlace?.id === place.id;
-        const el = createTouristPlaceMarkerElement(
-          place.category,
-          isSelected,
-          place.popular,
-          () => onTouristPlaceClick?.(place.id),
-          (place.name as string) ?? "চিহ্নিত স্থান"
-        );
-
-        const marker = new Marker({
-          element: el,
-          anchor: "bottom",
-        })
-          .setLngLat(place.location.coordinates as [number, number])
-          .addTo(map);
-
-        markersMap.set(place.id, marker);
-      });
-
-      // Optionally fit bounds to show the selected city's places
-      if (placesToShow.length > 0 && touristCity === "makkah") {
-        // For Makkah, we can fit bounds since places are clustered
-        const bounds: LngLatBoundsLike = [
-          [
-            Math.min(...placesToShow.map((p) => p.location.coordinates[0])),
-            Math.min(...placesToShow.map((p) => p.location.coordinates[1])),
-          ],
-          [
-            Math.max(...placesToShow.map((p) => p.location.coordinates[0])),
-            Math.max(...placesToShow.map((p) => p.location.coordinates[1])),
-          ],
-        ];
-        programmaticFitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: 50, right: 50 },
-          duration: 1000,
-        });
-      }
-    }
-  }, [
-    mapLoaded,
-    showTouristPlaces,
-    selectedTouristPlace?.id,
-    onTouristPlaceClick,
-    touristCity,
-    programmaticFitBounds,
-  ]);
-
   // ----- "আমার কাছে": মানচিত্র-নির্বাচন (ক্যাপ + ওভারল্যাপ স্কিপ) -----
   // বিশুদ্ধ নির্বাচন map.project() দিয়ে হিসাব করে state-এ রাখে; মার্কার-ইফেক্ট
   // শুধু সিগনেচার বদলালে চলে। moveend-এ রিকমপিউট — জেসচার থামলে একবার (প্রতি
@@ -1195,8 +899,8 @@ export function MapView({
   // kept-তালিকা (<= cap) পূর্ণ আইকন পায় — নিকটতম ৩টি স্পন্দিত (rank টিয়ার),
   // বাকি compact; বাদ-পড়া আইটেম ছোট বিন্দু (hover-এ মার্কার, ট্যাপে নির্বাচন) —
   // কেউ মানচিত্রে লুকায় না। deps-এ সিগনেচার-কী + নির্বাচন — GPS ফিক্সে
-  // সদস্যতা/টিয়ার বদলানো পর্যন্ত রিবিল্ড হয় না। গেট/হোটেল/ঐতিহাসিক বিভাগে
-  // পেজ সংশ্লিষ্ট show* প্রপ চেপে দেয়, তাই দ্বৈত-মার্কার হয় না।
+  // সদস্যতা/টিয়ার বদলানো পর্যন্ত রিবিল্ড হয় না। গেট/হোটেল/ঐতিহাসিক এখন শুধুই
+  // এই পথে মার্কার পায় (আলাদা লেয়ার-টগল আর নেই), তাই দ্বৈত-মার্কার নেই।
   // নোট: সদস্যতা বদলালে এই ইফেক্ট চলেই না যতক্ষণ নির্বাচন-state না বসে —
   // map.project ইম্পারেটিভ, তাই এক কমিটের বিলম্ব অনিবার্য; ৮০০ms ফ্লাই-এর
   // পাশে অনুভবযোগ্য নয়।
@@ -1419,39 +1123,6 @@ export function MapView({
     mapLoaded,
     programmaticEaseTo,
   ]);
-
-  // Fly to selected gate
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !selectedGate) return;
-
-    programmaticFlyTo({
-      center: selectedGate.location.coordinates as [number, number],
-      zoom: 17,
-      duration: 1000,
-    });
-  }, [selectedGate, mapLoaded, programmaticFlyTo]);
-
-  // Fly to selected hotel
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !selectedHotel) return;
-
-    programmaticFlyTo({
-      center: selectedHotel.location.coordinates as [number, number],
-      zoom: 17,
-      duration: 1000,
-    });
-  }, [selectedHotel, mapLoaded, programmaticFlyTo]);
-
-  // Fly to selected tourist place
-  useEffect(() => {
-    if (!mapRef.current || !mapLoaded || !selectedTouristPlace) return;
-
-    programmaticFlyTo({
-      center: selectedTouristPlace.location.coordinates as [number, number],
-      zoom: 16,
-      duration: 1000,
-    });
-  }, [selectedTouristPlace, mapLoaded, programmaticFlyTo]);
 
   // Update route — নেভিগেশন চলাকালীন ভ্রমণকৃত অংশ বাদ দিয়ে অবশিষ্ট জ্যামিতি
   // আঁকা হয়; fitBounds শুধু প্রথমবার দেখানোর সময়, যাতে রিয়ারাউটে ক্যামেরা
