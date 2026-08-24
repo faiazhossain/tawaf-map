@@ -4,8 +4,6 @@ export { useGateStore } from "./gateStore";
 export { useRouteStore } from "./routeStore";
 export { useNavigationStore } from "./navigationStore";
 export { useNearbyStore } from "./nearbyStore";
-export { useHotelStore } from "./hotelStore";
-export { useTouristPlaceStore } from "./touristPlaceStore";
 export { usePanelStore } from "./panelStore";
 export { useUmrahGuideStore } from "./umrahGuideStore";
 export type { UmrahGuideMode } from "./umrahGuideStore";

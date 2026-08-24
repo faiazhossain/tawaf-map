@@ -72,8 +72,8 @@ const DRAG_REGION_ATTR = "data-sheet-drag-region";
 
 type GestureState = "idle" | "pending" | "dragging" | "rejected";
 
-// Ref-counted: two stacked sheets (e.g. the persistent NearbyGatesPanel plus
-// GateInfoPanel on the map page) must hold the body lock until both close.
+// Ref-counted: two stacked sheets (e.g. the nearby list sheet plus the
+// detail sheet on the map page) must hold the body lock until both close.
 let openSheetCount = 0;
 
 function prefersReducedMotion(): boolean {
