@@ -4,8 +4,7 @@ import type { CSSProperties } from "react";
 import { Settings2 } from "lucide-react";
 import { NEARBY_CATEGORIES } from "@/lib/nearby/categories";
 import { useNearbyStore } from "@/lib/store/nearbyStore";
-import { toBengaliNumber } from "@/lib/utils/bengali-number";
-import { cn } from "@/lib/utils";
+import { NearbyCategoryButton } from "./NearbyCategoryButton";
 import type { NearbyCategory, NearbyCounts } from "@/types/nearby";
 
 interface NearbyChipBarProps {
@@ -57,37 +56,16 @@ export function NearbyChipBar({
           <Settings2 className="h-5 w-5" aria-hidden />
         </button>
 
-        {chips.map((meta) => {
-          const count = counts[meta.id];
-          const isActive = activeCategory === meta.id;
-          const Icon = meta.icon;
-          const disabled = count === 0 && !isActive;
-          return (
-            <button
-              key={meta.id}
-              type="button"
-              disabled={disabled}
-              aria-pressed={isActive}
-              data-testid={`nearby-chip-${meta.id}`}
-              onClick={() => onSelectCategory(meta.id)}
-              className={cn(
-                "flex h-11 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-medium shadow-lg backdrop-blur-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
-                isActive
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-surface/95 text-foreground hover:bg-muted",
-                disabled && "opacity-40"
-              )}
-            >
-              <Icon
-                className={cn("h-4 w-4", isActive ? "text-primary-foreground" : "text-primary")}
-                aria-hidden
-              />
-              <span className="whitespace-nowrap">
-                {toBengaliNumber(count)} {meta.plural}
-              </span>
-            </button>
-          );
-        })}
+        {chips.map((meta) => (
+          <NearbyCategoryButton
+            key={meta.id}
+            category={meta.id}
+            count={counts[meta.id]}
+            active={activeCategory === meta.id}
+            testId={`nearby-chip-${meta.id}`}
+            onSelect={onSelectCategory}
+          />
+        ))}
       </div>
     </div>
   );
