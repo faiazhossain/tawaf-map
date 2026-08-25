@@ -10,27 +10,27 @@
  *   });
  */
 
-import * as THREE from 'three';
+import * as THREE from "three";
 
 const DEFAULT_FACES = [
-  { x: -15.086, y: -1.252,  z: 435.807, rx: -1.5708, ry:  0.0000, rz: 3.1416 },
-  { x: -15.000, y: -54.050, z: 436.500, rx: -1.5720, ry:  3.1580, rz: 3.1420 },
-  { x:  21.000, y: -27.450, z: 436.500, rx:  0.5890, ry:  1.5220, rz: 0.9720 },
-  { x: -50.000, y: -27.250, z: 436.000, rx: -1.5708, ry: -1.5710, rz: 3.1320 },
+  { x: -15.086, y: -1.252, z: 435.807, rx: -1.5708, ry: 0.0, rz: 3.1416 },
+  { x: -15.0, y: -54.05, z: 436.5, rx: -1.572, ry: 3.158, rz: 3.142 },
+  { x: 21.0, y: -27.45, z: 436.5, rx: 0.589, ry: 1.522, rz: 0.972 },
+  { x: -50.0, y: -27.25, z: 436.0, rx: -1.5708, ry: -1.571, rz: 3.132 },
 ];
 
 /** Final hand look (colors + material) */
 const DEFAULT_LOOK = {
-  hour: '#000000',
-  minute: '#000000',
-  second: '#000000',
-  pin: '#c9a227',
+  hour: "#000000",
+  minute: "#000000",
+  second: "#000000",
+  pin: "#c9a227",
   metal: 0.35,
   rough: 0.45,
 };
 
-const FRAME_NAME = 'Makkah_Clock__Frame&Anbrala';
-const HIDE_NAMES = new Set(['HourHand', 'MinuteHand', 'SecondHand', 'Plane.001']);
+const FRAME_NAME = "Makkah_Clock__Frame&Anbrala";
+const HIDE_NAMES = new Set(["HourHand", "MinuteHand", "SecondHand", "Plane.001"]);
 
 function makeHand(length, baseW, color, depth, look) {
   const s = new THREE.Shape();
@@ -85,7 +85,7 @@ function createHandSet(scale, look) {
     })
   );
   pin.position.z = 0.4 * scale;
-  pin.name = 'ClockPin';
+  pin.name = "ClockPin";
 
   group.add(hour, minute, second, pin);
   return { group, hour, minute, second, pin };
@@ -100,23 +100,23 @@ function getClockParts(date, timeZone) {
       label: date.toLocaleTimeString(),
     };
   }
-  const parts = new Intl.DateTimeFormat('en-GB', {
+  const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone,
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
+    hour: "numeric",
+    minute: "numeric",
+    second: "numeric",
     hour12: false,
   }).formatToParts(date);
   const get = (t) => +parts.find((p) => p.type === t).value;
   const label =
-    new Intl.DateTimeFormat('en-GB', {
+    new Intl.DateTimeFormat("en-GB", {
       timeZone,
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
       hour12: false,
     }).format(date) + ` (${timeZone})`;
-  return { h: get('hour') % 12, m: get('minute'), s: get('second'), label };
+  return { h: get("hour") % 12, m: get("minute"), s: get("second"), label };
 }
 
 function paintMesh(mesh, hex, look) {
@@ -141,7 +141,7 @@ function paintMesh(mesh, hex, look) {
  * @param {(label:string)=>void} [options.onTick]
  */
 export function attachRealtimeClockHands(root, options = {}) {
-  const timeZone = options.timeZone ?? 'Asia/Riyadh';
+  const timeZone = options.timeZone ?? "Asia/Riyadh";
   const handScale = options.handScale ?? 0.72;
   const intervalMs = options.intervalMs ?? 80;
   const faces = options.faces ?? DEFAULT_FACES;
@@ -153,7 +153,7 @@ export function attachRealtimeClockHands(root, options = {}) {
   root.traverse((c) => {
     if (c.name === FRAME_NAME) frameNode = c;
     if (hideOriginal) {
-      if (HIDE_NAMES.has(c.name) || (c.name && c.name.endsWith('.001'))) {
+      if (HIDE_NAMES.has(c.name) || (c.name && c.name.endsWith(".001"))) {
         c.visible = false;
       }
     }

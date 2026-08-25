@@ -32,9 +32,9 @@ describe("makeBengaliName", () => {
   it("উপরের ওভাররাইড টেবিল থেকে বাংলা নাম দেয়", () => {
     expect(makeBengaliName("باب الملك فھد - 79", "King Fahd Gate - 79", "79")).toBe("কিং ফাহদ গেট");
     expect(makeBengaliName("باب السلام", "Bab Al Salam", "")).toBe("বাব সালাম গেট");
-    expect(makeBengaliName("مدخل النساء للروضة الشريفة", "Women's Entry into noble Rawda", "")).toBe(
-      "নারীদের রওজা প্রবেশ"
-    );
+    expect(
+      makeBengaliName("مدخل النساء للروضة الشريفة", "Women's Entry into noble Rawda", "")
+    ).toBe("নারীদের রওজা প্রবেশ");
   });
 
   it("সংখ্যামূলক ref থেকে গেট N বাংলা নাম দেয়", () => {
@@ -87,7 +87,9 @@ describe("filterNabawiGates", () => {
 
 describe("denormalizeNode / toGate", () => {
   it("stabilizes ওয়েলচেয়ার + আয়কার", () => {
-    const g = denormalizeNode(node(123, { entrance: "main", name: "باب الملك عبد العزیز", wheelchair: "yes", ref: "1" }));
+    const g = denormalizeNode(
+      node(123, { entrance: "main", name: "باب الملك عبد العزیز", wheelchair: "yes", ref: "1" })
+    );
     expect(g).toMatchObject({
       id: "+osm-123",
       osmId: 123,
@@ -105,7 +107,12 @@ describe("denormalizeNode / toGate", () => {
 
   it("nameEn থাকলে Gate-এ রাখে (লাতিন সার্চের জন্য)", () => {
     const g = denormalizeNode(
-      node(124, { entrance: "yes", "name:en": "King Fahd Gate - 79", "name:ar": "باب الملك فھد", ref: "79" })
+      node(124, {
+        entrance: "yes",
+        "name:en": "King Fahd Gate - 79",
+        "name:ar": "باب الملك فھد",
+        ref: "79",
+      })
     );
     expect(toGate(g).nameEn).toBe("King Fahd Gate - 79");
   });

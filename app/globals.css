@@ -130,7 +130,11 @@
   body {
     @apply bg-background text-foreground;
     /* Inter for Latin; Bengali glyphs fall through to Ador Noirrit. */
-    font-family: var(--font-inter), var(--font-ador-noir), system-ui, -apple-system,
+    font-family:
+      var(--font-inter),
+      var(--font-ador-noir),
+      system-ui,
+      -apple-system,
       sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -141,7 +145,9 @@
   .font-arabic {
     font-family: var(--font-noto-naskh-arabic), "Noto Naskh Arabic", serif;
     direction: rtl;
-    font-feature-settings: "calt" 1, "liga" 1;
+    font-feature-settings:
+      "calt" 1,
+      "liga" 1;
     line-height: 2;
   }
 

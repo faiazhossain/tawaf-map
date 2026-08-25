@@ -1,0 +1,38 @@
+# LLM code review on every push, via barikoi/code-review (see its README).
+# Reviews each push and files at most one labeled issue per push when the
+# model flags something at or above the severity threshold. The local
+# /ship command runs lint, type-check and tests before committing, so this
+# workflow mostly sees already-verified changes.
+#
+# The reusable workflow is pinned to the v1 tag SHA (b80a849) rather than
+# the moving @v1 tag, so the review tool version is stable and can't be
+# silently retagged under us. Bump deliberately when upgrading.
+#
+# Requires repo secrets (set in GitHub repo settings > Secrets and variables):
+#   LLM_BASE_URL  - OpenAI-compatible base URL, e.g. https://ollama.example.com/v1
+#   LLM_API_KEY   - bearer key for that endpoint
+#   LLM_MODEL     - model tag on the server (optional)
+# The Ollama server must run with OLLAMA_CONTEXT_LENGTH=262144 to match the
+# default context_tokens budget below.
+
+name: Code Review
+
+on:
+  push:
+    branches: ["main"]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  review:
+    uses: barikoi/code-review/.github/workflows/ollama-code-review.yml@b80a849cffde5e61e79a94a9a5c519b4e9b7abd9
+    secrets:
+      LLM_BASE_URL: ${{ secrets.LLM_BASE_URL }}
+      LLM_API_KEY: ${{ secrets.LLM_API_KEY }}
+      LLM_MODEL: ${{ secrets.LLM_MODEL }}
+    # Optional per-repo overrides:
+    # with:
+    #   severity_threshold: high
+    #   model: some-other-tag

@@ -48,13 +48,14 @@ function main() {
   assertRange("nabawiGates", nabawiGates.length, 40, 80, "নববী গেট সংখ্যা");
   assertRange("total", all.length, 130, 250, "মোট গেট সংখ্যা");
 
-  console.log(`গেট পাওয়া গেছে: হ্যারাম ${haramGates.length}, নববী ${nabawiGates.length}, মোট ${all.length}`);
+  console.log(
+    `গেট পাওয়া গেছে: হ্যারাম ${haramGates.length}, নববী ${nabawiGates.length}, মোট ${all.length}`
+  );
 
   // --- উত্পন্ন TS ---
-  const gatesJs = all
-    .map((g) => toGate(g))
-    .sort((a, b) => a.id.localeCompare(b.id));
-  const tsBody = `${GENERATED_HEADER}\n\nimport type { Gate } from "@/types/gate";\n\n` +
+  const gatesJs = all.map((g) => toGate(g)).sort((a, b) => a.id.localeCompare(b.id));
+  const tsBody =
+    `${GENERATED_HEADER}\n\nimport type { Gate } from "@/types/gate";\n\n` +
     `export const GATES_OSM: Gate[] = ${JSON.stringify(gatesJs, null, 2)};\n`;
   writeFileSync(GENERATED_TS, tsBody);
   console.log("উত্পন্ন ডেটাসেট:", GENERATED_TS, `(${gatesJs.length} গেট)`);

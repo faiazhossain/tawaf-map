@@ -71,7 +71,8 @@ function bengaliFromArabic(nameAr) {
  * সংখ্যা বের করা হয় — যেন মদিনার নাম-সংখ্যাযুক্ত গেটগুলোও বাংলা হয়।
  */
 export function makeBengaliName(nameAr, nameEn, ref, numericName) {
-  const numberSource = ref || (numericName && /^[\d,\s]+$/.test(numericName) ? numericName : undefined);
+  const numberSource =
+    ref || (numericName && /^[\d,\s]+$/.test(numericName) ? numericName : undefined);
   if (nameAr) {
     const fromTable = bengaliFromArabic(nameAr);
     if (fromTable) return fromTable;
