@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { MapView, GateSelector, UserLocation, BarikoiAttribution } from "@/components/map";
 import { NearbyChipBar, NearbySettingsPanel } from "@/components/map/nearby";
 import {
@@ -12,6 +12,7 @@ import {
 } from "@/components/map/nearby";
 import { UmrahOnboarding, UmrahStepList, MiqatOverviewPanel } from "@/components/umrah";
 import { GpsSimBadge } from "@/components/dev/GpsSimBadge";
+import { LocationRecoverySheet } from "@/components/map/LocationRecoverySheet";
 import { isDemoWorldActive } from "@/lib/dev/demo-world";
 import { BetaBadge } from "@/components/ui/beta-badge";
 import { useGeolocation, useMediaQuery, useNearbyPlaces, useNavigation } from "@/lib/hooks";
@@ -128,6 +129,28 @@ export default function MapPage() {
     permission: userPermission,
     requestLocation,
   } = useGeolocation();
+
+  // UX-001: অনুমতি না দিলে / GPS ব্যর্থ হলে "আমার কাছে" আর গায়েব হয় না —
+  // একবার (প্রতি সেশনে) ব্যাখ্যা + retry + ব্রাউজ-মোডের পথ দেখানো হয়।
+  const [locationRecoveryOpen, setLocationRecoveryOpen] = useState(false);
+  const recoveryAutoShownRef = useRef(false);
+  useEffect(() => {
+    if (recoveryAutoShownRef.current || userLoading) return;
+    const failed =
+      userPermission === "denied" ||
+      ((userPermission === "prompt" || userPermission === "unknown") &&
+        userError !== null &&
+        userLat === null);
+    if (!failed) return;
+    recoveryAutoShownRef.current = true;
+    setLocationRecoveryOpen(true);
+  }, [userPermission, userError, userLoading, userLat]);
+
+  const handleLocationRecoveryChange = useCallback((open: boolean) => {
+    setLocationRecoveryOpen(open);
+    // Manual dismissals also count: never re-nag inside the same session.
+    if (!open) recoveryAutoShownRef.current = true;
+  }, []);
   // লাইভ নেভিগেশন অর্কেস্ট্রেশন — পেজে ঠিক একবারই মাউন্ট হয় (দ্বিতীয়বার হলে
   // প্রতি ফিক্সে ডাবল হিসাব/ডাবল রিয়ারাউট হবে)।
   useNavigation();
@@ -186,6 +209,14 @@ export default function MapPage() {
     useNearbyStore.getState().selectItem(item);
   }, []);
   const handleNearbyCategorySelect = useCallback((category: NearbyCategory) => {
+    // UX-001: লোকেশন ছাড়া চিপগুলো স্পষ্ট কারণ-সহ রিকভারি শীটে পৌঁছায়,
+    // নির্জীব opacity-তে নয়।
+    const fix = useLocationStore.getState();
+    if (fix.latitude === null) {
+      recoveryAutoShownRef.current = true;
+      setLocationRecoveryOpen(true);
+      return;
+    }
     useNearbyStore.getState().setActiveCategory(category);
   }, []);
   const handleNearbySettingsOpen = useCallback(() => {
@@ -330,6 +361,10 @@ export default function MapPage() {
       loading={userLoading}
       permission={userPermission}
       onRequestLocation={requestLocation}
+      onExplainDenied={() => {
+        recoveryAutoShownRef.current = true;
+        setLocationRecoveryOpen(true);
+      }}
     />
   );
   const umrahButton = (
@@ -519,6 +554,18 @@ export default function MapPage() {
         {/* লাইভ নেভিগেশন ব্যানার — নেভিগেশন চালু না থাকলে নিজেই লুকায় */}
         <NavigationBanner />
 
+        {/* UX-001: লোকেশন denied/ব্যর্থ — ব্যাখ্যা, retry, ব্রাউজ-মোড */}
+        <LocationRecoverySheet
+          open={locationRecoveryOpen}
+          onOpenChange={handleLocationRecoveryChange}
+          permission={userPermission}
+          error={userError}
+          loading={userLoading}
+          onRetry={() => {
+            void requestLocation();
+          }}
+        />
+
         {/* Dev/test harness — production builds এ কোনোটিই render/import-effect চালায় না */}
         {SHOW_DEV_HARNESS && !hasActivePanel && <DebugLocationPanel />}
         {SHOW_DEV_HARNESS && <GpsSimBadge />}
@@ -559,7 +606,6 @@ export default function MapPage() {
           counts={nearby.counts}
           activeCategory={activeNearbyCategory}
           hidden={
-            !nearby.hasLocation ||
             hasActivePanel ||
             guideBlocksNearby ||
             nearbyListMode === "expanded" ||

@@ -66,4 +66,24 @@ describe("UserLocation", () => {
     expect(screen.getByText("±12m")).toBeTruthy();
     expect(screen.queryByRole("button", { name: "লোকেশন চালু করুন" })).toBeNull();
   });
+
+  it("denied অবস্থা এখন ট্যাপযোগ্য — onExplainDenied ডাকে, নীরব পিল নয় (UX-001)", async () => {
+    const onExplainDenied = vi.fn();
+    const user = userEvent.setup();
+    render(<UserLocation {...baseProps({ permission: "denied", onExplainDenied })} />);
+
+    await user.click(screen.getByTestId("user-location-denied"));
+    expect(onExplainDenied).toHaveBeenCalledTimes(1);
+    // Screen-reader users hear an action, not a status-less icon.
+    expect(screen.getByRole("button", { name: "লোকেশন বন্ধ — সমাধান দেখুন" })).toBeTruthy();
+  });
+
+  it("onExplainDenied না দিলে denied ট্যাপ legacy onRequestLocation-এ পড়ে", async () => {
+    const onRequestLocation = vi.fn();
+    const user = userEvent.setup();
+    render(<UserLocation {...baseProps({ permission: "denied", onRequestLocation })} />);
+
+    await user.click(screen.getByTestId("user-location-denied"));
+    expect(onRequestLocation).toHaveBeenCalledTimes(1);
+  });
 });

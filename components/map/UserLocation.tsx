@@ -11,6 +11,11 @@ export interface UserLocationProps {
   loading: boolean;
   permission: "granted" | "denied" | "prompt" | "unknown";
   onRequestLocation: () => void;
+  /**
+   * UX-001: denied অবস্থায় নীরব পিলের বদলে ট্যাপযোগ্য — রিকভারি শীট খোলে
+   * (ব্রাউজার-সেটিংস নির্দেশনা + retry)। না দিলে আগের মতো onRequestLocation।
+   */
+  onExplainDenied?: () => void;
 }
 
 /**
@@ -30,6 +35,7 @@ export function UserLocation({
   loading,
   permission,
   onRequestLocation,
+  onExplainDenied,
 }: UserLocationProps) {
   if (loading) {
     return (
@@ -44,10 +50,17 @@ export function UserLocation({
 
   if (permission === "denied") {
     return (
-      <div className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 backdrop-blur-xl border border-rose-500/20 rounded-xl shadow-lg">
+      // UX-001: passive pill → actionable; taps open the recovery guidance.
+      <button
+        type="button"
+        onClick={onExplainDenied ?? onRequestLocation}
+        aria-label="লোকেশন বন্ধ — সমাধান দেখুন"
+        data-testid="user-location-denied"
+        className="flex items-center gap-2 px-3 py-2 bg-rose-500/10 backdrop-blur-xl border border-rose-500/20 rounded-xl shadow-lg cursor-pointer transition-colors hover:bg-rose-500/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
         <NavigationOff className="w-4 h-4 text-rose-400" />
         <span className="text-sm text-rose-400 hidden sm:inline">লোকেশন বন্ধ</span>
-      </div>
+      </button>
     );
   }
 
