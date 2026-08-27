@@ -1,0 +1,65 @@
+# Gate CI: lint, type-check, unit tests and a production build on every push
+# to main and every PR. This repo previously had no CI at all (only an LLM
+# review bot), so broken changes reached main whenever local husky hooks were
+# skipped or a fresh machine hadn't run `npm install` (FULL_PRODUCT_AUDIT.md
+# OPS-003).
+#
+# Deliberately NOT here yet:
+# - Playwright e2e: those specs need live internet, a valid Barikoi style key
+#   and networkidle waits against real tile CDNs (QA-001). Add a
+#   chromium-only job after key rotation lands.
+# - Docker image publish: still manual per deploy/DEPLOY_LAYERSTACK_FRONTEND.md.
+#   This workflow only gates what reaches main; it does not deploy.
+
+name: Verify
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+
+concurrency:
+  group: verify-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    env:
+      # MapView fails loudly in non-production contexts without this var (the
+      # hardcoded fallback was removed as SEC-001). next build runs with
+      # NODE_ENV=production so it skips the guard anyway, but the placeholder
+      # keeps vitest free to import the map barrel if tests ever grow to.
+      NEXT_PUBLIC_BARIKOI_API_KEY: ci-placeholder-not-a-real-key
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type-check
+        run: npm run type-check
+
+      # pre-push runs this same suite locally; this makes it non-bypassable.
+      - name: Unit tests
+        run: npm run test -- --run
+
+      # Mirrors the Dockerfile builder stage: `next build` directly against the
+      # committed lib/data/gates-osm.generated.ts. Only regenerate via
+      # `npm run build:gates` when data/gates/*.overpass.json actually changes.
+      - name: Production build
+        run: npm run build:web
