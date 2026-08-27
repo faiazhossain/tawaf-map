@@ -47,6 +47,12 @@ import {
 } from "@/lib/store";
 import { NAV_FOLLOW_ZOOM, NAV_FOLLOW_EASE_MS } from "@/lib/hooks/useNavigation";
 import { useMediaQuery } from "@/lib/hooks/useMediaQuery";
+import {
+  BASEMAP_LOAD_WATCHDOG_MS,
+  isFatalBasemapError,
+  type BasemapErrorSignal,
+} from "@/lib/map/basemap-health";
+import { Button } from "@/components/ui/button";
 import { guideOverlayBottomPx, withGuidePadding } from "@/lib/utils/guide-sheet";
 import { LandmarkHint } from "@/components/umrah/guide/LandmarkHint";
 import type { LandmarkHintData } from "@/lib/map/landmark-utils";
@@ -219,6 +225,8 @@ export function MapView({
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<MapLibreMap | null>(null);
   const [mapLoaded, setMapLoaded] = useState(false);
+  // REL-001: baseline outage shows a retry banner instead of an eternal blank canvas.
+  const [basemapHealth, setBasemapHealth] = useState<"loading" | "ready" | "failed">("loading");
   // map instance-এর জন্য reactive state যাতে useTawafCamera পুনরায় রান করে
   const [mapInstance, setMapInstance] = useState<MapLibreMap | null>(null);
 
@@ -499,8 +507,38 @@ export function MapView({
     // `maplibregl-ctrl-top-right` (added last = bottom of the column).
     map.addControl(new ZoomIndicatorControl(), "top-right");
 
+    // REL-001: fail visibly instead of staying a silent blank rectangle.
+    // Before "load" no tiles are in flight, so any early error event is a
+    // style-level failure (offline / key rejection) — surface it immediately.
+    // The watchdog also catches the quiet hang where the CDN never answers.
+    // Retry reloads the page deliberately: this file's overlays gate on the
+    // one-shot mapLoaded effect below, which setStyle() would never re-run.
+    let styleReady = false;
+    let basemapWatchdog: ReturnType<typeof setTimeout> | null = setTimeout(() => {
+      if (!styleReady) {
+        setBasemapHealth("failed");
+      }
+    }, BASEMAP_LOAD_WATCHDOG_MS);
+
     map.on("load", () => {
+      styleReady = true;
+      if (basemapWatchdog != null) {
+        clearTimeout(basemapWatchdog);
+        basemapWatchdog = null;
+      }
       setMapLoaded(true);
+      setBasemapHealth("ready");
+    });
+
+    map.on("error", (event) => {
+      const signal = (event?.error ?? null) as BasemapErrorSignal | null;
+      if (isFatalBasemapError(signal, styleReady)) {
+        if (basemapWatchdog != null) {
+          clearTimeout(basemapWatchdog);
+          basemapWatchdog = null;
+        }
+        setBasemapHealth("failed");
+      }
     });
 
     // `move` ও `zoom` হ্যান্ডলার আগে প্রতি ফ্রেমে স্টোর লিখত (60×/s)। rAF কো-অলেসিংয়ের
@@ -535,6 +573,7 @@ export function MapView({
     return () => {
       if (moveRafId != null) cancelAnimationFrame(moveRafId);
       if (zoomRafId != null) cancelAnimationFrame(zoomRafId);
+      if (basemapWatchdog != null) clearTimeout(basemapWatchdog);
       map.remove();
       mapRef.current = null;
       setMapInstance(null);
@@ -1598,6 +1637,29 @@ export function MapView({
             max={ritualHud.max}
             className="absolute top-4 left-1/2 -translate-x-1/2 z-[40]"
           />
+        )}
+        {/* REL-001: বেসম্যাপ আসেনি — চিরতরে ফাঁকা ক্যানভাসের বদলে স্পষ্ট বার্তা */}
+        {basemapHealth === "failed" && (
+          <div
+            role="alert"
+            className="absolute inset-0 z-[30] flex items-center justify-center pointer-events-none"
+          >
+            <div className="pointer-events-auto mx-4 max-w-xs px-5 py-4 rounded-2xl bg-surface/95 backdrop-blur-xl border border-border/60 shadow-2xl text-center">
+              <span className="block text-sm font-semibold text-foreground">
+                মানচিত্র লোড হচ্ছে না
+              </span>
+              <span className="mt-1.5 block text-xs leading-relaxed text-muted-foreground">
+                ইন্টারনেট সংযোগ দুর্বল হতে পারে। সংযোগ ঠিক আছে কি না দেখে আবার চেষ্টা করুন।
+              </span>
+              <Button
+                size="sm"
+                className="mt-3 bg-primary hover:bg-primary-hover text-primary-foreground border-0"
+                onClick={() => window.location.reload()}
+              >
+                আবার চেষ্টা করুন
+              </Button>
+            </div>
+          </div>
         )}
         {contextualLandmarkHint && !hintDismissed && (
           <LandmarkHint
