@@ -146,10 +146,26 @@ interface MapViewProps {
   onNearbyItemClick?: (item: NearbyItem) => void;
 }
 
-// Barikoi Map Style URL — key sourced from env so it isn't hardcoded in the
-// client bundle. Falls back to a dev-only default so local dev still works.
-// NOTE: any NEXT_PUBLIC_* value ships in the bundle; treat it as public.
-const BARIKOI_API_KEY = process.env.NEXT_PUBLIC_BARIKOI_API_KEY ?? "MjY0NDpHRUswODE3R1VV";
+// Barikoi Map Style URL — key sourced from env. কোনো fallback literal নেই:
+// এই ফাইলে হার্ডকড করা credential গিট হিস্টরি ও ক্লায়েন্ট বান্ডলে চিরতরে
+// থেকে যায় (পুরনো key দুটি এভাবেই burned হয়েছে)। NEXT_PUBLIC_ মান ডিজাইনগত
+// ভাবেই public — তাই style key-টি আলাদা, domain-restricted ও quota-capped
+// রাখতে হবে; routing-এর BARIKOI_API_KEY কখনো এখানে বসবে না।
+//
+// Dev/test-এ key না থাকলেই import ব্যর্থ — অসম্পূর্ণ সেটআপ নীরবে অন্য key
+// ব্যবহার করার চেয়ে জোরে ব্যর্থ হওয়া ভালো। Production build-এ মান build
+// মেশিনের env থেকে inline হয়, তাই খালি থাকলে ডিপ্লয় রিহার্সালেই ধরা পড়বে
+// (style ছাড়া ম্যাপ যেমনই ফাঁকা — REL-001 সেই ব্যর্থতাকে বার্তায় রূপ দেবে)।
+if (
+  typeof process !== "undefined" &&
+  !process.env.NEXT_PUBLIC_BARIKOI_API_KEY &&
+  process.env.NODE_ENV !== "production"
+) {
+  throw new Error(
+    "NEXT_PUBLIC_BARIKOI_API_KEY সেট করা হয়নি — .env.example দেখে .env.local-এ যোগ করুন"
+  );
+}
+const BARIKOI_API_KEY = process.env.NEXT_PUBLIC_BARIKOI_API_KEY ?? "";
 const BARIKOI_MAP_STYLE = `https://map.barikoi.com/styles/osm_barikoi_pl/style.json?key=${BARIKOI_API_KEY}`;
 
 /**
