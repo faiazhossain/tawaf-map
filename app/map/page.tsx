@@ -54,6 +54,11 @@ const DebugLocationPanel = dynamic(
   { ssr: false }
 );
 
+// Dev/test harness chrome (টেস্ট লোকেশন প্যানেল, GPS সিম ব্যাজ) dev সার্ভারেই
+// শুধু থাকে; production বিল্ড থেকে UI ও activation দুই-ই compile-out হয়।
+// (FULL_PRODUCT_AUDIT.md DEV-001)
+const SHOW_DEV_HARNESS = process.env.NODE_ENV !== "production";
+
 // মোবাইল হ্যামবার্গার মেনুর টগল-সারি: আইকন + বাংলা লেবেল বামে, সুইচ ডানে।
 // সুইচের রঙ primary থিম অনুসরণ করে; বোতামটি aria-pressed-এ অবস্থা জানায়।
 // (স্থায়ী মানচিত্র-পছন্দ — টেরেইন/3D — এর জন্য; "আমার কাছে" বিভাগগুলো
@@ -514,11 +519,9 @@ export default function MapPage() {
         {/* লাইভ নেভিগেশন ব্যানার — নেভিগেশন চালু না থাকলে নিজেই লুকায় */}
         <NavigationBanner />
 
-        {/* Debug Location Panel */}
-        {!hasActivePanel && <DebugLocationPanel />}
-
-        {/* GPS simulator badge (dev/test harness, only renders while active) */}
-        <GpsSimBadge />
+        {/* Dev/test harness — production builds এ কোনোটিই render/import-effect চালায় না */}
+        {SHOW_DEV_HARNESS && !hasActivePanel && <DebugLocationPanel />}
+        {SHOW_DEV_HARNESS && <GpsSimBadge />}
 
         {/* ওমরাহ গাইড - অনবোর্ডিং উইজার্ড */}
         {showUmrahOnboarding && (

@@ -1,7 +1,8 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   DHAKA_TEST_ARENA,
   DEFAULT_GPS_SIM_SCALE,
+  activateGpsSimulator,
   centroidLngLat,
   metersOffset,
   offsetToLngLat,
@@ -9,6 +10,7 @@ import {
   makeGpsSimTransform,
   autoWalkFix,
   resolveGpsSimPrefs,
+  storeGpsSimPrefs,
   createSimulatedGeolocation,
   type SimFix,
 } from "@/lib/dev/gps-sim";
@@ -324,5 +326,33 @@ describe("metersOffset round trip", () => {
     const back = metersOffset(ORIGIN, { lng, lat });
     expect(back.east).toBeCloseTo(east, 4);
     expect(back.north).toBeCloseTo(north, 4);
+  });
+});
+
+describe("dev-only gating and session persistence", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    delete window.__TAWAF_GPS_SIM__;
+    window.sessionStorage.clear();
+    window.localStorage.clear();
+  });
+
+  it("persists prefs in session storage only", () => {
+    storeGpsSimPrefs({ mode: "auto", scale: 3 });
+    expect(window.sessionStorage.getItem("tawaf:gps-sim")).not.toBeNull();
+    // localStorage would leak one activated link into future sessions.
+    expect(window.localStorage.getItem("tawaf:gps-sim")).toBeNull();
+  });
+
+  it("never activates under a production build, even with ?gps-sim=auto", () => {
+    window.history.replaceState(null, "", "/map?gps-sim=auto");
+    vi.stubEnv("NODE_ENV", "production");
+    const realGeolocation = navigator.geolocation;
+
+    const runtime = activateGpsSimulator();
+
+    expect(runtime?.enabled).toBe(false);
+    expect(navigator.geolocation).toBe(realGeolocation);
+    expect(window.sessionStorage.getItem("tawaf:gps-sim")).toBeNull();
   });
 });

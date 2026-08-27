@@ -1,10 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   DEMO_ARENA_CENTER,
   DEMO_WORLD_SCALE,
   makeDemoWorldConfig,
   mapDemoPoint,
   applyDemoWorld,
+  isDemoWorldActive,
+  storeDemoWorldActive,
   resolveDemoWorldActive,
   type CoordinatesHolder,
 } from "@/lib/dev/demo-world";
@@ -189,5 +191,32 @@ describe("resolveDemoWorldActive", () => {
 
   it("URL param wins over storage", () => {
     expect(resolveDemoWorldActive("?demo-world=0", "1")).toBe(false);
+  });
+});
+
+describe("dev-only gating and session persistence", () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    delete window.__TAWAF_DEMO_WORLD__;
+    window.sessionStorage.clear();
+    window.localStorage.clear();
+  });
+
+  it("keeps the toggle in session storage only", () => {
+    storeDemoWorldActive(true);
+    expect(window.sessionStorage.getItem("tawaf:demo-world")).toBe("1");
+    // localStorage would translate Makkah data into future sessions too.
+    expect(window.localStorage.getItem("tawaf:demo-world")).toBeNull();
+  });
+
+  it("stays inactive without translating datasets under a production build", () => {
+    const pristine = HARAM_GATES.map((gate) => [...gate.location.coordinates] as [number, number]);
+    window.history.replaceState(null, "", "/map?demo-world=1");
+    vi.stubEnv("NODE_ENV", "production");
+
+    expect(isDemoWorldActive()).toBe(false);
+    HARAM_GATES.forEach((gate, i) => {
+      expect(gate.location.coordinates).toEqual(pristine[i]);
+    });
   });
 });

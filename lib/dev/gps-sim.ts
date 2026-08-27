@@ -450,7 +450,11 @@ export function createSimulatedGeolocation(
 }
 
 // ---------------------------------------------------------------------------
-// Activation state (URL param + localStorage)
+// Activation state (URL param + session-scoped persistence)
+//
+// Sim state lives in sessionStorage, never localStorage: a reload keeps the
+// harness convenient within the tab, while a one-time crafted link can no
+// longer spoof geolocation into future sessions.
 // ---------------------------------------------------------------------------
 
 export type GpsSimMode = "live" | "auto";
@@ -544,51 +548,64 @@ function clampScale(value: number | undefined | null): number | null {
   return Math.min(value, SCALE_MAX);
 }
 
-/** Persist prefs (or clear when null) so the setting survives navigation. */
+/** Persist prefs (or clear when null) for this tab session only. */
 export function storeGpsSimPrefs(prefs: GpsSimPrefs | null): void {
   if (typeof window === "undefined") return;
   if (prefs === null) {
-    window.localStorage.removeItem(STORAGE_KEY);
+    window.sessionStorage.removeItem(STORAGE_KEY);
   } else {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    window.sessionStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
   }
 }
 
 function readStoredPrefs(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.sessionStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
 }
 
+/** Inert runtime handed out when the simulator is compiled out or not asked for. */
+function disabledRuntime(): GpsSimRuntime {
+  return {
+    enabled: false,
+    mode: "live",
+    scale: DEFAULT_GPS_SIM_SCALE,
+    origin: { lng: 0, lat: 0 },
+    target: { lng: 0, lat: 0 },
+    lastRaw: null,
+    veerOffsetM: 0,
+  };
+}
+
 /**
- * Install the simulated geolocation if the URL/localStorage asked for it.
- * Safe to call multiple times; runs at import time (see bottom of file) so
- * the patch is in place before any component effect reads a position.
+ * Install the simulated geolocation if the URL/session asked for it.
+ * Safe to call multiple times; runs at import time (see bottom of file) in dev
+ * builds so the patch is in place before any component effect reads a position.
  */
 export function activateGpsSimulator(): GpsSimRuntime | null {
   if (typeof window === "undefined") return null;
+  // Dev/test harness (DEV-001): production builds never patch navigator,
+  // whatever the URL says — stray callers just see a consistent disabled state.
+  if (process.env.NODE_ENV === "production") {
+    if (!window.__TAWAF_GPS_SIM__) {
+      window.__TAWAF_GPS_SIM__ = disabledRuntime();
+    }
+    return window.__TAWAF_GPS_SIM__;
+  }
   if (window.__TAWAF_GPS_SIM__ !== undefined) {
     return window.__TAWAF_GPS_SIM__;
   }
 
   const prefs = resolveGpsSimPrefs(window.location.search, readStoredPrefs());
   if (!prefs) {
-    window.__TAWAF_GPS_SIM__ = {
-      enabled: false,
-      mode: "live",
-      scale: DEFAULT_GPS_SIM_SCALE,
-      origin: { lng: 0, lat: 0 },
-      target: { lng: 0, lat: 0 },
-      lastRaw: null,
-      veerOffsetM: 0,
-    };
+    window.__TAWAF_GPS_SIM__ = disabledRuntime();
     return window.__TAWAF_GPS_SIM__;
   }
 
-  // URL params win over stored prefs; persist the result for next loads.
+  // URL params win over stored prefs; persist within this tab session.
   storeGpsSimPrefs(prefs);
 
   const origin = centroidLngLat(DHAKA_TEST_ARENA);
@@ -658,7 +675,8 @@ function replaceGeolocation(simulated: Geolocation): void {
 
 // Activate as soon as this module is evaluated on the client, so the patch
 // exists before any geolocation consumer mounts. Importing this module from
-// a client component (GpsSimBadge) is enough.
-if (typeof window !== "undefined") {
+// a client component (GpsSimBadge) is enough. Production builds compile this
+// out entirely — the simulator must stay unreachable there (DEV-001).
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   activateGpsSimulator();
 }

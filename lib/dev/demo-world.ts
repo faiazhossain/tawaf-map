@@ -13,8 +13,8 @@
  * places) run the exact production code path against the translated data.
  * Because the basemap is Barikoi, the arena renders on real Dhaka streets.
  *
- * Activation: `?demo-world=1` / `?demo-world=0` on any URL (persisted in
- * localStorage) or the one-tap toggle in DebugLocationPanel. Mutually
+ * Activation: `?demo-world=1` / `?demo-world=0` on any URL (session-persisted
+ * per tab, dev builds only) or the one-tap toggle in DebugLocationPanel. Mutually
  * exclusive with the GPS simulator. Mutations happen at module load,
  * before any component reads the datasets, and a reload restores pristine
  * module state.
@@ -106,7 +106,9 @@ export function applyDemoWorld(
 }
 
 // ---------------------------------------------------------------------------
-// Activation state (URL param + localStorage), gps-sim mutually exclusive
+// Activation state (URL param + session storage), gps-sim mutually exclusive.
+// Same contract as gps-sim: session persistence keeps reloads convenient while
+// a one-time link can never translate datasets into future sessions.
 // ---------------------------------------------------------------------------
 
 const STORAGE_KEY = "tawaf:demo-world";
@@ -131,9 +133,9 @@ export function storeDemoWorldActive(active: boolean): void {
   if (typeof window === "undefined") return;
   try {
     if (active) {
-      window.localStorage.setItem(STORAGE_KEY, "1");
+      window.sessionStorage.setItem(STORAGE_KEY, "1");
     } else {
-      window.localStorage.removeItem(STORAGE_KEY);
+      window.sessionStorage.removeItem(STORAGE_KEY);
     }
   } catch {
     // Storage can be unavailable (private mode); the URL param still works.
@@ -143,7 +145,7 @@ export function storeDemoWorldActive(active: boolean): void {
 function readStored(): string | null {
   if (typeof window === "undefined") return null;
   try {
-    return window.localStorage.getItem(STORAGE_KEY);
+    return window.sessionStorage.getItem(STORAGE_KEY);
   } catch {
     return null;
   }
@@ -155,6 +157,12 @@ function readStored(): string | null {
  */
 export function activateDemoWorld(): boolean {
   if (typeof window === "undefined") return false;
+  // Dev/test harness (DEV-001): production builds never translate datasets,
+  // whatever the URL says. Memoized false keeps repeated checks cheap.
+  if (process.env.NODE_ENV === "production") {
+    window.__TAWAF_DEMO_WORLD__ = false;
+    return false;
+  }
   if (window.__TAWAF_DEMO_WORLD__ !== undefined) {
     return window.__TAWAF_DEMO_WORLD__;
   }
@@ -182,7 +190,7 @@ export function activateDemoWorld(): boolean {
 
 function readGpsSimStored(): string | null {
   try {
-    return window.localStorage.getItem("tawaf:gps-sim");
+    return window.sessionStorage.getItem("tawaf:gps-sim");
   } catch {
     return null;
   }
@@ -191,6 +199,7 @@ function readGpsSimStored(): string | null {
 /** Whether the demo world is active (activating on first call if needed). */
 export function isDemoWorldActive(): boolean {
   if (typeof window === "undefined") return false;
+  if (process.env.NODE_ENV === "production") return false;
   return window.__TAWAF_DEMO_WORLD__ ?? activateDemoWorld();
 }
 
@@ -202,7 +211,8 @@ export function getDemoWorldViewport(): { center: [number, number]; zoom: number
 
 // Activate as soon as this module is evaluated on the client, before any
 // component mounts. Statically imported by the map page (via GpsSimBadge)
-// so the timing is guaranteed.
-if (typeof window !== "undefined") {
+// so the timing is guaranteed. Production builds compile this out entirely
+// — real pilgrims must always see the real data (DEV-001).
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
   activateDemoWorld();
 }
