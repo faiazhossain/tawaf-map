@@ -76,8 +76,27 @@ curl -I https://tawaf.barikoimaps.com
 ```bash
 cd /home/faiaz/tawaf-map
 docker compose down
-docker image ls | head
+# Find the previous image ID before deciding anything:
+docker image ls rilusmahmud/tawaf-map --format "{{.ID}} {{.CreatedSince}}"
+# Bring the old image back by pinning its ID in docker-compose.yml, then:
+docker compose up -d
 ```
+
+A real rollback needs the previous image to still exist locally — one more
+reason to tag releases instead of overwriting `:latest` (see runbook notes).
+
+### Health monitoring (OBS-001)
+
+- Liveness pinger (every 1-5 min, external uptime service):
+  `curl -fsS https://tawaf.barikoimaps.com/api/health` — expect HTTP 200 with
+  `"status":"ok"`.
+- Config drift: the body's `"degraded":true` means an expected env key is
+  missing on this deployment (e.g. `barikoiRoutingKey:false`) — alert-worthy.
+- Incident debug, human-run only: add `?deep=1` — it probes the Barikoi origin
+  and the style endpoint with a 3s timeout and reports
+  reachable/upstream-5xx/unreachable per target.
+- On boot, `docker compose logs tawaf-frontend | grep tawaf-map-start` prints
+  one JSON line with the version and which env flags actually arrived.
 
 Nginx rollback:
 

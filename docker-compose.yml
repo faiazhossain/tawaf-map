@@ -3,6 +3,12 @@ services:
     container_name: tawaf-frontend
     image: rilusmahmud/tawaf-map:latest
     restart: unless-stopped
+    # json-file defaults grow forever on long-lived hosts; cap at ~30MB.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
     env_file:
       - .env.production
     environment:

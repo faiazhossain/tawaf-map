@@ -8,6 +8,7 @@
 import { useEffect } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { reportError } from "@/lib/telemetry";
 
 export default function RouteError({
   error,
@@ -17,8 +18,8 @@ export default function RouteError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // The boundary is the UX; the console keeps something for Sentry (OBS-001).
-    console.error("[app-error]", error);
+    // The boundary is the UX; telemetry is the ops signal (OBS-001).
+    reportError(error, { scope: "route-boundary" });
   }, [error]);
 
   return (

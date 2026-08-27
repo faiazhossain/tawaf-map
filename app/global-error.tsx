@@ -6,6 +6,7 @@
 // screen is up, even theming is not guaranteed to be available.
 
 import { useEffect } from "react";
+import { reportError } from "@/lib/telemetry";
 
 export default function GlobalError({
   error,
@@ -15,7 +16,7 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    console.error("[global-error]", error);
+    reportError(error, { scope: "global-boundary" });
   }, [error]);
 
   return (
