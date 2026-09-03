@@ -1,15 +1,7 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, Noto_Naskh_Arabic } from "next/font/google";
 import local from "next/font/local";
 import "./globals.css";
 import { ThemeProvider, themeNoFlashScript } from "@/components/theme/theme-provider";
-
-// Latin UI type — clean, neutral, calm.
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 // Bengali — the primary content language. Inter has no Bengali glyphs, so all
 // Bengali text falls through to this face (Ador Noirrit, local) in the body
@@ -71,15 +63,6 @@ const adorNoir = local({
   display: "swap",
 });
 
-// Arabic — used for duas / Quranic text. Apply via the `.font-arabic` utility
-// with dir="rtl" on the consuming element.
-const notoNaskhArabic = Noto_Naskh_Arabic({
-  subsets: ["arabic"],
-  weight: ["400", "500", "700"],
-  variable: "--font-noto-naskh-arabic",
-  display: "swap",
-});
-
 export const metadata: Metadata = {
   title: "TawafMap (Beta) — তওয়াফ গাইড ও মক্কা-মদিনা ম্যাপ",
   description:
@@ -113,7 +96,7 @@ export default function RootLayout({
         {/* Apply stored theme before hydration to avoid a flash of the wrong theme. */}
         <script dangerouslySetInnerHTML={{ __html: themeNoFlashScript }} />
       </head>
-      <body className={`${inter.variable} ${adorNoir.variable} ${notoNaskhArabic.variable}`}>
+      <body className={adorNoir.variable}>
         <ThemeProvider>{children}</ThemeProvider>
       </body>
     </html>

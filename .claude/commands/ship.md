@@ -2,11 +2,6 @@
 description: Verify lint, type-check, format and tests, then commit and push
 ---
 
-Run every local check that guards the codebase before committing, then stage,
-commit and push. The push triggers the Code Review workflow
-(`.github/workflows/code-review.yml`), so the goal is to catch issues locally
-first and keep the pushed state clean.
-
 ## Steps
 
 1. **Show the current state** so the user can see what is about to ship:
