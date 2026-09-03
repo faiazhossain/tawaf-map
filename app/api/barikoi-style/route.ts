@@ -1,5 +1,9 @@
 import { NextResponse } from "next/server";
 
+// রানটাইম env পড়া হয় — build মেশিনের env দিয়ে কখনো prerender/cache হলে
+// খালি key-এর 500 রেসপনসই স্থায়ীভাবে বেক হয়ে থাকবে। তাই স্পষ্টভাবে dynamic।
+export const dynamic = "force-dynamic";
+
 const BARIKOI_STYLE_URL = "https://map.barikoi.com/styles/osm_barikoi_pl/style.json";
 
 export async function GET() {
